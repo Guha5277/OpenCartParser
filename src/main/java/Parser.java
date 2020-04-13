@@ -1,67 +1,53 @@
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 class Parser {
     private final String URL = "https://ilfumoshop.ru/zhidkost-dlya-zapravki-vejporov.html";
     private final String CATEGORY_DELIMITER = "col-lg-4 col-md-4 col-sm-6 col-xs-12";
-    Elements categories;
-    private Document page;
 
+    private Document fullPage;
+    private Elements unparseCategoryPage;
+    private final ArrayList<Category> categories;
 
     Parser() {
-        page = downloadPage();
-        categories = parseCategories();
+        fullPage = downloadPage();
+        unparseCategoryPage = fetchCategory();
+        categories = getCategoryNames();
     }
 
-    public Document getPage() {
-        return page;
+    Document getFullPage() {
+        return fullPage;
     }
 
-    public Elements getCategories(){
-        return categories;
+    Elements getCategoriesPage() {
+        return unparseCategoryPage;
     }
 
-     private Document downloadPage() {
-        try{
-            page = Jsoup.connect(URL).get();
+    private Document downloadPage() {
+        try {
+            fullPage = Jsoup.connect(URL).get();
 
-        } catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        return page;
+        return fullPage;
     }
 
-    private Elements parseCategories() {
-        return page.body().getElementsByClass(CATEGORY_DELIMITER);
+    private Elements fetchCategory() {
+        return fullPage.body().getElementsByClass(CATEGORY_DELIMITER);
     }
 
-    public void showCategories(){
-
-        Element link = categories.select("a").first();
-        String href = link.attr("href");
-        System.out.println(href);
-
-//        link = categories.select("a").next();
-
-//
-//        for (Element links : categories.select("a").next()){
-//            String href = links.attr("href");
-//            System.out.println(href);
-//        }
-
-
-//
-//        int i = 0;
-//        for(String s : categories.eachText()){
-//            System.out.print(i + ": "); System.out.println(s);
-//            i++;
-//        }
+    ArrayList<Category> getCategoryNames() {
+        ArrayList<Category> resultList = new ArrayList<>();
+        unparseCategoryPage.forEach(catElem -> {
+            Element category = catElem.child(1).select("a").get(0);
+            resultList.add(new Category(category.text(), category.attr("href")));
+        });
+        return resultList;
     }
 }
