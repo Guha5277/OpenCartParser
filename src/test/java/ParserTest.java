@@ -31,7 +31,7 @@ public class ParserTest {
 
     @Test
     public void receivedCategoryData(){
-        ArrayList<Category> list = parser.getCategoryNames();
+        ArrayList<Category> list = parser.parseCategories();
         Assert.assertEquals(9, list.size());
     }
 }

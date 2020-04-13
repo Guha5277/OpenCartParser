@@ -17,15 +17,7 @@ class Parser {
     Parser() {
         fullPage = downloadPage();
         unparseCategoryPage = fetchCategory();
-        categories = getCategoryNames();
-    }
-
-    Document getFullPage() {
-        return fullPage;
-    }
-
-    Elements getCategoriesPage() {
-        return unparseCategoryPage;
+        categories = parseCategories();
     }
 
     private Document downloadPage() {
@@ -38,11 +30,19 @@ class Parser {
         return fullPage;
     }
 
+    Document getFullPage() {
+        return fullPage;
+    }
+
+    Elements getCategoriesPage() {
+        return unparseCategoryPage;
+    }
+
     private Elements fetchCategory() {
         return fullPage.body().getElementsByClass(CATEGORY_DELIMITER);
     }
 
-    ArrayList<Category> getCategoryNames() {
+    ArrayList<Category> parseCategories() {
         ArrayList<Category> resultList = new ArrayList<>();
         unparseCategoryPage.forEach(catElem -> {
             Element category = catElem.child(1).select("a").get(0);

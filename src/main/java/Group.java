@@ -16,14 +16,6 @@ public class Group {
         this.parentGroup = parentGroup;
     }
 
-    public String getGroupName() {
-        return name;
-    }
-
-    public String getGroupURL() {
-        return URL;
-    }
-
     public void setParentGroup(Group parentGroup) {
         this.parentGroup = parentGroup;
     }
@@ -35,11 +27,19 @@ public class Group {
         childGroups.add(childGroup);
     }
 
+    public String getGroupName() {
+        return name;
+    }
+
+    public String getGroupURL() {
+        return URL;
+    }
+
     public Group parent(){
         return parentGroup;
     }
 
     public Group child(int index){
-        return childGroups.get(0);
+        return childGroups.get(index);
     }
 }
