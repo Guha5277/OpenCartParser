@@ -10,41 +10,34 @@ class Parser {
     private final String URL = "https://ilfumoshop.ru/zhidkost-dlya-zapravki-vejporov.html";
     private final String CATEGORY_DELIMITER = "col-lg-4 col-md-4 col-sm-6 col-xs-12";
 
-    private Document fullPage;
-    private Elements unparseCategoryPage;
     private final ArrayList<Category> categories;
 
     Parser() {
-        fullPage = downloadPage();
-        unparseCategoryPage = fetchCategory();
-        categories = parseCategories();
+        categories = parseCategories(fetchCategory(downloadPage()));
+    }
+
+    public ArrayList<Category> getCategories() {
+        return categories;
     }
 
     private Document downloadPage() {
+        Document result = null;
         try {
-            fullPage = Jsoup.connect(URL).get();
+            result = Jsoup.connect(URL).get();
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return fullPage;
+        return result;
     }
 
-    Document getFullPage() {
-        return fullPage;
+    private Elements fetchCategory(Document liquidPage) {
+        return liquidPage.body().getElementsByClass(CATEGORY_DELIMITER);
     }
 
-    Elements getCategoriesPage() {
-        return unparseCategoryPage;
-    }
-
-    private Elements fetchCategory() {
-        return fullPage.body().getElementsByClass(CATEGORY_DELIMITER);
-    }
-
-    ArrayList<Category> parseCategories() {
+    ArrayList<Category> parseCategories(Elements liquidPagePart) {
         ArrayList<Category> resultList = new ArrayList<>();
-        unparseCategoryPage.forEach(catElem -> {
+        liquidPagePart.forEach(catElem -> {
             Element category = catElem.child(1).select("a").get(0);
             resultList.add(new Category(category.text(), category.attr("href")));
         });

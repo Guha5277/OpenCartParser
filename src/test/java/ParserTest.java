@@ -8,6 +8,8 @@ import java.util.ArrayList;
 
 public class ParserTest {
     static Parser parser;
+
+    public static ArrayList<Category> expectedCategoryList;
     //String URL = "https://ilfumoshop.ru";
 
     @BeforeClass
@@ -16,22 +18,16 @@ public class ParserTest {
     }
 
     @Test
-    public void remotePageNotNullTest() {
-        Document retrievedDocument = parser.getFullPage();
-        Assert.assertNotNull(retrievedDocument);
-    }
-
-    @Test
-    public void receivedLiquidPartOfPage(){
-        Elements retrievedElements = parser.getCategoriesPage();
-        int count = retrievedElements.size();
-        Assert.assertNotNull(retrievedElements);
-        Assert.assertEquals(9, count);
-    }
-
-    @Test
     public void receivedCategoryData(){
-        ArrayList<Category> list = parser.parseCategories();
+        ArrayList<Category> list = parser.getCategories();
         Assert.assertEquals(9, list.size());
+    }
+
+    @Test
+    public void vailReceivedData(){
+        ArrayList<Category> list = parser.getCategories();
+        Assert.assertEquals("Жидкость Постоянного ассортимента", parser.getCategories().get(0).getName());
+        Assert.assertEquals("Жидкость Америка", parser.getCategories().get(1).getName());
+        Assert.assertEquals("Жидкость Дополнительного ассортимента", parser.getCategories().get(2).getName());
     }
 }
