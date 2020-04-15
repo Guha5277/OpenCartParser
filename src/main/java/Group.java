@@ -3,6 +3,7 @@ import java.util.ArrayList;
 public class Group {
     private Group parentGroup;
     private ArrayList<Group> childGroups;
+    private ArrayList<Liquid> liquids;
     private final String name;
     private final String URL;
 

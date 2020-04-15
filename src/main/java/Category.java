@@ -17,4 +17,15 @@ public class Category {
     public String getUrl() {
         return url;
     }
+
+    public void addGroup(Group group){
+        if (groups == null){
+            groups = new ArrayList<>();
+        }
+        groups.add(group);
+    }
+
+    public ArrayList<Group> getGroups() {
+        return groups;
+    }
 }

@@ -9,9 +9,6 @@ import java.util.ArrayList;
 public class ParserTest {
     static Parser parser;
 
-    public static ArrayList<Category> expectedCategoryList;
-    //String URL = "https://ilfumoshop.ru";
-
     @BeforeClass
     public static void initialize() {
         parser = new Parser();
@@ -30,4 +27,19 @@ public class ParserTest {
         Assert.assertEquals("Жидкость Америка", parser.getCategories().get(1).getName());
         Assert.assertEquals("Жидкость Дополнительного ассортимента", parser.getCategories().get(2).getName());
     }
+
+//    @Test
+//    public void getAndParseGroupsTest(){
+//        parser.parseGroups();
+//        ArrayList<Category> receivedCategories = parser.getCategories();
+//
+//        for(Category cat : receivedCategories){
+//            ArrayList<Group> groups = cat.getGroups();
+//            if(groups == null) continue;
+//            for (Group g : groups){
+//                System.out.println(g.getGroupName());
+//            }
+//        }
+//    }
+
 }
