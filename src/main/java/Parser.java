@@ -49,13 +49,17 @@ class Parser {
         for (Category cat : categories) {
             try {
                 //Получение групп жидкостей из категории
-                Elements elements = Jsoup.connect(cat.getUrl()).get().body().getElementsByClass(CATEGORY_DELIMITER);
+                Elements groupElements = Jsoup.connect(cat.getUrl()).get().body().getElementsByClass(CATEGORY_DELIMITER);
 
                 //Перебор всех групп
-                elements.forEach(groupElement -> {
-                    Element group = groupElement.child(1).select("a").get(0);
-                    String groupName = group.text();
-                    String groupUrl = group.attr("href");
+                groupElements.forEach(singleGroupElement -> {
+
+                    String[] groupData = getGroupContains(singleGroupElement.child(1).select("a").get(0));
+
+                   // Element group = groupElement.child(1).select("a").get(0);
+
+//                    String groupName = group.text();
+//                    String groupUrl = group.attr("href");
 
                     //Проверка, содержит ли группа жидкости
                     if (!isGroupEmpty(groupUrl)) {
@@ -82,5 +86,26 @@ class Parser {
             return false;
         }
         return groupPage.size() == 0;
+    }
+
+    private boolean isGroupContainGroups(String url){
+
+    }
+
+    private boolean isGroupContainLiquids(String url){
+
+    }
+
+    private String[] getGroupContains(Category category, String groupURL){
+        boolean isGroupEmpty = true;
+        String [] result = new String[2];
+
+        if (isGroupContainGroups(groupElement.attr("href"))){
+            isGroupEmpty = false;
+        }
+        if (isGroupContainLiquids()){
+            isGroupEmpty = false;
+        }
+        return isGroupEmpty ? null : result;
     }
 }
