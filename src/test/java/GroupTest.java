@@ -37,7 +37,24 @@ public class GroupTest {
     }
 
     @Test
-    public void addChildrenTest(){
+    public void addLiquidTest(){
+        String name = "testLiqName";
+        String url = "testLiqUrl";
+        int price = 1000;
+
+        group.addLiquid(new Liquid(name, url, price));
+
+        String receivedName = group.getLiquids().get(0).getName();
+        String receivedUrl = group.getLiquids().get(0).getURL();
+        int receivedPrice = group.getLiquids().get(0).getPrice();
+
+        Assert.assertEquals(name, receivedName);
+        Assert.assertEquals(url, receivedUrl);
+        Assert.assertEquals(price, receivedPrice);
+    }
+
+    @Test
+    public void childrenTest(){
         String childName1 = "Child1";
         String childName2 = "Child2";
         String childName3 = "Child3";
@@ -61,5 +78,21 @@ public class GroupTest {
     @Test (expected = NullPointerException.class)
     public void testChildNull(){
         group.child(0);
+    }
+
+    @Test
+    public void getNullLiquidsTest(){
+        Assert.assertNull(group.getLiquids());
+    }
+
+    @Test
+    public void isGroupEmptyTest(){
+        Assert.assertTrue(group.isGroupEmpty());
+    }
+
+    @Test
+    public void isGroupNotEmptyTest(){
+        group.addChild(new Group(name, url));
+        Assert.assertFalse(group.isGroupEmpty());
     }
 }

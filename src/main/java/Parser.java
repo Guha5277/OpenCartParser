@@ -10,6 +10,7 @@ class Parser {
     private final String URL = "https://ilfumoshop.ru/zhidkost-dlya-zapravki-vejporov.html";
     private final String CATEGORY_DELIMITER = "col-lg-4 col-md-4 col-sm-6 col-xs-12";
     private final String LIQUIDS_DELIMITER = "product-layout product-list col-xs-12";
+    private static final String INNER_LIQUID_DELIMITER = "product-title";
 
     private final ArrayList<Category> categories;
 
@@ -53,18 +54,8 @@ class Parser {
 
                 //Перебор всех групп
                 groupElements.forEach(singleGroupElement -> {
-
-                    String[] groupData = getGroupContains(singleGroupElement.child(1).select("a").get(0));
-
-                   // Element group = groupElement.child(1).select("a").get(0);
-
-//                    String groupName = group.text();
-//                    String groupUrl = group.attr("href");
-
-                    //Проверка, содержит ли группа жидкости
-                    if (!isGroupEmpty(groupUrl)) {
-                        cat.addGroup(new Group(groupName, groupUrl));
-                    }
+                    Group resultGroup = getGroupContains(singleGroupElement.child(1).select("a").get(0), null);
+                    if (resultGroup != null) cat.addGroup(resultGroup);
 
                 });
             } catch (IOException e) {
@@ -72,7 +63,6 @@ class Parser {
             }
         }
     }
-
 
     private boolean isGroupEmpty(String url) {
         Elements groupPage = null;
@@ -83,29 +73,74 @@ class Parser {
 
         } catch (IOException e) {
             e.printStackTrace();
-            return false;
+            return true;
         }
         return groupPage.size() == 0;
     }
 
-    private boolean isGroupContainGroups(String url){
+    public Group getGroupContains(Element element, Group parentGroup) {
+        String name = element.text();
+        String url = element.attr("href");
+        Group resultGroup = new Group(name, url, parentGroup);
 
+        Elements innerGroups = getInnerGroups(url);
+        if (innerGroups != null && innerGroups.size() > 0) {
+            for (Element elementG : innerGroups) {
+                Group innerGroup = getGroupContains(elementG.child(1).select("a").get(0), resultGroup);
+                if (innerGroup == null) continue;
+                resultGroup.addChild(innerGroup);
+            }
+        }
+
+        Elements innerLiquids = getInnerLiquidsCount(url);
+        if (innerLiquids != null && innerLiquids.size() > 0) {
+            for (Element element1Liq : innerLiquids) {
+                Liquid resultLiq = parseLiquid(element1Liq.attr("href"), parentGroup, resultGroup);
+                if (resultLiq == null) continue;
+                    resultLiq.setGroup(resultGroup);
+                    resultGroup.addLiquid(resultLiq);
+
+            }
+        }
+
+        return resultGroup.isGroupEmpty() ? null : resultGroup;
     }
 
-    private boolean isGroupContainLiquids(String url){
-
+    private Elements getInnerGroups(String url) {
+        try {
+            return Jsoup.connect(url).get().body().getElementsByClass(CATEGORY_DELIMITER);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
-    private String[] getGroupContains(Category category, String groupURL){
-        boolean isGroupEmpty = true;
-        String [] result = new String[2];
+    private Elements getInnerLiquidsCount(String url) {
+        try {
+            return Jsoup.connect(url).get().body().getElementsByClass(INNER_LIQUID_DELIMITER);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
-        if (isGroupContainGroups(groupElement.attr("href"))){
-            isGroupEmpty = false;
+    private Liquid parseLiquid(String url, Group parentGroup, Group group) {
+        try {
+            Document liqPage = Jsoup.connect(url).get();
+            Elements nameElement = liqPage.getElementsByClass("mobile_h1_hide");
+            String name = nameElement.get(0).text();
+
+            Elements priceElement = liqPage.getElementsByClass("price");
+            String price = priceElement.get(0).text();
+            int cutIndex = price.indexOf("р");
+            price = price.substring(0, cutIndex);
+
+            return new Liquid(name, url, Integer.parseInt(price), parentGroup, group);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        if (isGroupContainLiquids()){
-            isGroupEmpty = false;
-        }
-        return isGroupEmpty ? null : result;
+
+        return null;
     }
 }

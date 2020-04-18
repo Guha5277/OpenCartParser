@@ -23,9 +23,16 @@ public class Group {
 
     public void addChild(Group childGroup) {
         if(childGroups == null){
-            this.childGroups = new ArrayList<>();
+            childGroups = new ArrayList<>();
         }
         childGroups.add(childGroup);
+    }
+
+    public void addLiquid(Liquid liquid){
+        if (liquids == null){
+            liquids = new ArrayList<>();
+        }
+        liquids.add(liquid);
     }
 
     public String getGroupName() {
@@ -36,6 +43,10 @@ public class Group {
         return URL;
     }
 
+    public ArrayList<Liquid> getLiquids() {
+        return liquids;
+    }
+
     public Group parent(){
         return parentGroup;
     }
@@ -43,4 +54,9 @@ public class Group {
     public Group child(int index){
         return childGroups.get(index);
     }
+
+    public boolean isGroupEmpty(){
+        return (childGroups == null && liquids == null);
+    }
+
 }

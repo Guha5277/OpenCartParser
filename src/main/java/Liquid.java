@@ -1,27 +1,48 @@
-public class Liquid{
+class Liquid{
     private final String name;
     private final String URL;
-    private final Group rootGroup;
-    private final Group group;
+    private Group parentGroup;
+    private Group group;
     private final int price;
 
-    public Liquid(String name, String URL, Group rootGroup, Group group, int price) {
+    Liquid(String name, String URL, int price) {
         this.name = name;
         this.URL = URL;
-        this.rootGroup = rootGroup;
-        this.group = group;
         this.price = price;
     }
 
-    public String getName() {
+    Liquid(String name, String URL, int price, Group group) {
+        this(name, URL, price);
+        this.group = group;
+    }
+
+    Liquid(String name, String URL, int price, Group parentGroup, Group group) {
+        this(name, URL, price);
+        this.parentGroup = parentGroup;
+        this.group = group;
+    }
+
+    String getName() {
         return name;
     }
 
-    public String getURL() {
+    String getURL() {
         return URL;
     }
 
-    public Group getGroup() {
+    int getPrice() {
+        return price;
+    }
+
+    Group getGroup() {
         return group;
+    }
+
+    void setParentGroup(Group parentGroup) {
+        this.parentGroup = parentGroup;
+    }
+
+    void setGroup(Group group) {
+        this.group = group;
     }
 }

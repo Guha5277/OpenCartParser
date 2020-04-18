@@ -7,9 +7,9 @@ import java.util.ArrayList;
 import static org.junit.Assert.*;
 
 public class CategoryTest {
-    Category category;
-    String name = "Жижа";
-    String url = "https://yourdomain.com";
+    private Category category;
+    private String name = "Жижа";
+    private String url = "https://yourdomain.com";
     @Before
     public void init(){
         category = new Category(name, url);

@@ -11,9 +11,8 @@ public class LiquidTest {
 
     @Before
     public void init() {
-        liquid = new Liquid(name, url, new Group("", ""), 100);
+        liquid = new Liquid(name, url, 100);
     }
-
 
     @Test
     public void getName() {
@@ -28,7 +27,14 @@ public class LiquidTest {
     }
 
     @Test
-    public void getGroup() {
+    public void getNullGroupTest() {
+        Group receivedGroup = liquid.getGroup();
+        Assert.assertNull(receivedGroup);
+    }
+
+    @Test
+    public void getNotNullGroupTest() {
+        liquid.setGroup(new Group(name, url));
         Group receivedGroup = liquid.getGroup();
         Assert.assertNotNull(receivedGroup);
     }
