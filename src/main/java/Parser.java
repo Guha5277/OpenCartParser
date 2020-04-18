@@ -37,7 +37,7 @@ class Parser {
         return liquidPage.body().getElementsByClass(CATEGORY_DELIMITER);
     }
 
-    ArrayList<Category> parseCategories(Elements liquidPagePart) {
+    private ArrayList<Category> parseCategories(Elements liquidPagePart) {
         ArrayList<Category> resultList = new ArrayList<>();
         liquidPagePart.forEach(catElem -> {
             Element category = catElem.child(1).select("a").get(0);
@@ -46,7 +46,7 @@ class Parser {
         return resultList;
     }
 
-    public void parseGroups() {
+    private void parseGroups() {
         for (Category cat : categories) {
             try {
                 //Получение групп жидкостей из категории
@@ -64,21 +64,7 @@ class Parser {
         }
     }
 
-    private boolean isGroupEmpty(String url) {
-        Elements groupPage = null;
-        try {
-            Document doc = Jsoup.connect(url).get();
-            groupPage = doc.body().getElementsByClass(LIQUIDS_DELIMITER);
-            if (groupPage.size() == 0) groupPage = doc.getElementsByClass(CATEGORY_DELIMITER);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            return true;
-        }
-        return groupPage.size() == 0;
-    }
-
-    public Group getGroupContains(Element element, Group parentGroup) {
+    private Group getGroupContains(Element element, Group parentGroup) {
         String name = element.text();
         String url = element.attr("href");
         Group resultGroup = new Group(name, url, parentGroup);
