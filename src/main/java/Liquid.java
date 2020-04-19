@@ -1,7 +1,7 @@
 class Liquid{
     private final String name;
     private final String URL;
-    private Group parentGroup;
+    private int categoryID;
     private Group group;
     private final int price;
 
@@ -11,15 +11,10 @@ class Liquid{
         this.price = price;
     }
 
-    Liquid(String name, String URL, int price, Group group) {
+    Liquid(String name, String URL, int price, Group group, int categoryID) {
         this(name, URL, price);
         this.group = group;
-    }
-
-    Liquid(String name, String URL, int price, Group parentGroup, Group group) {
-        this(name, URL, price);
-        this.parentGroup = parentGroup;
-        this.group = group;
+        this.categoryID = categoryID;
     }
 
     String getName() {
@@ -38,8 +33,12 @@ class Liquid{
         return group;
     }
 
-    void setParentGroup(Group parentGroup) {
-        this.parentGroup = parentGroup;
+    public int getCategoryID() {
+        return categoryID;
+    }
+
+    public void setCategoryID(int categoryID) {
+        this.categoryID = categoryID;
     }
 
     void setGroup(Group group) {
