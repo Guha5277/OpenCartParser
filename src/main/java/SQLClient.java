@@ -31,14 +31,14 @@ public class SQLClient {
         }
     }
 
-    synchronized static int getCategoryID(Category category){
+    synchronized static int getCategoryID(Category category) {
         String categoryName = category.getName();
         int categoryID = 0;
 
         String query = String.format("SELECT id FROM categories WHERE name='%s'", categoryName);
         try {
             ResultSet set = statement.executeQuery(query);
-            if(set.next()){
+            if (set.next()) {
                 categoryID = set.getInt(1);
             }
         } catch (SQLException e) {
@@ -49,8 +49,13 @@ public class SQLClient {
     }
 
     synchronized static void insertNewLiquid(Liquid liquid) {
-        String query = String.format("INSERT INTO liquids (name, url, price, group) " +
-                "VALUES (%s, %s, %d, %s, %s)", liquid.getName(), liquid.getURL(), liquid.getPrice(), liquid.getGroup());
+        String query = String.format("INSERT INTO liquids(name, url, price, category, groupName) VALUES('%s', '%s', %d, %d, '%s')",
+                liquid.getName(), liquid.getURL(), liquid.getPrice(), liquid.getCategoryID(), liquid.getGroup().getGroupName());
+        try {
+            statement.execute(query);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
 

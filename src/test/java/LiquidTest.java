@@ -2,8 +2,6 @@ import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 public class LiquidTest {
     String name = "Жидкость Arctica 120 мл Currant Grapefruit 3 мг/мл";
     String url = "https://ilfumoshop.ru/zhidkost-arctica-120-ml-currant-grapefruit-3-mgml";

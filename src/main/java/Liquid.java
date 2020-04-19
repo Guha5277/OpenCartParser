@@ -33,7 +33,7 @@ class Liquid{
         return group;
     }
 
-    public int getCategoryID() {
+    int getCategoryID() {
         return categoryID;
     }
 
