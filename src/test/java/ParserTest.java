@@ -8,8 +8,13 @@ public class ParserTest {
     public String name = "testname";
     public String url = "testurl";
 
-    @BeforeClass
-    public static void initialize() {
+//    @BeforeClass
+//    public static void initialize() {
+//        parser = new Parser();
+//    }
+
+    @Test
+    public void testTime(){
         parser = new Parser();
     }
 

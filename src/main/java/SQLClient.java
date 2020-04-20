@@ -8,6 +8,7 @@ public class SQLClient {
         try {
             Class.forName("org.sqlite.JDBC");
             connection = DriverManager.getConnection("jdbc:sqlite:liquidBase.db");
+            connection.setAutoCommit(false);
             statement = connection.createStatement();
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
@@ -17,6 +18,14 @@ public class SQLClient {
     synchronized static void disconnect() {
         try {
             connection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    synchronized static void commit(){
+        try {
+            connection.commit();
         } catch (SQLException e) {
             e.printStackTrace();
         }

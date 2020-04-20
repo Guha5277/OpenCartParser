@@ -55,8 +55,20 @@ class Group {
         return childGroups.get(index);
     }
 
+    public ArrayList<Group> getChildGroups() {
+        return childGroups;
+    }
+
     boolean isGroupEmpty(){
         return (childGroups == null && liquids == null);
+    }
+
+    boolean isGroupHaveChild() {
+        return !(childGroups == null);
+    }
+
+    boolean isGroupHaveLiquids(){
+        return !(liquids == null);
     }
 
 }

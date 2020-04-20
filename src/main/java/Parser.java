@@ -16,6 +16,13 @@ class Parser {
 
     Parser() {
         categories = parseCategories(fetchCategory(downloadPage()));
+        SQLClient.connect();
+        getCategoriesID();
+        parseGroups();
+        insertAllLiquidsToDB();
+
+        SQLClient.commit();
+        SQLClient.disconnect();
     }
 
     ArrayList<Category> getCategories() {
@@ -47,7 +54,8 @@ class Parser {
     }
 
     private void parseGroups() {
-        for (Category cat : categories) {
+        long currentTime = System.currentTimeMillis();
+        categories.forEach(cat -> {
             try {
                 //Получение групп жидкостей из категории
                 Elements groupElements = Jsoup.connect(cat.getUrl()).get().body().getElementsByClass(CATEGORY_DELIMITER);
@@ -61,12 +69,34 @@ class Parser {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
+        });
+        System.out.println("parseGroups() " + (System.currentTimeMillis() - currentTime));
+    }
+
+    private void insertAllLiquidsToDB(){
+        long currentTime = System.currentTimeMillis();
+        categories.forEach(category -> {
+           if(category.getGroups() != null) category.getGroups().forEach(this::innerGroups);
+        });
+        System.out.println("addAllLiquidsToDB() " + (System.currentTimeMillis() - currentTime));
+    }
+
+    private void innerGroups(Group group){
+        if (group.isGroupHaveLiquids()) group.getLiquids().forEach(SQLClient::insertNewLiquid);
+        if (group.isGroupHaveChild()) group.getChildGroups().forEach(this::innerGroups);
     }
 
     private Group getGroupContains(Element element, Group parentGroup, Category category) {
         String name = element.text();
+        System.out.println(name);
+
         String url = element.attr("href");
+
+        if(parentGroup != null && url.equals(parentGroup.getGroupURL())){
+            System.out.println("Recurvied Group! " + url);
+            return null;
+        }
+
         Group resultGroup = new Group(name, url, parentGroup);
 
         Elements innerGroups = getInnerGroups(url);
@@ -114,6 +144,10 @@ class Parser {
         try {
             Document liqPage = Jsoup.connect(url).get();
             Elements nameElement = liqPage.getElementsByClass("mobile_h1_hide");
+            if(nameElement.size() == 0) {
+                System.out.println("Wrong Liquid Page(Group - " + group.getGroupName() + ", catID - " + categoryID + "): " + url);
+                return null;
+            }
             String name = nameElement.get(0).text();
 
             Elements priceElement = liqPage.getElementsByClass("price");
@@ -138,7 +172,6 @@ class Parser {
         categories.forEach(category -> {
             int id = SQLClient.getCategoryID(category);
             category.setCategoryID(id);
-            System.out.println(category.getName() + " " + category.getCategoryID());
         });
     }
 }
