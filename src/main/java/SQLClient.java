@@ -1,8 +1,16 @@
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.sql.*;
 
 public class SQLClient {
     private static Connection connection;
     private static Statement statement;
+    private static Logger LOG;
+
+    static {
+        LOG = LogManager.getLogger();
+    }
 
     synchronized static void connect() {
         try {
@@ -10,8 +18,9 @@ public class SQLClient {
             connection = DriverManager.getConnection("jdbc:sqlite:liquidBase.db");
             connection.setAutoCommit(false);
             statement = connection.createStatement();
+            LOG.info("Connected to DB");
         } catch (ClassNotFoundException | SQLException e) {
-            e.printStackTrace();
+            LOG.error("Failed to Connect to DB! " + e.getMessage());
         }
     }
 
@@ -19,15 +28,17 @@ public class SQLClient {
         try {
             connection.close();
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOG.error("Failed to Close the connection" + e.getMessage());
         }
+        LOG.info("Disonnected from DB");
     }
 
     synchronized static void commit(){
         try {
             connection.commit();
+            LOG.info("Commited changes to DB Succesful!");
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOG.error("Failed to Commit changes to DB" + e.getMessage());
         }
     }
 
@@ -36,7 +47,7 @@ public class SQLClient {
         try {
             statement.execute(query);
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOG.error("Failed to Insert category to DB! CategoryName: " + category.getName() + ", " + e.getMessage());
         }
     }
 
@@ -51,19 +62,37 @@ public class SQLClient {
                 categoryID = set.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOG.error("Failed to Get Category ID! CategoryName: " + categoryName + ", " + e.getMessage());
         }
 
         return categoryID;
     }
 
-    synchronized static void insertNewLiquid(Product product) {
+    synchronized static void insertNewProduct(Product product) {
+        String name = product.getName();
+        String url = product.getURL();
+        int price = product.getPrice();
+        int category = product.getCategoryID();
+        String groupName = product.getGroup().getGroupName();
+
+        int index = name.indexOf('\'');
+        if(index != -1){
+            String sub1 = name.substring(0, index);
+            String sub2 = name.substring(index);
+        }
+
         String query = String.format("INSERT INTO liquids(name, url, price, category, groupName) VALUES('%s', '%s', %d, %d, '%s')",
-                product.getName(), product.getURL(), product.getPrice(), product.getCategoryID(), product.getGroup().getGroupName());
+                name, url, price, category, groupName);
         try {
             statement.execute(query);
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOG.error("Failed to Insert new Product!"
+                        +"\n\t\t name: " + name
+                        +"\n\t\t url: " + url
+                        +"\n\t\t price: " + price
+                        +"\n\t\t category: " + category
+                        +"\n\t\t groupName: " + groupName
+            + "\n " + e.getMessage());
         }
     }
 

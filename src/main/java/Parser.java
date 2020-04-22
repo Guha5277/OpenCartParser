@@ -13,14 +13,13 @@ class Parser {
     private final String CATEGORY_DELIMITER = "col-lg-4 col-md-4 col-sm-6 col-xs-12";
     private final String LIQUIDS_DELIMITER = "product-layout product-list col-xs-12";
     private static final String INNER_LIQUID_DELIMITER = "product-title";
-    private static Logger logger;
+    private static Logger LOG;
 
     private final ArrayList<Category> categories;
 
     Parser() {
+        LOG = LogManager.getLogger();
         categories = parseCategories(fetchCategory(downloadPage()));
-        logger = LogManager.getLogger();
-        logger.debug("Program start");
         SQLClient.connect();
         getCategoriesID();
         parseGroups();
@@ -37,6 +36,7 @@ class Parser {
     private Document downloadPage() {
         Document result = null;
         try {
+            LOG.info("Downloading Page: " + URL);
             result = Jsoup.connect(URL).get();
 
         } catch (IOException e) {
@@ -46,23 +46,30 @@ class Parser {
     }
 
     private Elements fetchCategory(Document liquidPage) {
+        LOG.info("Getting sub-elements of page...");
         return liquidPage.body().getElementsByClass(CATEGORY_DELIMITER);
     }
 
     private ArrayList<Category> parseCategories(Elements liquidPagePart) {
+        LOG.info("Getting categories...");
         ArrayList<Category> resultList = new ArrayList<>();
         liquidPagePart.forEach(catElem -> {
             Element category = catElem.child(1).select("a").get(0);
-            resultList.add(new Category(category.text(), category.attr("href")));
+            String name = category.text();
+            String url = category.attr("href");
+            LOG.info("Parsed: " + name + " " + url);
+            resultList.add(new Category(name, url));
         });
         return resultList;
     }
 
     private void parseGroups() {
+        LOG.info("Parse all groups...");
         long currentTime = System.currentTimeMillis();
         categories.forEach(cat -> {
             try {
                 //Получение групп жидкостей из категории
+                LOG.info("Group: " + cat.getName());
                 Elements groupElements = Jsoup.connect(cat.getUrl()).get().body().getElementsByClass(CATEGORY_DELIMITER);
 
                 //Перебор всех групп
@@ -75,7 +82,7 @@ class Parser {
                 e.printStackTrace();
             }
         });
-        System.out.println("parseGroups() " + (System.currentTimeMillis() - currentTime));
+        LOG.info("Finished with " + (System.currentTimeMillis() - currentTime) + "ms");
     }
 
     private void insertAllLiquidsToDB(){
@@ -83,22 +90,26 @@ class Parser {
         categories.forEach(category -> {
            if(category.getGroups() != null) category.getGroups().forEach(this::innerGroups);
         });
-        System.out.println("addAllLiquidsToDB() " + (System.currentTimeMillis() - currentTime));
+        LOG.info("Finished with " + (System.currentTimeMillis() - currentTime) + "ms");
     }
 
     private void innerGroups(Group group){
-        if (group.isGroupHaveLiquids()) group.getProducts().forEach(SQLClient::insertNewLiquid);
+        if (group.isGroupHaveLiquids()) group.getProducts().forEach(SQLClient::insertNewProduct);
         if (group.isGroupHaveChild()) group.getChildGroups().forEach(this::innerGroups);
     }
 
     private Group getGroupContains(Element element, Group parentGroup, Category category) {
         String name = element.text();
-        System.out.println(name);
+        if (parentGroup != null){
+            LOG.info("\t" + name);
+        } else {
+            LOG.info(name);
+        }
 
         String url = element.attr("href");
 
         if(parentGroup != null && url.equals(parentGroup.getGroupURL())){
-            System.out.println("Recurvied Group! " + url);
+            LOG.debug("Recursive group (parent and child URL's are equals)! " +  url);
             return null;
         }
 
@@ -150,10 +161,12 @@ class Parser {
             Document liqPage = Jsoup.connect(url).get();
             Elements nameElement = liqPage.getElementsByClass("mobile_h1_hide");
             if(nameElement.size() == 0) {
-                System.out.println("Wrong Product Page(Group - " + group.getGroupName() + ", catID - " + categoryID + "): " + url);
+                LOG.debug("Wrong product page!(Group: " + group.getGroupName() + ", CategoryID: " + categoryID + "): " + url);
                 return null;
             }
             String name = nameElement.get(0).text();
+
+            LOG.info("\t\t" + name);
 
             Elements priceElement = liqPage.getElementsByClass("price");
             String price = priceElement.get(0).text();
@@ -174,6 +187,7 @@ class Parser {
     }
 
     private void getCategoriesID(){
+        LOG.info("Getting ID's for categories...");
         categories.forEach(category -> {
             int id = SQLClient.getCategoryID(category);
             category.setCategoryID(id);
