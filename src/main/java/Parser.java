@@ -15,18 +15,13 @@ class Parser {
     private static final String INNER_LIQUID_DELIMITER = "product-title";
     private static Logger LOG;
 
-    private final ArrayList<Category> categories;
+    private ArrayList<Category> categories;
 
     Parser() {
         LOG = LogManager.getLogger();
-        categories = parseCategories(fetchCategory(downloadPage()));
-        SQLClient.connect();
-        getCategoriesID();
-        parseGroups();
-        insertAllLiquidsToDB();
-
-        SQLClient.commit();
-        SQLClient.disconnect();
+//        initializeCategories();
+//         insertAllStores();
+//        initializeDB();
     }
 
     ArrayList<Category> getCategories() {
@@ -63,7 +58,7 @@ class Parser {
         return resultList;
     }
 
-    private void parseGroups() {
+    private void parseAllGroups() {
         LOG.info("Parse all groups...");
         long currentTime = System.currentTimeMillis();
         categories.forEach(cat -> {
@@ -85,7 +80,11 @@ class Parser {
         LOG.info("Finished with " + (System.currentTimeMillis() - currentTime) + "ms");
     }
 
-    private void insertAllLiquidsToDB(){
+    private void insertAllCategories(){
+        categories.forEach(SQLClient::insertCategory);
+    }
+
+    private void insertAllLiquids(){
         long currentTime = System.currentTimeMillis();
         categories.forEach(category -> {
            if(category.getGroups() != null) category.getGroups().forEach(this::innerGroups);
@@ -182,15 +181,99 @@ class Parser {
         return null;
     }
 
-    private void insertAllCategories(){
-        categories.forEach(SQLClient::insertCategory);
-    }
-
     private void getCategoriesID(){
         LOG.info("Getting ID's for categories...");
         categories.forEach(category -> {
             int id = SQLClient.getCategoryID(category);
             category.setCategoryID(id);
         });
+    }
+
+    private void initializeCategories(){
+        categories = parseCategories(fetchCategory(downloadPage()));
+    }
+
+    private void insertAllStores(){
+        try {
+            Document page = Jsoup.connect("https://ilfumoshop.ru/magaziny").get();
+            Elements storesListPart = page.body().getElementsByClass("col-sm-12");
+            Elements storesFetchedByCity = storesListPart.select("a");
+            SQLClient.connect();
+            storesPageParser(storesFetchedByCity);
+            SQLClient.commit();
+            SQLClient.disconnect();
+
+        } catch (IOException e) {
+            LOG.error("Error to get the stores page!");
+        }
+    }
+
+    private void storesPageParser(Elements elements){
+        int region = 0;
+        String city;
+        String address;
+        String phone;
+
+        int index = 0;
+        while (index < elements.size()){
+            Element storePart = elements.get(index);
+            String text = storePart.text();
+            int indexOfChar = text.indexOf(',');
+
+            if (indexOfChar != -1){
+                city = text.substring(0, indexOfChar);
+                address = text.substring(indexOfChar + 2);
+                String phonePart = elements.get(index).attr("href");
+
+                while (!phonePart.contains("tel")){
+                    index++;
+                    phonePart = elements.get(index).attr("href");
+                }
+                indexOfChar = phonePart.indexOf('+');
+
+                if (indexOfChar != -1 ) {
+                    phone = phonePart.substring(indexOfChar);
+                } else {
+                    phone = phonePart;
+                }
+
+                switch (city){
+                    case "Москва":
+                    case "Московская область":
+                        region = 1;
+                        break;
+                    case "Новосибирск":
+                    case "Новосибирская обл":
+                    case "Бердск":
+                        region = 2;
+                        break;
+                    case "Омск":
+                        region = 3;
+                        break;
+                    case "Красноярск":
+                        region = 4;
+                        break;
+                    case "Калининград":
+                        region = 5;
+                        break;
+                }
+                SQLClient.insertNewStore(region, city, address, phone);
+            }
+            index++;
+        }
+    }
+
+    private void initializeDB(){
+        SQLClient.connect();
+
+        initializeCategories();
+        insertAllCategories();
+        getCategoriesID();
+        insertAllStores();
+        parseAllGroups();
+        insertAllLiquids();
+
+        SQLClient.commit();
+        SQLClient.disconnect();
     }
 }

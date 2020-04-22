@@ -76,10 +76,10 @@ public class SQLClient {
         String groupName = product.getGroup().getGroupName();
 
         int index = name.indexOf('\'');
-        if(index != -1){
-            String sub1 = name.substring(0, index);
-            String sub2 = name.substring(index);
-        }
+        if(index != -1) name = returnValidString(name, index);
+
+        index = groupName.indexOf('\'');
+        if(index != -1) groupName = returnValidString(groupName, index);
 
         String query = String.format("INSERT INTO liquids(name, url, price, category, groupName) VALUES('%s', '%s', %d, %d, '%s')",
                 name, url, price, category, groupName);
@@ -96,5 +96,25 @@ public class SQLClient {
         }
     }
 
+    synchronized static void insertNewStore(int region, String city, String address, String phone){
+        String query = String.format("INSERT INTO shop_list(region, city, address, phone) VALUES(%d, '%s', '%s', '%s')",
+                region, city, address, phone);
+        try {
+            statement.execute(query);
+        } catch (SQLException e) {
+            LOG.error("Failed to Insert new Store!"
+                    +"\n\t\t region: " + region
+                    +"\n\t\t city: " + city
+                    +"\n\t\t address: " + address
+                    +"\n\t\t phone: " + phone
+                    + "\n " + e.getMessage());
+        }
+    }
+
+    private static String returnValidString(String wrongString, int index){
+        String sub1 = wrongString.substring(0, index);
+        String sub2 = wrongString.substring(index);
+        return sub1 + '\'' + sub2;
+    }
 
 }
