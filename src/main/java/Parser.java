@@ -1,3 +1,5 @@
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -11,11 +13,14 @@ class Parser {
     private final String CATEGORY_DELIMITER = "col-lg-4 col-md-4 col-sm-6 col-xs-12";
     private final String LIQUIDS_DELIMITER = "product-layout product-list col-xs-12";
     private static final String INNER_LIQUID_DELIMITER = "product-title";
+    private static Logger logger;
 
     private final ArrayList<Category> categories;
 
     Parser() {
         categories = parseCategories(fetchCategory(downloadPage()));
+        logger = LogManager.getLogger();
+        logger.debug("Program start");
         SQLClient.connect();
         getCategoriesID();
         parseGroups();
@@ -82,7 +87,7 @@ class Parser {
     }
 
     private void innerGroups(Group group){
-        if (group.isGroupHaveLiquids()) group.getLiquids().forEach(SQLClient::insertNewLiquid);
+        if (group.isGroupHaveLiquids()) group.getProducts().forEach(SQLClient::insertNewLiquid);
         if (group.isGroupHaveChild()) group.getChildGroups().forEach(this::innerGroups);
     }
 
@@ -111,7 +116,7 @@ class Parser {
         Elements innerLiquids = getInnerLiquidsCount(url);
         if (innerLiquids != null && innerLiquids.size() > 0) {
             for (Element element1Liq : innerLiquids) {
-                Liquid resultLiq = parseLiquid(element1Liq.attr("href"), resultGroup, category.getCategoryID());
+                Product resultLiq = parseLiquid(element1Liq.attr("href"), resultGroup, category.getCategoryID());
                 if (resultLiq == null) continue;
                     resultLiq.setGroup(resultGroup);
                     resultGroup.addLiquid(resultLiq);
@@ -140,12 +145,12 @@ class Parser {
         }
     }
 
-    private Liquid parseLiquid(String url, Group group, int categoryID) {
+    private Product parseLiquid(String url, Group group, int categoryID) {
         try {
             Document liqPage = Jsoup.connect(url).get();
             Elements nameElement = liqPage.getElementsByClass("mobile_h1_hide");
             if(nameElement.size() == 0) {
-                System.out.println("Wrong Liquid Page(Group - " + group.getGroupName() + ", catID - " + categoryID + "): " + url);
+                System.out.println("Wrong Product Page(Group - " + group.getGroupName() + ", catID - " + categoryID + "): " + url);
                 return null;
             }
             String name = nameElement.get(0).text();
@@ -155,7 +160,7 @@ class Parser {
             int cutIndex = price.indexOf("р");
             price = price.substring(0, cutIndex);
 
-            return new Liquid(name, url, Integer.parseInt(price), group, categoryID);
+            return new Product(name, url, Integer.parseInt(price), group, categoryID);
 
         } catch (IOException e) {
             e.printStackTrace();

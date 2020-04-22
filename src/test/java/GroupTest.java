@@ -42,11 +42,11 @@ public class GroupTest {
         String url = "testLiqUrl";
         int price = 1000;
 
-        group.addLiquid(new Liquid(name, url, price));
+        group.addLiquid(new Product(name, url, price));
 
-        String receivedName = group.getLiquids().get(0).getName();
-        String receivedUrl = group.getLiquids().get(0).getURL();
-        int receivedPrice = group.getLiquids().get(0).getPrice();
+        String receivedName = group.getProducts().get(0).getName();
+        String receivedUrl = group.getProducts().get(0).getURL();
+        int receivedPrice = group.getProducts().get(0).getPrice();
 
         Assert.assertEquals(name, receivedName);
         Assert.assertEquals(url, receivedUrl);
@@ -82,7 +82,7 @@ public class GroupTest {
 
     @Test
     public void getNullLiquidsTest(){
-        Assert.assertNull(group.getLiquids());
+        Assert.assertNull(group.getProducts());
     }
 
     @Test

@@ -3,7 +3,7 @@ import java.util.ArrayList;
 class Group {
     private Group parentGroup;
     private ArrayList<Group> childGroups;
-    private ArrayList<Liquid> liquids;
+    private ArrayList<Product> products;
     private final String name;
     private final String URL;
 
@@ -28,11 +28,11 @@ class Group {
         childGroups.add(childGroup);
     }
 
-    void addLiquid(Liquid liquid){
-        if (liquids == null){
-            liquids = new ArrayList<>();
+    void addLiquid(Product product){
+        if (products == null){
+            products = new ArrayList<>();
         }
-        liquids.add(liquid);
+        products.add(product);
     }
 
     String getGroupName() {
@@ -43,8 +43,8 @@ class Group {
         return URL;
     }
 
-    ArrayList<Liquid> getLiquids() {
-        return liquids;
+    ArrayList<Product> getProducts() {
+        return products;
     }
 
     Group parent(){
@@ -60,7 +60,7 @@ class Group {
     }
 
     boolean isGroupEmpty(){
-        return (childGroups == null && liquids == null);
+        return (childGroups == null && products == null);
     }
 
     boolean isGroupHaveChild() {
@@ -68,7 +68,7 @@ class Group {
     }
 
     boolean isGroupHaveLiquids(){
-        return !(liquids == null);
+        return !(products == null);
     }
 
 }

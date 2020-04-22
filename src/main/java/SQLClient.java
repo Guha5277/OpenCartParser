@@ -57,9 +57,9 @@ public class SQLClient {
         return categoryID;
     }
 
-    synchronized static void insertNewLiquid(Liquid liquid) {
+    synchronized static void insertNewLiquid(Product product) {
         String query = String.format("INSERT INTO liquids(name, url, price, category, groupName) VALUES('%s', '%s', %d, %d, '%s')",
-                liquid.getName(), liquid.getURL(), liquid.getPrice(), liquid.getCategoryID(), liquid.getGroup().getGroupName());
+                product.getName(), product.getURL(), product.getPrice(), product.getCategoryID(), product.getGroup().getGroupName());
         try {
             statement.execute(query);
         } catch (SQLException e) {

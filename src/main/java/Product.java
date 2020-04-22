@@ -1,17 +1,17 @@
-class Liquid{
+class Product {
     private final String name;
     private final String URL;
     private int categoryID;
     private Group group;
     private final int price;
 
-    Liquid(String name, String URL, int price) {
+    Product(String name, String URL, int price) {
         this.name = name;
         this.URL = URL;
         this.price = price;
     }
 
-    Liquid(String name, String URL, int price, Group group, int categoryID) {
+    Product(String name, String URL, int price, Group group, int categoryID) {
         this(name, URL, price);
         this.group = group;
         this.categoryID = categoryID;
