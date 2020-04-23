@@ -1,6 +1,7 @@
 class Product {
     private final String name;
     private final String URL;
+    private int id;
     private int categoryID;
     private Group group;
     private final int price;
@@ -17,6 +18,11 @@ class Product {
         this.categoryID = categoryID;
     }
 
+    Product(int id, String name, String URL, int price, Group group, int categoryID) {
+        this(name, URL, price, group, categoryID);
+        this.id = id;
+    }
+
     String getName() {
         return name;
     }
@@ -31,6 +37,10 @@ class Product {
 
     Group getGroup() {
         return group;
+    }
+
+    public int getId() {
+        return id;
     }
 
     int getCategoryID() {

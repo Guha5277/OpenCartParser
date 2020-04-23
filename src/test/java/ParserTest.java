@@ -8,10 +8,10 @@ public class ParserTest {
     public String name = "testname";
     public String url = "testurl";
 
-//    @BeforeClass
-//    public static void initialize() {
-//        parser = new Parser();
-//    }
+    @BeforeClass
+    public static void initialize() {
+        parser = new Parser();
+    }
 
     @Test
     public void testTime(){
@@ -31,4 +31,12 @@ public class ParserTest {
         Assert.assertEquals("Жидкость Америка", parser.getCategories().get(1).getName());
         Assert.assertEquals("Жидкость Дополнительного ассортимента", parser.getCategories().get(2).getName());
     }
+
+//    @Test
+//    public void productParse(){
+//        String url = "https://ilfumoshop.ru/zhidkost-yummy-cold-watermelon-and-strawberry-100-ml-3-mgml.html";
+//        Product receivedProd = parser.parseProduct(url, null, 2);
+//        Assert.assertEquals(url, receivedProd.getURL());
+//        Assert.assertEquals(1300, receivedProd.getPrice());
+//    }
 }
