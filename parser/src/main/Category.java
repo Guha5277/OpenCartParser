@@ -30,12 +30,11 @@ class Category {
         return url;
     }
 
-    public int getCategoryID() {
+    int getCategoryID() {
         return categoryID;
     }
 
     ArrayList<Group> getGroups() {
         return groups;
     }
-
 }

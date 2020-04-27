@@ -10,7 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-class Parser {
+class ParserOLD {
     private final String URL = "https://ilfumoshop.ru/zhidkost-dlya-zapravki-vejporov.html";
     private final String CATEGORY_DELIMITER = "col-lg-4 col-md-4 col-sm-6 col-xs-12";
     //private final String LIQUIDS_DELIMITER = "product-layout product-list col-xs-12";
@@ -19,13 +19,13 @@ class Parser {
 
     private ArrayList<Category> categories;
 
-    Parser() {
+    ParserOLD() {
         LOG = LogManager.getLogger();
         SQLClient.connect();
         initializeCategories();
         getCategoriesID();
-        updateAllProductInfo();
-        SQLClient.commit();
+//        updateAllProductInfo();
+//        SQLClient.commit();
         SQLClient.disconnect();
     }
 
@@ -34,7 +34,7 @@ class Parser {
         SQLClient.connect();
 
         initializeCategories();
-        insertAllCategories();
+        //insertAllCategories();
         getCategoriesID();
         insertAllStores();
         parseAllGroups();
@@ -45,17 +45,19 @@ class Parser {
     }
 
     private void initializeCategories() {
-        categories = parseCategories(fetchCategory(downloadPage()));
+        categories = parseCategories(downloadPage(URL));
     }
 
     private void insertAllCategories() {
-        categories.forEach(SQLClient::insertCategory);
+        categories.forEach(category -> {
+            SQLClient.insertCategory(category.getName());
+        });
     }
 
     private void getCategoriesID() {
         LOG.info("Getting ID's for categories...");
         categories.forEach(category -> {
-            int id = SQLClient.getCategoryID(category);
+            int id = SQLClient.getCategoryID(category.getName());
             category.setCategoryID(id);
         });
     }
@@ -124,7 +126,9 @@ class Parser {
 
     //Utils
     private void innerGroups(Group group) {
-        if (group.isGroupHaveLiquids()) group.getProducts().forEach(SQLClient::insertNewProduct);
+        if (group.isGroupHaveLiquids()) group.getProducts().forEach(product -> {
+            SQLClient.insertProduct(product.getName(), product.getURL(), product.getPrice(), product.getCategoryID(), product.getGroup().getGroupName());
+        });
         if (group.isGroupHaveChild()) group.getChildGroups().forEach(this::innerGroups);
     }
 
@@ -175,41 +179,40 @@ class Parser {
         Elements innerLiquids = getInnerLiquids(url);
         if (innerLiquids != null && innerLiquids.size() > 0) {
             for (Element element1Liq : innerLiquids) {
-                Product resultLiq = parseProduct(element1Liq.attr("href"), resultGroup, category.getCategoryID());
+                Product resultLiq = parseProduct(element1Liq.attr("href"));
                 if (resultLiq == null) continue;
                 resultLiq.setGroup(resultGroup);
+                resultLiq.setCategoryID(category.getCategoryID());
                 resultGroup.addLiquid(resultLiq);
-
             }
         }
 
         return resultGroup.isGroupEmpty() ? null : resultGroup;
     }
 
-    private Product parseProduct(String url, Group group, int categoryID) {
+    private Product parseProduct(String url) {
+        String name;
+        String groupName;
+        String categoryName;
+        int price;
+
         try {
-            Document liqPage = Jsoup.connect(url).get();
-            Elements nameElement = liqPage.getElementsByClass("mobile_h1_hide");
-            if (nameElement.size() == 0) {
-                LOG.debug("Wrong product page!(Group: " + group.getGroupName() + ", CategoryID: " + categoryID + "): " + url);
+            Document document = Jsoup.connect(url).get();
+            Elements elements = document.body().getElementsByClass("breadcrumb").select("li");
+            if (elements.size() == 0) {
+                System.out.println("Wrong product page!: " + url);
                 return null;
             }
-            String name = nameElement.get(0).text();
-
-            LOG.info("\t\t" + name);
-
-            Elements priceElement = liqPage.getElementsByClass("price");
-            String priceString = priceElement.get(0).text();
-
-            int price = parseStringPriceToInt(priceString);
-
-            return new Product(name, url, price, group, categoryID);
-
+            name = elements.get(elements.size() - 1).text();
+            groupName = elements.get(elements.size() - 2).text();
+            categoryName = elements.get(2).text();
+            price = parseStringPriceToInt(document.getElementsByClass("price").text());
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
 
-        return null;
+        return new Product(name, url, price, new Group(groupName, null), categoryName);
     }
 
     private void warehousesPageParser(Elements elements) {
@@ -261,7 +264,7 @@ class Parser {
                         region = 5;
                         break;
                 }
-                SQLClient.insertNewStore(region, city, address, phone);
+                SQLClient.insertStore(region, city, address, phone);
             }
             index++;
         }
@@ -271,11 +274,11 @@ class Parser {
         return categories;
     }
 
-    private Document downloadPage() {
+    private Document downloadPage(String url) {
         Document result = null;
         try {
-            LOG.info("Downloading Page: " + URL);
-            result = Jsoup.connect(URL).get();
+            LOG.info("Downloading Page: " + url);
+            result = Jsoup.connect(url).get();
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -283,15 +286,11 @@ class Parser {
         return result;
     }
 
-    private Elements fetchCategory(Document liquidPage) {
-        LOG.info("Getting sub-elements of page...");
-        return liquidPage.body().getElementsByClass(CATEGORY_DELIMITER);
-    }
-
-    private ArrayList<Category> parseCategories(Elements liquidPagePart) {
+    private ArrayList<Category> parseCategories(Document categoriesPage) {
         LOG.info("Getting categories...");
+        Elements categoryParts = categoriesPage.body().getElementsByClass(CATEGORY_DELIMITER);
         ArrayList<Category> resultList = new ArrayList<>();
-        liquidPagePart.forEach(catElem -> {
+        categoryParts.forEach(catElem -> {
             Element category = catElem.child(1).select("a").get(0);
             String name = category.text();
             String url = category.attr("href");
@@ -304,26 +303,6 @@ class Parser {
     private int parseStringPriceToInt(String price) {
         int cutIndex = price.indexOf("р");
         return Integer.parseInt(price.substring(0, cutIndex));
-    }
-
-    private ArrayList<Product> getProductsListFromDB() {
-        ArrayList<Product> list = new ArrayList<>();
-        ResultSet set = SQLClient.getAllProducts();
-
-        try {
-            while (set.next()) {
-                int id = set.getInt(1);
-                String name = set.getString(2);
-                String url = set.getString(3);
-                int price = set.getInt(4);
-                int category = set.getInt(5);
-                String groupName = set.getString(6);
-                list.add(new Product(id, name, url, price, new Group(groupName, ""), category));
-            }
-        } catch (SQLException e) {
-            LOG.error("Error to parse a ResultSet from DB query");
-        }
-        return list;
     }
 
     private void compareAndUpdateProductInfo(Product product) {
@@ -363,19 +342,19 @@ class Parser {
         }
 
         if (!(actualProductName.equals(expectedProductName))) {
-            LOG.info("\t\tdifferences found!: " + actualProductName + " <-> " + product.getName());
+            LOG.info("\t\tdifferences of Names!: " + actualProductName + " <-> " + product.getName());
             SQLClient.updateProductName(id, actualProductName);
         }
         if (!(actualGroupName.equals(expectedGroupName))) {
-            LOG.info("\t\tdifferences found!: " + actualGroupName + " <-> " + product.getGroup().getGroupName());
+            LOG.info("\t\tdifferences of Groups!: " + actualGroupName + " <-> " + product.getGroup().getGroupName());
             SQLClient.updateProductGroupName(id, actualGroupName);
         }
         if (actualCategoryId != expectedCategoryId) {
-            LOG.info("\t\tdifferences found!: " + actualCategoryId + " <-> " + product.getCategoryID());
+            LOG.info("\t\tdifferences of Categories!: " + actualCategoryId + " <-> " + product.getCategoryID());
             SQLClient.updateProductCategory(id, actualCategoryId);
         }
         if (actualPrice != expectedPrice) {
-            LOG.info("\t\tdifferences found!: " + actualPrice + " <-> " + product.getPrice());
+            LOG.info("\t\tdifferences of Price!: " + actualPrice + " <-> " + product.getPrice());
             SQLClient.updateProductPrice(id, actualPrice);
         }
     }
@@ -393,6 +372,26 @@ class Parser {
             e.printStackTrace();
         }
         return warehousesList;
+    }
+
+    private ArrayList<Product> getProductsListFromDB() {
+        ArrayList<Product> list = new ArrayList<>();
+        ResultSet set = SQLClient.getAllProducts();
+
+        try {
+            while (set.next()) {
+                int id = set.getInt(1);
+                String name = set.getString(2);
+                String url = set.getString(3);
+                int price = set.getInt(4);
+                int category = set.getInt(5);
+                String groupName = set.getString(6);
+                list.add(new Product(id, name, url, price, new Group(groupName, ""), category));
+            }
+        } catch (SQLException e) {
+            LOG.error("Error to parse a ResultSet from DB query");
+        }
+        return list;
     }
 
     private void updateProductRemains(ArrayList<Warehouse> warehousesList, Product product){

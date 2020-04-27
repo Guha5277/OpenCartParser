@@ -1,6 +1,7 @@
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.print.DocFlavor;
 import java.sql.*;
 
 class SQLClient {
@@ -42,17 +43,16 @@ class SQLClient {
         }
     }
 
-    synchronized static void insertCategory(Category category) {
-        String query = String.format("INSERT INTO categories (name) VALUES ('%s')", category.getName());
+    synchronized static void insertCategory(String categoryName) {
+        String query = String.format("INSERT INTO categories (name) VALUES ('%s')", categoryName);
         try {
             statement.execute(query);
         } catch (SQLException e) {
-            LOG.error("Failed to Insert category to DB! CategoryName: " + category.getName() + ", " + e.getMessage());
+            LOG.error("Failed to Insert category to DB! CategoryName: " + categoryName + ", " + e.getMessage());
         }
     }
 
-    synchronized static int getCategoryID(Category category) {
-        String categoryName = category.getName();
+    synchronized static int getCategoryID(String categoryName) {
         int categoryID = 0;
 
         String query = String.format("SELECT id FROM categories WHERE name='%s'", categoryName);
@@ -68,13 +68,7 @@ class SQLClient {
         return categoryID;
     }
 
-    synchronized static void insertNewProduct(Product product) {
-        String name = product.getName();
-        String url = product.getURL();
-        int price = product.getPrice();
-        int category = product.getCategoryID();
-        String groupName = product.getGroup().getGroupName();
-
+    synchronized static void insertProduct(String name, String url, int price, int category, String groupName) {
         int index = name.indexOf('\'');
         if (index != -1) name = returnValidString(name, index);
 
@@ -96,7 +90,7 @@ class SQLClient {
         }
     }
 
-    synchronized static void insertNewStore(int region, String city, String address, String phone) {
+    synchronized static void insertStore(int region, String city, String address, String phone) {
         String query = String.format("INSERT INTO warehouse(region, city, address, phone) VALUES(%d, '%s', '%s', '%s')",
                 region, city, address, phone);
         try {

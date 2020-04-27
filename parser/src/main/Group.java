@@ -71,4 +71,11 @@ class Group {
         return !(products == null);
     }
 
+    @Override
+    public String toString() {
+        return "<<Group: " + name
+                +"\n\tURL: " + URL
+                +"\n\tparentGroup: " + parentGroup + ">>";
+
+    }
 }
