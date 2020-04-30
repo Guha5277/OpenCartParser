@@ -1,4 +1,6 @@
-class Product {
+package product;
+
+public class Product {
     private final String name;
     private final String URL;
     private int id;
@@ -7,13 +9,13 @@ class Product {
     private Group group;
     private final int price;
 
-    Product(String name, String URL, int price) {
+    public Product(String name, String URL, int price) {
         this.name = name;
         this.URL = URL;
         this.price = price;
     }
 
-    Product(String name, String URL, int price, Group group, int categoryID) {
+    public Product(String name, String URL, int price, Group group, int categoryID) {
         this(name, URL, price);
         this.group = group;
         this.categoryID = categoryID;
@@ -25,12 +27,12 @@ class Product {
         this.categoryName = categoryName;
     }
 
-    Product(int id, String name, String URL, int price, Group group, int categoryID) {
+    public Product(int id, String name, String URL, int price, Group group, int categoryID) {
         this(name, URL, price, group, categoryID);
         this.id = id;
     }
 
-    String getName() {
+    public String getName() {
         return name;
     }
 
@@ -38,37 +40,37 @@ class Product {
         return categoryName;
     }
 
-    String getURL() {
+    public String getURL() {
         return URL;
     }
 
-    int getPrice() {
+    public int getPrice() {
         return price;
     }
 
-    Group getGroup() {
+    public Group getGroup() {
         return group;
     }
 
-    int getId() {
+    public int getId() {
         return id;
     }
 
-    int getCategoryID() {
+    public int getCategoryID() {
         return categoryID;
     }
 
-    void setCategoryID(int categoryID) {
+    public void setCategoryID(int categoryID) {
         this.categoryID = categoryID;
     }
 
-    void setGroup(Group group) {
+    public void setGroup(Group group) {
         this.group = group;
     }
 
     @Override
     public String toString() {
-        return "<<Product: " + name
+        return "<<product.Product: " + name
                 + "\n\tURL: " + URL
                 + "\n\tID: " + id
                 + "\n\tCategoryID: " + categoryID

@@ -1,57 +1,59 @@
+package product;
+
 import java.util.ArrayList;
 
-class Group {
+public class Group {
     private Group parentGroup;
     private ArrayList<Group> childGroups;
     private ArrayList<Product> products;
     private final String name;
     private final String URL;
 
-    Group(String name, String URL) {
+    public Group(String name, String URL) {
         this.name = name;
         this.URL = URL;
     }
 
-    Group(String name, String URL, Group parentGroup) {
+    public Group(String name, String URL, Group parentGroup) {
         this(name, URL);
         this.parentGroup = parentGroup;
     }
 
-    void setParentGroup(Group parentGroup) {
+    public void setParentGroup(Group parentGroup) {
         this.parentGroup = parentGroup;
     }
 
-    void addChild(Group childGroup) {
+    public void addChild(Group childGroup) {
         if(childGroups == null){
             childGroups = new ArrayList<>();
         }
         childGroups.add(childGroup);
     }
 
-    void addLiquid(Product product){
+    public void addLiquid(Product product){
         if (products == null){
             products = new ArrayList<>();
         }
         products.add(product);
     }
 
-    String getGroupName() {
+    public String getGroupName() {
         return name;
     }
 
-    String getGroupURL() {
+    public String getGroupURL() {
         return URL;
     }
 
-    ArrayList<Product> getProducts() {
+    public ArrayList<Product> getProducts() {
         return products;
     }
 
-    Group parent(){
+    public Group parent(){
         return parentGroup;
     }
 
-    Group child(int index){
+    public Group child(int index){
         return childGroups.get(index);
     }
 
@@ -59,21 +61,21 @@ class Group {
         return childGroups;
     }
 
-    boolean isGroupEmpty(){
+    public boolean isGroupEmpty(){
         return (childGroups == null && products == null);
     }
 
-    boolean isGroupHaveChild() {
+    public boolean isGroupHaveChild() {
         return !(childGroups == null);
     }
 
-    boolean isGroupHaveLiquids(){
+    public boolean isGroupHaveLiquids(){
         return !(products == null);
     }
 
     @Override
     public String toString() {
-        return "<<Group: " + name
+        return "<<product.Group: " + name
                 +"\n\tURL: " + URL
                 +"\n\tparentGroup: " + parentGroup + ">>";
 

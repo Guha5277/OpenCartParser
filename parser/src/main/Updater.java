@@ -1,13 +1,11 @@
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import product.Group;
+import product.Product;
 
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class Updater extends Parser implements Runnable {
     private final ParserEvents listener;
@@ -30,41 +28,19 @@ class Updater extends Parser implements Runnable {
     private int updateProductsInfo(ArrayList<Product> products){
         int overall = products.size();
         int totalUpdated = 0;
-        AtomicInteger current = new AtomicInteger(0);
+        int current = 1;
 
         ArrayList<Warehouse> warehousesList = getWarehousesFromDB();
-
-        int delimiter = Math.round(overall / 4);
-
-        ((Runnable) () -> {
-
-        }).run();
-
-        ((Runnable) () -> {
-
-        }).run();
-
-        ((Runnable) () -> {
-
-        }).run();
-
-        ((Runnable) () -> {
-
-        }).run();
-
 
         for (Product product :  products) {
             Product actualProduct = parseProduct(product.getURL());
             if (compareProducts(actualProduct, product)) totalUpdated++;
             updateProductRemains(warehousesList, product);
-            current.getAndIncrement();
-            LOG.info("Done: " + current + "/" + overall);
+            LOG.info("Done: " + current++ + "/" + overall);
         }
 
         return totalUpdated;
     }
-
-
 
     private boolean compareProducts (Product actualProduct, Product oldProduct){
         int id = oldProduct.getId();
@@ -150,7 +126,14 @@ class Updater extends Parser implements Runnable {
     private void updateProductRemains(ArrayList<Warehouse> warehousesList, Product product){
         ArrayList<Warehouse> warehouses = new ArrayList<>(warehousesList);
         //LOG.info("\tUpdate remains for: " + product.getName());
-        Elements remainsElements = downloadPage(product.getURL()).body().getElementsByClass("tab-pane active").get(0).select("span");
+        Elements remainsElements = null;
+        try {
+            remainsElements = downloadPage(product.getURL()).body().getElementsByClass("tab-pane active").get(0).select("span");
+        } catch (IOException e) {
+            LOG.error(e);
+            listener.onParseError();
+            return;
+        }
 
         remainsElements.forEach(element -> {
             String warehouseName = element.text();
@@ -169,8 +152,8 @@ class Updater extends Parser implements Runnable {
         });
 
         //updateDBtoOutOfStock
-        for (int i = 0; i < warehouses.size(); i ++){
-            SQLClient.updateProductRemains(warehouses.get(i).getId(), product.getId(), 0);
+        for (Warehouse warehouse : warehouses) {
+            SQLClient.updateProductRemains(warehouse.getId(), product.getId(), 0);
         }
     }
 }

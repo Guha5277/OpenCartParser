@@ -4,6 +4,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import product.Category;
+import product.Group;
+import product.Product;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,16 +17,8 @@ class Parser {
     private final String URL = "https://ilfumoshop.ru/zhidkost-dlya-zapravki-vejporov.html";
     private final String CATEGORY_DELIMITER = "col-lg-4 col-md-4 col-sm-6 col-xs-12";
 
-    Document downloadPage(String url) {
-        Document result = null;
-        try {
-            //LOG.info("Downloading Page: " + url);
-            result = Jsoup.connect(url).get();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return result;
+    Document downloadPage(String url) throws IOException{
+            return  Jsoup.connect(url).get();
     }
 
     ArrayList<Category> getCategories(Document categoriesPage) {
@@ -64,16 +59,20 @@ class Parser {
             }
             name = elements.get(elements.size() - 1).text();
 
-            groupName = elements.get(2).text();
+            categoryName = elements.get(2).text();
+            groupName = elements.get(3).text();
 
-            categoryID = SQLClient.getCategoryID(groupName);
+
+            categoryID = SQLClient.getCategoryID(categoryName);
             if(categoryID == 0){
-                groupName = elements.get(3).text();
-                categoryID = SQLClient.getCategoryID(groupName);
-                categoryName = elements.get(2).text();
-            } else {
+                groupName = elements.get(2).text();
                 categoryName = elements.get(3).text();
+                categoryID = SQLClient.getCategoryID(categoryName);
+
             }
+//            else {
+//                //categoryName = elements.get(3).text();
+//            }
 
             price = parseStringPriceToInt(document.getElementsByClass("price").text());
         } catch (IOException e) {

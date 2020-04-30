@@ -1,6 +1,8 @@
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import product.Group;
+import product.Product;
 
 public class ProductTest {
     String name = "Жидкость Arctica 120 мл Currant Grapefruit 3 мг/мл";

@@ -2,9 +2,13 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import product.Category;
+import product.Group;
+import product.Product;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 class Grabber extends Parser implements Runnable {
     private final String CATEGORY_DELIMITER = "col-lg-4 col-md-4 col-sm-6 col-xs-12";
@@ -22,8 +26,16 @@ class Grabber extends Parser implements Runnable {
     public void run() {
         listener.onParseStarted();
 
-        Document page = downloadPage(URL);
+        Document page;
+        try {
+            page = downloadPage(URL);
+        } catch (IOException e) {
+            LOG.error(e);
+            listener.onParseError();
+            return;
+        }
         ArrayList<Category> categories = getCategories(page);
+        insertAllCategories(categories);
         getCategoriesID(categories);
         getCategoriesContent(categories);
 
@@ -39,8 +51,15 @@ class Grabber extends Parser implements Runnable {
     private void getCategoriesContent(ArrayList<Category> categories) {
         for (Category cat : categories) {
             //Получение групп жидкостей из категории
-            LOG.info("Group: " + cat.getName());
-            Elements groupElements = downloadPage(cat.getUrl()).body().getElementsByClass(CATEGORY_DELIMITER);
+            LOG.info("product.Group: " + cat.getName());
+            Elements groupElements = null;
+            try {
+                groupElements = downloadPage(cat.getUrl()).body().getElementsByClass(CATEGORY_DELIMITER);
+            } catch (IOException e) {
+                LOG.error(e);
+                listener.onParseError();
+                return;
+            }
 
             //Перебор всех групп
             groupElements.forEach(singleGroupElement -> {
@@ -119,6 +138,12 @@ class Grabber extends Parser implements Runnable {
             LOG.error("Error to get the stores page!");
             return null;
         }
+    }
+
+    private void insertAllCategories(List<Category> categories) {
+        categories.forEach(category -> {
+            SQLClient.insertCategory(category.getName());
+        });
     }
 
     private boolean insertAllWarehouses(Elements elements) {

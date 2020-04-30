@@ -16,7 +16,7 @@ class SQLClient {
     synchronized static void connect() {
         try {
             Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:liquidBase.db");
+            connection = DriverManager.getConnection("jdbc:sqlite:baseTest.db");
             connection.setAutoCommit(false);
             statement = connection.createStatement();
             LOG.info("Connected to DB");
@@ -62,7 +62,7 @@ class SQLClient {
                 categoryID = set.getInt(1);
             }
         } catch (SQLException e) {
-            LOG.error("Failed to Get Category ID! CategoryName: " + categoryName + ", " + e.getMessage());
+            LOG.error("Failed to Get product.Category ID! CategoryName: " + categoryName + ", " + e.getMessage());
         }
 
         return categoryID;
@@ -80,7 +80,7 @@ class SQLClient {
         try {
             statement.execute(query);
         } catch (SQLException e) {
-            LOG.error("Failed to Insert new Product!"
+            LOG.error("Failed to Insert new product.Product!"
                     + "\n\t\t name: " + name
                     + "\n\t\t url: " + url
                     + "\n\t\t price: " + price

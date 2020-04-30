@@ -1,9 +1,11 @@
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import product.Group;
+import product.Product;
 
 public class GroupTest {
-    String name = "Test Group";
+    String name = "Test product.Group";
     String url = "http://ilfumo/testGroup.html";
     Group group;
 
