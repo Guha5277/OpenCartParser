@@ -12,13 +12,14 @@ class Updater extends Parser implements Runnable {
 
     Updater(ParserEvents listener) {
         this.listener = listener;
+        listener.onUpdaterReady();
     }
 
     @Override
     public void run() {
         ArrayList<Product> products = getProductsListFromDB();
         if (products == null){
-            listener.onParseError();
+            listener.onUpdateError();
             return;
         }
         int totalUpdated = updateProductsInfo(products);
@@ -47,8 +48,8 @@ class Updater extends Parser implements Runnable {
         boolean result = false;
         String actualName = actualProduct.getName();
         String oldName = oldProduct.getName();
-        String actualGroupName = actualProduct.getGroup().getGroupName();
-        String oldGroupName = oldProduct.getGroup().getGroupName();
+        String actualGroupName = actualProduct.getGroup().getName();
+        String oldGroupName = oldProduct.getGroup().getName();
         int actualCategoryId = actualProduct.getCategoryID();
         int oldCategoryId = oldProduct.getCategoryID();
         int actualPrice = actualProduct.getPrice();
@@ -97,7 +98,7 @@ class Updater extends Parser implements Runnable {
                 listener.onParserException(e);
             }
         } else {
-            listener.onParseError();
+            listener.onUpdateError();
             return null;
         }
         return list;
@@ -113,7 +114,7 @@ class Updater extends Parser implements Runnable {
                     warehousesList.add(new Warehouse(set.getInt("id"), set.getString("alt_name")));
                 }
             } else {
-                listener.onParseError();
+                listener.onUpdateError();
                 return null;
             }
         } catch (SQLException e){
@@ -131,7 +132,7 @@ class Updater extends Parser implements Runnable {
             remainsElements = downloadPage(product.getURL()).body().getElementsByClass("tab-pane active").get(0).select("span");
         } catch (IOException e) {
             LOG.error(e);
-            listener.onParseError();
+            listener.onUpdateError();
             return;
         }
 

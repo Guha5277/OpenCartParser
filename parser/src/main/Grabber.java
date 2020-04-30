@@ -12,10 +12,10 @@ import java.util.List;
 
 class Grabber extends Parser implements Runnable {
     private final String CATEGORY_DELIMITER = "col-lg-4 col-md-4 col-sm-6 col-xs-12";
-    private static final String INNER_LIQUID_DELIMITER = "product-title";
+
     private final String URL;
     private final ParserEvents listener;
-    private int totalInsertCount = 0;
+    private int totalInsertCount;
 
     Grabber(String url, ParserEvents listener) {
         this.URL = url;
@@ -24,7 +24,7 @@ class Grabber extends Parser implements Runnable {
 
     @Override
     public void run() {
-        listener.onParseStarted();
+        listener.onParserReady();
 
         Document page;
         try {
@@ -60,6 +60,7 @@ class Grabber extends Parser implements Runnable {
                 listener.onParseError();
                 return;
             }
+
 
             //Перебор всех групп
             groupElements.forEach(singleGroupElement -> {
@@ -107,24 +108,6 @@ class Grabber extends Parser implements Runnable {
             }
         }
         return resultGroup.isGroupEmpty() ? null : resultGroup;
-    }
-
-    private Elements getInnerGroups(String url) {
-        try {
-            return Jsoup.connect(url).get().body().getElementsByClass(CATEGORY_DELIMITER);
-        } catch (IOException e) {
-            listener.onParserException(e);
-            return null;
-        }
-    }
-
-    private Elements getInnerLiquids(String url) {
-        try {
-            return Jsoup.connect(url).get().body().getElementsByClass(INNER_LIQUID_DELIMITER);
-        } catch (IOException e) {
-            listener.onParserException(e);
-            return null;
-        }
     }
 
     private Elements getWarehousesList() {
@@ -217,7 +200,7 @@ class Grabber extends Parser implements Runnable {
 
     private void innerGroups(Group group) {
         if (group.isGroupHaveLiquids()) group.getProducts().forEach(product -> {
-            SQLClient.insertProduct(product.getName(), product.getURL(), product.getPrice(), product.getCategoryID(), product.getGroup().getGroupName());
+            SQLClient.insertProduct(product.getName(), product.getURL(), product.getPrice(), product.getCategoryID(), product.getGroup().getName());
             totalInsertCount++;
         });
         if (group.isGroupHaveChild()) group.getChildGroups().forEach(this::innerGroups);

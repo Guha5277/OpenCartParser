@@ -37,7 +37,7 @@ public class Group {
         products.add(product);
     }
 
-    public String getGroupName() {
+    public String getName() {
         return name;
     }
 

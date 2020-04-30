@@ -21,4 +21,15 @@ public class SQLClientTest {
         SQLClient.getAllProducts();
     }
 
+    @Test
+    public void isProductAlreadyInDB(){
+       boolean receivedResult =  SQLClient.isProductAlreadyInDB("https://ilfumoshop.ru/zhidkost-arctica-120-ml-bubble-berry-3-mgml");
+        assertTrue(receivedResult);
+    }
+
+    @Test
+    public void isProductNotInDB(){
+        boolean receivedResult =  SQLClient.isProductAlreadyInDB("some wrong url product");
+        assertFalse(receivedResult);
+    }
 }

@@ -37,7 +37,6 @@ public class CategoryTest {
     public void addAndGetGroups() {
         category.addGroup(new Group(name, url));
         ArrayList<Group> receivedGroupList = category.getGroups();
-        Assert.assertNotNull(receivedGroupList);
         Assert.assertEquals(1, receivedGroupList.size());
     }
 }

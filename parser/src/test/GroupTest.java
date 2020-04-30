@@ -16,7 +16,7 @@ public class GroupTest {
 
     @Test
     public void receivedNameTest(){
-        String receivedName = group.getGroupName();
+        String receivedName = group.getName();
         Assert.assertEquals(name, receivedName);
     }
 
@@ -34,7 +34,7 @@ public class GroupTest {
 
         Group receivedGroup = group.parent();
 
-        Assert.assertEquals(parentName, receivedGroup.getGroupName());
+        Assert.assertEquals(parentName, receivedGroup.getName());
         Assert.assertEquals(parentUrl, receivedGroup.getGroupURL());
     }
 
@@ -72,9 +72,9 @@ public class GroupTest {
         Group receivedChild2 = group.child(1);
         Group receivedChild3 = group.child(2);
 
-        Assert.assertEquals(childName1, receivedChild1.getGroupName());
-        Assert.assertEquals(childName2, receivedChild2.getGroupName());
-        Assert.assertEquals(childName3, receivedChild3.getGroupName());
+        Assert.assertEquals(childName1, receivedChild1.getName());
+        Assert.assertEquals(childName2, receivedChild2.getName());
+        Assert.assertEquals(childName3, receivedChild3.getName());
     }
 
     @Test (expected = NullPointerException.class)

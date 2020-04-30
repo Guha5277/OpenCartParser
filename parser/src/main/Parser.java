@@ -10,12 +10,14 @@ import product.Product;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 class Parser {
     static final Logger LOG = LogManager.getLogger();
 
     private final String URL = "https://ilfumoshop.ru/zhidkost-dlya-zapravki-vejporov.html";
     private final String CATEGORY_DELIMITER = "col-lg-4 col-md-4 col-sm-6 col-xs-12";
+    private static final String INNER_LIQUID_DELIMITER = "product-title";
 
     Document downloadPage(String url) throws IOException{
             return  Jsoup.connect(url).get();
@@ -33,6 +35,24 @@ class Parser {
             resultList.add(new Category(name, url));
         });
         return resultList;
+    }
+
+    Elements getInnerGroups(String url) {
+        try {
+            return Jsoup.connect(url).get().body().getElementsByClass(CATEGORY_DELIMITER);
+        } catch (IOException e) {
+            LOG.error(e);
+            return null;
+        }
+    }
+
+    Elements getInnerLiquids(String url) {
+        try {
+            return Jsoup.connect(url).get().body().getElementsByClass(INNER_LIQUID_DELIMITER);
+        } catch (IOException e) {
+            LOG.error(e);
+            return null;
+        }
     }
 
     void getCategoriesID(ArrayList<Category> categories) {
@@ -86,5 +106,22 @@ class Parser {
     private int parseStringPriceToInt(String price) {
         int cutIndex = price.indexOf("р");
         return Integer.parseInt(price.substring(0, cutIndex));
+    }
+
+    List<Element> getCategoryElements(Category category) {
+        List<Element> groupList = new ArrayList<>();
+        Elements groupElements = null;
+        try {
+            groupElements = downloadPage(category.getUrl()).body().getElementsByClass(CATEGORY_DELIMITER);
+        } catch (IOException e) {
+            LOG.error(e);
+            return null;
+        }
+
+        groupElements.forEach(singleGroupElement -> {
+            groupList.add(singleGroupElement.child(1).select("a").get(0));
+        });
+
+        return groupList;
     }
 }

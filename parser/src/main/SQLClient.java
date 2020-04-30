@@ -16,7 +16,7 @@ class SQLClient {
     synchronized static void connect() {
         try {
             Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:baseTest.db");
+            connection = DriverManager.getConnection("jdbc:sqlite:liquidBase.db");
             connection.setAutoCommit(false);
             statement = connection.createStatement();
             LOG.info("Connected to DB");
@@ -103,6 +103,22 @@ class SQLClient {
                     + "\n\t\t phone: " + phone
                     + "\n " + e.getMessage());
         }
+    }
+
+    synchronized static boolean isProductAlreadyInDB(String url){
+        String query = String.format("SELECT name from liquids WHERE url='%s'", url);
+        try {
+            ResultSet set = statement.executeQuery(query);
+            int size = 0;
+            if (set.next()){
+                size = 1;
+            }
+            return size > 0;
+        } catch (SQLException e) {
+            LOG.error("Error when trying to get product by URL: " + e.getMessage());
+
+        }
+        return true;
     }
 
     synchronized static ResultSet getAllProducts() {
