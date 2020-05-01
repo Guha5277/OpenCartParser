@@ -8,6 +8,8 @@ public class Product {
     private String categoryName;
     private Group group;
     private final int price;
+    private int volume;
+    private double strength;
 
     public Product(String name, String URL, int price) {
         this.name = name;
@@ -15,10 +17,12 @@ public class Product {
         this.price = price;
     }
 
-    public Product(String name, String URL, int price, Group group, int categoryID) {
+    public Product(String name, String URL, int price, Group group, int categoryID, int volume, double strength) {
         this(name, URL, price);
         this.group = group;
         this.categoryID = categoryID;
+        this.volume = volume;
+        this.strength = strength;
     }
 
     Product(String name, String URL, int price, Group group, String categoryName) {
@@ -28,8 +32,10 @@ public class Product {
     }
 
     public Product(int id, String name, String URL, int price, Group group, int categoryID) {
-        this(name, URL, price, group, categoryID);
+        this(name, URL, price);
         this.id = id;
+        this.group = group;
+        this.categoryID = categoryID;
     }
 
     public String getName() {
@@ -52,6 +58,14 @@ public class Product {
         return group;
     }
 
+    public int getVolume() {
+        return volume;
+    }
+
+    public double getStrength() {
+        return strength;
+    }
+
     public int getId() {
         return id;
     }
@@ -68,6 +82,14 @@ public class Product {
         this.group = group;
     }
 
+    public void setVolume(int volume) {
+        this.volume = volume;
+    }
+
+    public void setStrength(double strength) {
+        this.strength = strength;
+    }
+
     @Override
     public String toString() {
         return "<<product.Product: " + name
@@ -75,6 +97,8 @@ public class Product {
                 + "\n\tID: " + id
                 + "\n\tCategoryID: " + categoryID
                 + "\n\tgroup: " + group
-                + "\n\tprice: " + price + ">>";
+                + "\n\tprice: " + price
+                + "\n\tvolume: " + volume
+                + "\n\tstrength: " + strength + ">>";
     }
 }

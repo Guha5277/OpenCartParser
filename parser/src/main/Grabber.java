@@ -104,6 +104,7 @@ class Grabber extends Parser implements Runnable {
                 resultLiq.setGroup(resultGroup);
                 resultLiq.setCategoryID(category.getCategoryID());
                 resultGroup.addLiquid(resultLiq);
+                LOG.info("\t\t" + resultLiq.getName());
 
             }
         }
@@ -200,7 +201,7 @@ class Grabber extends Parser implements Runnable {
 
     private void innerGroups(Group group) {
         if (group.isGroupHaveLiquids()) group.getProducts().forEach(product -> {
-            SQLClient.insertProduct(product.getName(), product.getURL(), product.getPrice(), product.getCategoryID(), product.getGroup().getName());
+            insertProductToDB(product);
             totalInsertCount++;
         });
         if (group.isGroupHaveChild()) group.getChildGroups().forEach(this::innerGroups);

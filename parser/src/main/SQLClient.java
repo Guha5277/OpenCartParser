@@ -68,15 +68,15 @@ class SQLClient {
         return categoryID;
     }
 
-    synchronized static void insertProduct(String name, String url, int price, int category, String groupName) {
+    synchronized static void insertProduct(String name, String url, int price, int category, String groupName, int volume, double strength) {
         int index = name.indexOf('\'');
         if (index != -1) name = returnValidString(name, index);
 
         index = groupName.indexOf('\'');
         if (index != -1) groupName = returnValidString(groupName, index);
 
-        String query = String.format("INSERT INTO liquids(name, url, price, category, groupName) VALUES('%s', '%s', %d, %d, '%s')",
-                name, url, price, category, groupName);
+        String query = String.format("INSERT INTO liquids(name, url, price, category, groupName, volume, strength) VALUES('%s', '%s', %d, %d, '%s', %d, %f)",
+                name, url, price, category, groupName, volume, strength);
         try {
             statement.execute(query);
         } catch (SQLException e) {

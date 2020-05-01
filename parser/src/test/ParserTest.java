@@ -16,7 +16,7 @@ public class ParserTest {
     String title = "Жидкость для Вейпов купить в Новосибирске, Москве, Омске, Томске, Красноярксе, Калининграде для электронных сигарет и вейпа";
     String productsPage = "https://ilfumoshop.ru/zhidkost-dlya-zapravki-vejporov.html";
     String singleProductPage = "https://ilfumoshop.ru/zhidkost-freaky-squeeze-60-ml-chilled-chillin-oxlazhdennaya-kola-s-ananasom-3-mgml";
-    String singleProductName = "Жидкость FREAKY SQUEEZE 60 мл Chilled Chillin Охлажденная Кола с Ананасом 3 мг/мл";
+    String singleProductName = "Жидкость FREAKY SQUEEZE Chilled Chillin Охлажденная Кола с Ананасом";
 
 
     @Before
@@ -50,14 +50,18 @@ public class ParserTest {
 
     @Test
     public void parseProductUrl() {
+        SQLClient.connect();
         Product receivedProduct = parser.parseProduct(singleProductPage);
         String receivedProductURL = receivedProduct.getURL();
+        SQLClient.disconnect();
         assertEquals(singleProductPage, receivedProductURL);
     }
 
     @Test
     public void parseProductName() {
+        SQLClient.connect();
         Product receivedProduct = parser.parseProduct(singleProductPage);
+        SQLClient.disconnect();
         String receivedName = receivedProduct.getName();
         assertEquals(singleProductName, receivedName);
     }
@@ -69,5 +73,36 @@ public class ParserTest {
         SQLClient.disconnect();
         int receivedCategory = receivedProduct.getCategoryID();
         assertEquals(1, receivedCategory);
+    }
+
+
+    @Test
+    public void parseProductVolume() {
+        int receivedVolume = parser.parseVolume("Жидкость Coil Sauz Strawberry Cannoli 100 мл 0 мг/мл");
+        assertEquals(100, receivedVolume);
+    }
+
+    @Test
+    public void parseProductVolume2() {
+        int receivedVolume = parser.parseVolume("Жидкость Candy Juice SALT 30мл Apple 25 мг/мл");
+        assertEquals(30, receivedVolume);
+    }
+
+    @Test
+    public void parseProductStrength() {
+        double receivedStrength = parser.parseStrength("Жидкость Coil Sauz Strawberry Cannoli 100 мл 0 мг/мл");
+        assertEquals(0.0, receivedStrength, 0.0);
+    }
+
+    @Test
+    public void trimToValidName() {
+        String receivedName = parser.trimToValidName("Жидкость Coil Sauz Strawberry Cannoli 100 мл 0 мг/мл", 100, 0.0d);
+        assertEquals("Жидкость Coil Sauz Strawberry Cannoli", receivedName);
+    }
+
+    @Test
+    public void trimToValidNameTwo() {
+        String receivedName = parser.trimToValidName("Жидкость Heroes 2*60 мл Clash: Battle Drunk Grape Rifle 3 мг/мл", 120, 3.0d);
+        assertEquals("Жидкость Heroes Clash: Battle Drunk Grape Rifle", receivedName);
     }
 }

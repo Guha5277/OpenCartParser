@@ -56,7 +56,7 @@ public class Researcher extends Parser implements Runnable {
     }
 
     private void addProduct(Product product) {
-        SQLClient.insertProduct(product.getName(), product.getURL(), product.getPrice(), product.getCategoryID(), product.getGroup().getName());
+        insertProductToDB(product);
     }
 
     private void getGroupContent(Element element) {
@@ -64,8 +64,8 @@ public class Researcher extends Parser implements Runnable {
 
         Elements innerGroups = getInnerGroups(url);
         if (innerGroups != null && innerGroups.size() > 0) {
-            for (Element elementG : innerGroups) {
-                getGroupContent(elementG.child(1).select("a").get(0));
+            for (Element groupElement : innerGroups) {
+                getGroupContent(groupElement.child(1).select("a").get(0));
             }
         }
         Elements innerProducts = getInnerLiquids(url);
