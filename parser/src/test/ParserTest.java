@@ -76,17 +76,17 @@ public class ParserTest {
     }
 
 
-    @Test
-    public void parseProductVolume() {
-        int receivedVolume = parser.parseVolume("Жидкость Coil Sauz Strawberry Cannoli 100 мл 0 мг/мл");
-        assertEquals(100, receivedVolume);
-    }
+//    @Test
+//    public void parseProductVolume() {
+//        int receivedVolume = parser.parseVolume("Жидкость Coil Sauz Strawberry Cannoli 100 мл 0 мг/мл");
+//        assertEquals(100, receivedVolume);
+//    }
 
-    @Test
-    public void parseProductVolume2() {
-        int receivedVolume = parser.parseVolume("Жидкость Candy Juice SALT 30мл Apple 25 мг/мл");
-        assertEquals(30, receivedVolume);
-    }
+//    @Test
+//    public void parseProductVolume2() {
+//        int receivedVolume = parser.parseVolume("Жидкость Candy Juice SALT 30мл Apple 25 мг/мл");
+//        assertEquals(30, receivedVolume);
+//    }
 
     @Test
     public void parseProductStrength() {

@@ -16,7 +16,7 @@ class SQLClient {
     synchronized static void connect() {
         try {
             Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:liquidBase.db");
+            connection = DriverManager.getConnection("jdbc:sqlite:baseTest.db");
             connection.setAutoCommit(false);
             statement = connection.createStatement();
             LOG.info("Connected to DB");

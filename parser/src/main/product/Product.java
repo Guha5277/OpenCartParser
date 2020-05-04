@@ -1,7 +1,7 @@
 package product;
 
 public class Product {
-    private final String name;
+    private String name;
     private final String URL;
     private int id;
     private int categoryID;
@@ -88,6 +88,10 @@ public class Product {
 
     public void setStrength(double strength) {
         this.strength = strength;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     @Override

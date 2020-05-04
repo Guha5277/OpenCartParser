@@ -69,7 +69,7 @@ class Parser {
         String categoryName;
         int price;
         int categoryID;
-        int volume;
+        int volume = 0;
         double strength = 0;
 
         try {
@@ -94,11 +94,11 @@ class Parser {
             }
 
             price = parseStringPriceToInt(document.getElementsByClass("price").text());
-            volume = parseVolume(name);
-            if (volume != 0) {
-                strength = parseStrength(name);
-                name = trimToValidName(name, volume, strength);
-            }
+//            volume = parseVolume(name);
+//            if (volume != 0) {
+//                strength = parseStrength(name);
+//                name = trimToValidName(name, volume, strength);
+//            }
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -130,22 +130,105 @@ class Parser {
         return groupList;
     }
 
-    int parseVolume(String name) {
-        int indexEnd = name.indexOf(" мл");
-        int indexStart = indexEnd - 1;
-        for (; indexStart > 0; indexStart--) {
-            if (name.charAt(indexStart) == 32) break;
+    void parseVolume(Product product) {
+        String[] partsArray = product.getName().split(" ");
+        String volumePart = "";
+
+        int volumeIndex;
+
+        volumeIndex = findVolume(partsArray);
+
+        if (volumeIndex < 0) {
+            product.setVolume(0);
+        } else {
+            volumePart = partsArray[volumeIndex];
+            product.setVolume(getValidVolume(volumePart));
+
+            StringBuilder newName = new StringBuilder();
+
+            for (int i = 0; i < partsArray.length; i++) {
+                if (i == volumeIndex) {
+                    if (i == partsArray.length - 1) continue;
+                    if (partsArray[i + 1].contains("мл") || partsArray[i + 1].contains("ml")) i++;
+                    continue;
+                }
+                newName.append(partsArray[i]);
+                if (i != partsArray.length - 1) newName.append(" ");
+            }
+            product.setName(newName.toString());
+        }
+    }
+
+    private int findVolume(String[] nameParts) {
+        int index = -1;
+
+        for (int i = 0; i < nameParts.length; i++) {
+            if (nameParts[i].contains("мл")) {
+                if (nameParts[i].contains("мг/мл")) {
+                    if (i >= nameParts.length - 1) break;
+                    i++;
+                    while (i < nameParts.length) {
+                        if (nameParts[i].contains("мл")) break;
+                        i++;
+                    }
+                    if (i >= nameParts.length) break;
+                }
+                if (nameParts[i].length() == 2) {
+                    index = i - 1;
+                } else if (nameParts[i].length() < 6 || nameParts[i].indexOf('*') > -1) {
+                    index = i;
+                }
+                break;
+            }
+        }
+        if (index < 0) {
+            for (int i = 0; i < nameParts.length; i++) {
+                if (nameParts[i].contains("ml")) {
+                    if (nameParts[i].length() == 2) {
+                        index =  i - 1;
+                    } else {
+                        index = i;
+                    }
+                }
+            }
+        }
+        if (index < 0) {
+            for (int i = 0; i < nameParts.length; i++) {
+                if (nameParts[i].contains("мг")) {
+                    if (nameParts[i].length() == 2) {
+                        index = i - 1;
+                        break;
+                    }
+                }
+            }
+        }
+        return index;
+    }
+
+    private int getValidVolume(String volume) {
+        int length = volume.length();
+
+        if ((volume.contains("мл") || volume.contains("ml")) && length < 7) {
+            volume = volume.substring(0, length - 2);
         }
 
-        if (name.indexOf('*') > 0){
-            int mult = name.charAt(indexStart+1);
-            int value = Integer.valueOf(name.substring(indexStart + 3, indexEnd));
-            return value * mult;
-        }
+        int multIndex = volume.indexOf('*');
+        int pointIndex = volume.indexOf('.');
 
-        if (indexStart < 0) return 0;
-        String result = name.substring(indexStart + 1, indexEnd);
-        return Integer.parseInt(result);
+        if (multIndex > -1) {
+            String count = volume.substring(0, multIndex);
+            String vol = volume.substring(multIndex + 1);
+            return Integer.parseInt(count) * Integer.parseInt(vol);
+        } else if (pointIndex > -1) {
+            String vol = volume.substring(0, pointIndex);
+            return Integer.parseInt(vol);
+        } else {
+            try {
+                return Integer.parseInt(volume);
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
     }
 
     double parseStrength(String name) {
@@ -173,14 +256,13 @@ class Parser {
         String secondPart = name.substring(indexEnd);
 
 
-
         if (strength != 1.5d) {
-            if (secondPart.equals(" " + (int)strength + " мг/мл")){
+            if (secondPart.equals(" " + (int) strength + " мг/мл")) {
                 return firstPart;
             }
-            indexEnd = secondPart.indexOf((String.valueOf((int)strength))) - 1;
+            indexEnd = secondPart.indexOf((String.valueOf((int) strength))) - 1;
         } else {
-            if (secondPart.equals("1.5 мг/мл") || secondPart.equals("01.5 мг/мл")){
+            if (secondPart.equals("1.5 мг/мл") || secondPart.equals("01.5 мг/мл")) {
                 return firstPart;
             }
             indexEnd = secondPart.indexOf("1.5") - 1;
@@ -189,7 +271,7 @@ class Parser {
         return firstPart + secondPart;
     }
 
-    void insertProductToDB(Product product){
+    void insertProductToDB(Product product) {
         SQLClient.insertProduct(product.getName(), product.getURL(), product.getPrice(), product.getCategoryID(), product.getGroup().getName(), product.getVolume(), product.getStrength());
     }
 }

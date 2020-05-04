@@ -2,7 +2,10 @@ import org.jsoup.select.Elements;
 import product.Group;
 import product.Product;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -18,7 +21,7 @@ class Updater extends Parser implements Runnable {
     @Override
     public void run() {
         ArrayList<Product> products = getProductsListFromDB();
-        if (products == null){
+        if (products == null) {
             listener.onUpdateError();
             return;
         }
@@ -26,14 +29,14 @@ class Updater extends Parser implements Runnable {
         listener.onUpdateSuccessfulEnd(totalUpdated);
     }
 
-    private int updateProductsInfo(ArrayList<Product> products){
+    private int updateProductsInfo(ArrayList<Product> products) {
         int overall = products.size();
         int totalUpdated = 0;
         int current = 1;
 
         ArrayList<Warehouse> warehousesList = getWarehousesFromDB();
 
-        for (Product product :  products) {
+        for (Product product : products) {
             Product actualProduct = parseProduct(product.getURL());
             if (compareProducts(actualProduct, product)) totalUpdated++;
             updateProductRemains(warehousesList, product);
@@ -43,7 +46,7 @@ class Updater extends Parser implements Runnable {
         return totalUpdated;
     }
 
-    private boolean compareProducts (Product actualProduct, Product oldProduct){
+    private boolean compareProducts(Product actualProduct, Product oldProduct) {
         int id = oldProduct.getId();
         boolean result = false;
         String actualName = actualProduct.getName();
@@ -57,26 +60,26 @@ class Updater extends Parser implements Runnable {
 
 
         if (!(actualName.equals(oldName))) {
-            LOG.info("\t\tDifferences of Names!: (actual)" + actualName + " <-> " + "(old)"+oldName);
+            LOG.info("\t\tDifferences of Names!: (actual)" + actualName + " <-> " + "(old)" + oldName);
             result = true;
             SQLClient.updateProductName(id, actualName);
         }
         if (!(actualGroupName.equals(oldGroupName))) {
-            LOG.info("\t\tdifferences of Groups!: (actual)" + actualGroupName + " <-> " + "(old)"+oldGroupName);
+            LOG.info("\t\tdifferences of Groups!: (actual)" + actualGroupName + " <-> " + "(old)" + oldGroupName);
             result = true;
             SQLClient.updateProductGroupName(id, actualGroupName);
         }
         if (actualCategoryId != oldCategoryId) {
-            LOG.info("\t\tdifferences of Categories!: (actual)" + actualCategoryId + " <-> " + "(old)"+oldCategoryId);
+            LOG.info("\t\tdifferences of Categories!: (actual)" + actualCategoryId + " <-> " + "(old)" + oldCategoryId);
             result = true;
             SQLClient.updateProductCategory(id, actualCategoryId);
         }
         if (actualPrice != oldPrice) {
-            LOG.info("\t\tdifferences of Price!: (actual)" + actualPrice + " <-> " + "(old)"+oldPrice);
+            LOG.info("\t\tdifferences of Price!: (actual)" + actualPrice + " <-> " + "(old)" + oldPrice);
             result = true;
             SQLClient.updateProductPrice(id, actualPrice);
         }
-        return  result;
+        return result;
     }
 
     private ArrayList<Product> getProductsListFromDB() {
@@ -104,27 +107,73 @@ class Updater extends Parser implements Runnable {
         return list;
     }
 
-    private ArrayList<Warehouse> getWarehousesFromDB(){
+    public void test() {
+        ArrayList<Product> list = getProductsListFromDB();
+        System.out.println(list.size());
+        File fileDone = new File("log/done.txt");
+        File fileError = new File("log/error.txt");
+
+        int doneCounter = 1;
+        int errorCounter = 1;
+
+
+        try {
+            if (fileDone.exists()) {
+                fileDone.delete();
+                fileDone.createNewFile();
+            }
+
+            if (fileError.exists()) {
+                fileError.delete();
+                fileError.createNewFile();
+            }
+
+            FileWriter writerDone = new FileWriter(fileDone, true);
+            FileWriter writerError = new FileWriter(fileError, true);
+
+            for (Product product : list) {
+                String name = product.getName();
+                parseVolume(product);
+                if (product.getVolume() == 0) {
+                    writerError.write(errorCounter + ": " + name + "\n");
+                    errorCounter++;
+                } else {
+                    writerDone.write(doneCounter + ": " + name + "\n");
+                    writerDone.write(doneCounter + ": " + product.getName() + "\n");
+                    writerDone.write("Объём: " + product.getVolume() + "\n\n");
+                    doneCounter++;
+                }
+            }
+
+            writerDone.close();
+            writerError.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private ArrayList<Warehouse> getWarehousesFromDB() {
         ArrayList<Warehouse> warehousesList = new ArrayList<>();
 
         ResultSet set = SQLClient.getAllWarehouses();
         try {
-            if (set != null){
-                while (set.next()){
+            if (set != null) {
+                while (set.next()) {
                     warehousesList.add(new Warehouse(set.getInt("id"), set.getString("alt_name")));
                 }
             } else {
                 listener.onUpdateError();
                 return null;
             }
-        } catch (SQLException e){
+        } catch (SQLException e) {
             LOG.error("Failed to get Warehouses List");
             listener.onParserException(e);
         }
         return warehousesList;
     }
 
-    private void updateProductRemains(ArrayList<Warehouse> warehousesList, Product product){
+    private void updateProductRemains(ArrayList<Warehouse> warehousesList, Product product) {
         ArrayList<Warehouse> warehouses = new ArrayList<>(warehousesList);
         //LOG.info("\tUpdate remains for: " + product.getName());
         Elements remainsElements = null;
@@ -139,12 +188,12 @@ class Updater extends Parser implements Runnable {
         remainsElements.forEach(element -> {
             String warehouseName = element.text();
             int index = warehouseName.indexOf(':');
-            warehouseName = warehouseName.substring(0, index-1);
+            warehouseName = warehouseName.substring(0, index - 1);
 
             int remains = Integer.parseInt(element.child(0).text());
 
-            for (int i = 0; i < warehouses.size(); i ++){
-                if (warehouses.get(i).getAltName().equals(warehouseName)){
+            for (int i = 0; i < warehouses.size(); i++) {
+                if (warehouses.get(i).getAltName().equals(warehouseName)) {
                     SQLClient.updateProductRemains(warehouses.get(i).getId(), product.getId(), remains);
                     warehouses.remove(i);
                     break;
