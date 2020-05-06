@@ -3,6 +3,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.print.DocFlavor;
 import java.sql.*;
+import java.util.Locale;
 
 class SQLClient {
     private static Connection connection;
@@ -16,7 +17,7 @@ class SQLClient {
     synchronized static void connect() {
         try {
             Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:baseTest.db");
+            connection = DriverManager.getConnection("jdbc:sqlite:liquidBase.db");
             connection.setAutoCommit(false);
             statement = connection.createStatement();
             LOG.info("Connected to DB");
@@ -75,18 +76,22 @@ class SQLClient {
         index = groupName.indexOf('\'');
         if (index != -1) groupName = returnValidString(groupName, index);
 
-        String query = String.format("INSERT INTO liquids(name, url, price, category, groupName, volume, strength) VALUES('%s', '%s', %d, %d, '%s', %d, %f)",
-                name, url, price, category, groupName, volume, strength);
+        String query = String.format(Locale.CANADA, "INSERT INTO liquids(name, url, price, category, groupName, strength, volume) VALUES('%s', '%s', %d, %d, '%s', %.1f, %d)",
+                name, url, price, category, groupName, strength, volume);
         try {
             statement.execute(query);
+            LOG.info("Product inserted!: " + name);
         } catch (SQLException e) {
-            LOG.error("Failed to Insert new product.Product!"
+            LOG.error("Failed to Insert new product. Product:"
                     + "\n\t\t name: " + name
                     + "\n\t\t url: " + url
                     + "\n\t\t price: " + price
                     + "\n\t\t category: " + category
                     + "\n\t\t groupName: " + groupName
+                    + "\n\t\t volume: " + volume
+                    + "\n\t\t strength: " + strength
                     + "\n " + e.getMessage());
+
         }
     }
 
@@ -180,6 +185,23 @@ class SQLClient {
             statement.execute(query);
         } catch (SQLException e) {
             LOG.error("Failed to UPDATE product PRICE! product_id: " + id + ", " + e.getMessage());
+        }
+    }
+    synchronized static void updateProductVolume(int id, int volume) {
+        String query = String.format(Locale.CANADA, "UPDATE liquids SET volume = %d WHERE id = %d", volume, id);
+        try {
+            statement.execute(query);
+        } catch (SQLException e) {
+            LOG.error("Failed to UPDATE product VOLUME! product_id: " + id + ", " + e.getMessage());
+        }
+    }
+
+    synchronized static void updateProductStrength(int id, double strength) {
+        String query = String.format(Locale.CANADA, "UPDATE liquids SET strength = %.1f WHERE id = %d", strength, id);
+        try {
+            statement.execute(query);
+        } catch (SQLException e) {
+            LOG.error("Failed to UPDATE product STRENGTH! product_id: " + id + ", " + e.getMessage());
         }
     }
 

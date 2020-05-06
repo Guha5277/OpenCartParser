@@ -37,10 +37,16 @@ class Updater extends Parser implements Runnable {
         ArrayList<Warehouse> warehousesList = getWarehousesFromDB();
 
         for (Product product : products) {
+            long time = System.currentTimeMillis();
             Product actualProduct = parseProduct(product.getURL());
+            if(actualProduct == null) {
+                current++;
+                continue;
+            }
             if (compareProducts(actualProduct, product)) totalUpdated++;
             updateProductRemains(warehousesList, product);
-            LOG.info("Done: " + current++ + "/" + overall);
+            time = System.currentTimeMillis() - time;
+            LOG.info("Product updated(" + time + "): " + current++ + "/" + overall);
         }
 
         return totalUpdated;
@@ -48,6 +54,7 @@ class Updater extends Parser implements Runnable {
 
     private boolean compareProducts(Product actualProduct, Product oldProduct) {
         int id = oldProduct.getId();
+        long time = System.currentTimeMillis();
         boolean result = false;
         String actualName = actualProduct.getName();
         String oldName = oldProduct.getName();
@@ -57,6 +64,10 @@ class Updater extends Parser implements Runnable {
         int oldCategoryId = oldProduct.getCategoryID();
         int actualPrice = actualProduct.getPrice();
         int oldPrice = oldProduct.getPrice();
+        int actualVolume = actualProduct.getVolume();
+        int oldVolume = oldProduct.getVolume();
+        double actualStrength = actualProduct.getStrength();
+        double oldStrength = oldProduct.getStrength();
 
 
         if (!(actualName.equals(oldName))) {
@@ -79,6 +90,17 @@ class Updater extends Parser implements Runnable {
             result = true;
             SQLClient.updateProductPrice(id, actualPrice);
         }
+        if (actualVolume != oldVolume) {
+            LOG.info("\t\tdifferences of Volume!: (actual)" + actualVolume + " <-> " + "(old)" + oldVolume);
+            result = true;
+            SQLClient.updateProductVolume(id, actualVolume);
+        }
+        if (actualStrength != oldStrength) {
+            LOG.info("\t\tdifferences of Strength!: (actual)" + actualVolume + " <-> " + "(old)" + oldVolume);
+            result = true;
+            SQLClient.updateProductStrength(id, actualStrength);
+        }
+        time = System.currentTimeMillis() - time;
         return result;
     }
 
@@ -94,7 +116,10 @@ class Updater extends Parser implements Runnable {
                     int price = set.getInt(4);
                     int category = set.getInt(5);
                     String groupName = set.getString(6);
-                    list.add(new Product(id, name, url, price, new Group(groupName, ""), category));
+                    double strength = set.getDouble(7);
+                    int volume = set.getInt(8);
+
+                    list.add(new Product(id, name, url, price, new Group(groupName, ""), category, volume, strength));
                 }
             } catch (SQLException e) {
                 LOG.error("Error to parse a ResultSet from DB query");
@@ -105,52 +130,6 @@ class Updater extends Parser implements Runnable {
             return null;
         }
         return list;
-    }
-
-    public void test() {
-        ArrayList<Product> list = getProductsListFromDB();
-        System.out.println(list.size());
-        File fileDone = new File("log/done.txt");
-        File fileError = new File("log/error.txt");
-
-        int doneCounter = 1;
-        int errorCounter = 1;
-
-
-        try {
-            if (fileDone.exists()) {
-                fileDone.delete();
-                fileDone.createNewFile();
-            }
-
-            if (fileError.exists()) {
-                fileError.delete();
-                fileError.createNewFile();
-            }
-
-            FileWriter writerDone = new FileWriter(fileDone, true);
-            FileWriter writerError = new FileWriter(fileError, true);
-
-            for (Product product : list) {
-                String name = product.getName();
-                parseVolume(product);
-                if (product.getVolume() == 0) {
-                    writerError.write(errorCounter + ": " + name + "\n");
-                    errorCounter++;
-                } else {
-                    writerDone.write(doneCounter + ": " + name + "\n");
-                    writerDone.write(doneCounter + ": " + product.getName() + "\n");
-                    writerDone.write("Объём: " + product.getVolume() + "\n\n");
-                    doneCounter++;
-                }
-            }
-
-            writerDone.close();
-            writerError.close();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private ArrayList<Warehouse> getWarehousesFromDB() {
@@ -175,8 +154,7 @@ class Updater extends Parser implements Runnable {
 
     private void updateProductRemains(ArrayList<Warehouse> warehousesList, Product product) {
         ArrayList<Warehouse> warehouses = new ArrayList<>(warehousesList);
-        //LOG.info("\tUpdate remains for: " + product.getName());
-        Elements remainsElements = null;
+        Elements remainsElements;
         try {
             remainsElements = downloadPage(product.getURL()).body().getElementsByClass("tab-pane active").get(0).select("span");
         } catch (IOException e) {
@@ -184,6 +162,7 @@ class Updater extends Parser implements Runnable {
             listener.onUpdateError();
             return;
         }
+
 
         remainsElements.forEach(element -> {
             String warehouseName = element.text();

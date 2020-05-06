@@ -64,13 +64,12 @@ class Parser {
     }
 
     Product parseProduct(String url) {
+        Product result = null;
         String name;
         String groupName;
         String categoryName;
         int price;
         int categoryID;
-        int volume = 0;
-        double strength = 0;
 
         try {
             Document document = Jsoup.connect(url).get();
@@ -84,28 +83,32 @@ class Parser {
             categoryName = elements.get(2).text();
             groupName = elements.get(3).text();
 
-
             categoryID = SQLClient.getCategoryID(categoryName);
             if (categoryID == 0) {
                 groupName = elements.get(2).text();
                 categoryName = elements.get(3).text();
                 categoryID = SQLClient.getCategoryID(categoryName);
-
             }
 
             price = parseStringPriceToInt(document.getElementsByClass("price").text());
-//            volume = parseVolume(name);
-//            if (volume != 0) {
-//                strength = parseStrength(name);
-//                name = trimToValidName(name, volume, strength);
-//            }
+
+            result = new Product(name, url, price, new Group(groupName, null), categoryID);
+
+            parseVolume(result);
+            parseStrength(result);
+
+            if (result.getVolume() > 0 && result.getStrength() < 0){
+                result.setStrength(3.0);
+            }
+
 
         } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
 
-        return new Product(name, url, price, new Group(groupName, null), categoryID, volume, strength);
+        //return new Product(name, url, price, new Group(groupName, null), categoryID, volume, strength);
+        return result;
     }
 
     private int parseStringPriceToInt(String price) {
@@ -131,35 +134,33 @@ class Parser {
     }
 
     void parseVolume(Product product) {
-        String[] partsArray = product.getName().split(" ");
-        String volumePart = "";
-
+        String[] nameParts = product.getName().split(" ");
         int volumeIndex;
 
-        volumeIndex = findVolume(partsArray);
+        volumeIndex = findVolumeIndex(nameParts);
 
         if (volumeIndex < 0) {
             product.setVolume(0);
         } else {
-            volumePart = partsArray[volumeIndex];
-            product.setVolume(getValidVolume(volumePart));
+            String volumePart = nameParts[volumeIndex];
+            product.setVolume(stringToVolume(volumePart));
 
             StringBuilder newName = new StringBuilder();
 
-            for (int i = 0; i < partsArray.length; i++) {
+            for (int i = 0; i < nameParts.length; i++) {
                 if (i == volumeIndex) {
-                    if (i == partsArray.length - 1) continue;
-                    if (partsArray[i + 1].contains("мл") || partsArray[i + 1].contains("ml")) i++;
+                    if (i == nameParts.length - 1) continue;
+                    if (nameParts[i + 1].contains("мл") || nameParts[i + 1].contains("ml")) i++;
                     continue;
                 }
-                newName.append(partsArray[i]);
-                if (i != partsArray.length - 1) newName.append(" ");
+                newName.append(nameParts[i]);
+                if (i != nameParts.length - 1) newName.append(" ");
             }
             product.setName(newName.toString());
         }
     }
 
-    private int findVolume(String[] nameParts) {
+    private int findVolumeIndex(String[] nameParts) {
         int index = -1;
 
         for (int i = 0; i < nameParts.length; i++) {
@@ -205,7 +206,7 @@ class Parser {
         return index;
     }
 
-    private int getValidVolume(String volume) {
+    private int stringToVolume(String volume) {
         int length = volume.length();
 
         if ((volume.contains("мл") || volume.contains("ml")) && length < 7) {
@@ -231,17 +232,121 @@ class Parser {
         }
     }
 
-    double parseStrength(String name) {
-        int indexEnd = name.indexOf(" мг");
-        if (indexEnd == -1) return 3.0d;
-        int indexStart = indexEnd - 1;
-        for (; indexStart > 0; indexStart--) {
-            if (name.charAt(indexStart) == 32) break;
+    void parseStrength(Product product) {
+        String[] nameParts = product.getName().split(" ");
+        int strengthIndex = -1;
+
+        strengthIndex = findStrengthIndex(nameParts);
+
+        if (strengthIndex == - 1){
+            product.setStrength(-1.0d);
+        } else {
+            product.setStrength(stringToStrength(nameParts[strengthIndex]));
+            StringBuilder newName = new StringBuilder();
+
+            for (int i = 0; i < nameParts.length; i++) {
+                if (i == strengthIndex) {
+                    if (i == nameParts.length - 1) continue;
+                    String part = nameParts[i + 1];
+                    if (part.contains("мг/мл") || part.contains("мл/мг") ||  part.contains("мг") ||  part.contains("%")) i++;
+                    //if (part.contains("мг/мл") || part.contains("мл/мг") ||  part.contains("мг") ||  part.contains("%")) i++;
+                    continue;
+                }
+                newName.append(nameParts[i]);
+                if (i != nameParts.length - 1) newName.append(" ");
+            }
+            product.setName(newName.toString());
+        }
+    }
+
+    private int findStrengthIndex (String[] nameParts){
+        int index = -1;
+
+        for (int i = 0; i < nameParts.length; i++){
+            String part = nameParts[i];
+            if (part.contains("мг/мл") || part.contains("мл/мг") || part.contains("мг/м")) {
+                if (nameParts[i].length() > 5){
+                    index = i;
+                    break;
+                }
+                index = i-1;
+                break;
+            }
         }
 
-        String result = name.substring(indexStart + 1, indexEnd);
-        if (result.indexOf(',') > 0) result = result.replace(',', '.');
-        return Double.parseDouble(result);
+        if (index == -1) {
+            for (int i = 0; i < nameParts.length; i++){
+                String part = nameParts[i];
+                if (part.contains("мг/")) {
+                    if (nameParts[i].length() > 3){
+                        index = i;
+                        break;
+                    }
+                    index = i-1;
+                    break;
+                }
+
+                if (part.contains("мг")) {
+                    if (nameParts[i].length() > 2){
+                        index = i;
+                        break;
+                    }
+                    index = i-1;
+                    break;
+                }
+            }
+        }
+
+        if (index == -1) {
+            for (int i = 0; i < nameParts.length; i++){
+                String part = nameParts[i];
+                if (part.contains("%")) {
+                    if (nameParts[i].length() > 1){
+                        index = i;
+                        break;
+                    }
+                    index = i-1;
+                    break;
+                }
+            }
+        }
+
+        return index;
+    }
+
+    private double stringToStrength(String strength){
+        int length = strength.length();
+        if (strength.contains("мг/мл") || strength.contains("мл/мг")){
+            strength = strength.substring(0, length - 5);
+        }
+
+        if (strength.contains("мг/")){
+            strength = strength.substring(0, length - 3);
+        }
+
+        if (strength.contains("мг")){
+            strength = strength.substring(0, length - 2);
+        }
+
+        if (strength.contains("/")){
+            strength = strength.split("/")[0];
+        }
+
+        if (strength.contains("%")){
+            strength = strength.split("%")[0];
+        }
+
+
+        int commaIndex = strength.indexOf(',');
+        if (commaIndex > 0) {
+            strength = strength.replace(',', '.');
+        }
+
+        try {
+            return Double.parseDouble(strength);
+        } catch (NumberFormatException e) {
+            return -1.0d;
+        }
     }
 
     String trimToValidName(String name, int volume, double strength) {

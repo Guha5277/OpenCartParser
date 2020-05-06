@@ -17,18 +17,19 @@ public class Product {
         this.price = price;
     }
 
-    public Product(String name, String URL, int price, Group group, int categoryID, int volume, double strength) {
+    public Product(int id, String name, String URL, int price, Group group, int categoryID, int volume, double strength) {
         this(name, URL, price);
+        this.id = id;
         this.group = group;
         this.categoryID = categoryID;
         this.volume = volume;
         this.strength = strength;
     }
 
-    Product(String name, String URL, int price, Group group, String categoryName) {
+    public Product(String name, String URL, int price, Group group, int categoryID) {
         this(name, URL, price);
         this.group = group;
-        this.categoryName = categoryName;
+        this.categoryID = categoryID;
     }
 
     public Product(int id, String name, String URL, int price, Group group, int categoryID) {

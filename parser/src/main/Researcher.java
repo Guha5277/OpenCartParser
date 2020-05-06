@@ -6,6 +6,7 @@ import product.Product;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Researcher extends Parser implements Runnable {
     private final String URL;
@@ -37,17 +38,11 @@ public class Researcher extends Parser implements Runnable {
     private void findNewProducts(ArrayList<Category> categories) {
         ArrayList<Element> list;
         for (Category category : categories) {
-            list = new ArrayList<>(getCategoryElements(category));
-            list.forEach(this::getGroupContent);
-        }
-    }
-
-    private void checkProduct(String url) {
-        if (!isProductAlreadyInDB(url)) {
-            Product product = parseProduct(url);
-            LOG.info("New product found: " + product.getName());
-            addProduct(product);
-            totalInsertCount++;
+            List<Element> tempList = getCategoryElements(category);
+            if (tempList != null){
+                list = new ArrayList<>(tempList);
+                list.forEach(this::getGroupContent);
+            }
         }
     }
 
@@ -74,6 +69,15 @@ public class Researcher extends Parser implements Runnable {
                 LOG.info("current: " + current++);
                 checkProduct(productElement.attr("href"));
             }
+        }
+    }
+
+    private void checkProduct(String url) {
+        if (!isProductAlreadyInDB(url)) {
+            Product product = parseProduct(url);
+            LOG.info("New product found: " + product.getName());
+            addProduct(product);
+            totalInsertCount++;
         }
     }
 }

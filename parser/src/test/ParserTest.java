@@ -88,11 +88,11 @@ public class ParserTest {
 //        assertEquals(30, receivedVolume);
 //    }
 
-    @Test
-    public void parseProductStrength() {
-        double receivedStrength = parser.parseStrength("Жидкость Coil Sauz Strawberry Cannoli 100 мл 0 мг/мл");
-        assertEquals(0.0, receivedStrength, 0.0);
-    }
+//    @Test
+//    public void parseProductStrength() {
+//        double receivedStrength = parser.parseStrength("Жидкость Coil Sauz Strawberry Cannoli 100 мл 0 мг/мл");
+//        assertEquals(0.0, receivedStrength, 0.0);
+//    }
 
     @Test
     public void trimToValidName() {

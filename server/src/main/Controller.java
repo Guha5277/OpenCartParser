@@ -5,8 +5,14 @@ public class Controller implements ParserEvents {
     Logger LOG = LogManager.getLogger();
 
     public static void main(String[] args) {
-        Grabber grabber = new Grabber("https://ilfumoshop.ru/zhidkost-dlya-zapravki-vejporov.html", new Controller());
-        new Thread(grabber).start();
+//        Grabber grabber = new Grabber("https://ilfumoshop.ru/zhidkost-dlya-zapravki-vejporov.html", new Controller());
+//        new Thread(grabber).start();
+
+        Updater updater = new Updater(new Controller());
+        new Thread(updater).start();
+
+//        Researcher researcher = new Researcher("https://ilfumoshop.ru/zhidkost-dlya-zapravki-vejporov.html", new Controller());
+//        new Thread(researcher).start();
     }
 
     @Override
