@@ -116,16 +116,9 @@ class Parser {
         return Integer.parseInt(price.substring(0, cutIndex));
     }
 
-    List<Element> getCategoryElements(Category category) {
+    List<Element> getCategoryElements(Category category) throws IOException{
         List<Element> groupList = new ArrayList<>();
-        Elements groupElements = null;
-        try {
-            groupElements = downloadPage(category.getUrl()).body().getElementsByClass(CATEGORY_DELIMITER);
-        } catch (IOException e) {
-            LOG.error(e);
-            return null;
-        }
-
+        Elements groupElements = downloadPage(category.getUrl()).body().getElementsByClass(CATEGORY_DELIMITER);
         groupElements.forEach(singleGroupElement -> {
             groupList.add(singleGroupElement.child(1).select("a").get(0));
         });
@@ -133,7 +126,7 @@ class Parser {
         return groupList;
     }
 
-    void parseVolume(Product product) {
+    private void parseVolume(Product product) {
         String[] nameParts = product.getName().split(" ");
         int volumeIndex;
 
@@ -232,7 +225,7 @@ class Parser {
         }
     }
 
-    void parseStrength(Product product) {
+    private void parseStrength(Product product) {
         String[] nameParts = product.getName().split(" ");
         int strengthIndex = -1;
 

@@ -24,14 +24,14 @@ class Grabber extends Parser implements Runnable {
 
     @Override
     public void run() {
-        listener.onParserReady();
+        listener.onGrabberReady();
 
         Document page;
         try {
             page = downloadPage(URL);
         } catch (IOException e) {
             LOG.error(e);
-            listener.onParseError();
+            listener.onGrabError();
             return;
         }
         ArrayList<Category> categories = getCategories(page);
@@ -40,7 +40,7 @@ class Grabber extends Parser implements Runnable {
         getCategoriesContent(categories);
 
         if (!insertAllWarehouses(getWarehousesList())) {
-            listener.onParseError();
+            listener.onGrabError();
             return;
         }
         insertAllLiquids(categories);
@@ -57,7 +57,7 @@ class Grabber extends Parser implements Runnable {
                 groupElements = downloadPage(cat.getUrl()).body().getElementsByClass(CATEGORY_DELIMITER);
             } catch (IOException e) {
                 LOG.error(e);
-                listener.onParseError();
+                listener.onGrabError();
                 return;
             }
 

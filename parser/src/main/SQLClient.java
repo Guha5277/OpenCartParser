@@ -141,7 +141,7 @@ class SQLClient {
         try {
             return statement.executeQuery(query);
         } catch (SQLException e) {
-            LOG.error("Error when trying to get all Warehouse from DB" + e.getMessage());
+            LOG.error("Error when trying to get all product.Warehouse from DB" + e.getMessage());
             return null;
         }
     }

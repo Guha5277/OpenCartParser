@@ -38,7 +38,13 @@ public class Researcher extends Parser implements Runnable {
     private void findNewProducts(ArrayList<Category> categories) {
         ArrayList<Element> list;
         for (Category category : categories) {
-            List<Element> tempList = getCategoryElements(category);
+            List<Element> tempList = null;
+            try {
+                tempList = getCategoryElements(category);
+            } catch (IOException e) {
+                LOG.error(e.getMessage());
+                listener.onResearchError();
+            }
             if (tempList != null){
                 list = new ArrayList<>(tempList);
                 list.forEach(this::getGroupContent);

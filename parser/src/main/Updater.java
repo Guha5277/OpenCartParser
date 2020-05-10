@@ -1,17 +1,17 @@
 import org.jsoup.select.Elements;
 import product.Group;
 import product.Product;
+import product.Warehouse;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
 class Updater extends Parser implements Runnable {
     private final ParserEvents listener;
+    private int current = 1;
+    private boolean isInterrupt;
 
     Updater(ParserEvents listener) {
         this.listener = listener;
@@ -26,20 +26,24 @@ class Updater extends Parser implements Runnable {
             return;
         }
         int totalUpdated = updateProductsInfo(products);
-        listener.onUpdateSuccessfulEnd(totalUpdated);
+        listener.onUpdateSuccessfulEnd(current, totalUpdated);
     }
 
     private int updateProductsInfo(ArrayList<Product> products) {
         int overall = products.size();
+        listener.onUpdaterTotalProducts(overall);
         int totalUpdated = 0;
-        int current = 1;
 
         ArrayList<Warehouse> warehousesList = getWarehousesFromDB();
 
         for (Product product : products) {
+            if (isInterrupt) return totalUpdated;
+            listener.onUpdaterCurrentProduct(current);
             long time = System.currentTimeMillis();
-            Product actualProduct = parseProduct(product.getURL());
+            String URL = product.getURL();
+            Product actualProduct = parseProduct(URL);
             if(actualProduct == null) {
+                listener.onUpdateProductFailed(URL);
                 current++;
                 continue;
             }
@@ -184,5 +188,9 @@ class Updater extends Parser implements Runnable {
         for (Warehouse warehouse : warehouses) {
             SQLClient.updateProductRemains(warehouse.getId(), product.getId(), 0);
         }
+    }
+
+    public void stop(){
+        isInterrupt = true;
     }
 }

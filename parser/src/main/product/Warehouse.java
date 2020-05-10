@@ -1,9 +1,11 @@
+package product;
+
 public class Warehouse {
     private int id;
     private String address;
     private String altName;
 
-    Warehouse(int id, String altName) {
+    public Warehouse(int id, String altName) {
         this.id = id;
         this.altName = altName;
     }
