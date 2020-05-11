@@ -3,7 +3,7 @@ package main;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Controller implements ParserEvents{
+public class Controller implements ParserEvents {
     Logger LOG = LogManager.getLogger();
     private final GUIEvents listener;
     private Updater updater;
