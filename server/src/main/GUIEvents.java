@@ -1,3 +1,5 @@
+package main;
+
 interface GUIEvents {
     void onUpdaterStart();
     void onUpdaterTotalProducts(int count);

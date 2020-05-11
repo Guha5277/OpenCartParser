@@ -1,7 +1,10 @@
+package main;
+
+
 import org.jsoup.select.Elements;
-import product.Group;
-import product.Product;
-import product.Warehouse;
+import main.product.Group;
+import main.product.Product;
+import main.product.Warehouse;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -39,7 +42,6 @@ class Updater extends Parser implements Runnable {
         for (Product product : products) {
             if (isInterrupt) return totalUpdated;
             listener.onUpdaterCurrentProduct(current);
-            long time = System.currentTimeMillis();
             String URL = product.getURL();
             Product actualProduct = parseProduct(URL);
             if(actualProduct == null) {
@@ -49,8 +51,7 @@ class Updater extends Parser implements Runnable {
             }
             if (compareProducts(actualProduct, product)) totalUpdated++;
             updateProductRemains(warehousesList, product);
-            time = System.currentTimeMillis() - time;
-            LOG.info("Product updated(" + time + "): " + current++ + "/" + overall);
+            current++;
         }
 
         return totalUpdated;

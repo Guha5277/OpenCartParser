@@ -1,14 +1,16 @@
+package main;
+
+import main.product.Category;
+import main.product.Group;
+import main.product.Product;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import product.Category;
-import product.Group;
-import product.Product;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 
 class Grabber extends Parser implements Runnable {
     private final String CATEGORY_DELIMITER = "col-lg-4 col-md-4 col-sm-6 col-xs-12";

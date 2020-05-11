@@ -1,3 +1,5 @@
+package main;
+
 public interface ParserEvents {
     void onGrabberReady();
     void onUpdaterReady();

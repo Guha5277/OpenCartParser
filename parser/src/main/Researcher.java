@@ -1,8 +1,10 @@
+package main;
+
+import main.product.Category;
+import main.product.Product;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import product.Category;
-import product.Product;
 
 import java.io.IOException;
 import java.util.ArrayList;

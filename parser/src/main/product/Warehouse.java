@@ -1,4 +1,4 @@
-package product;
+package main.product;
 
 public class Warehouse {
     private int id;
