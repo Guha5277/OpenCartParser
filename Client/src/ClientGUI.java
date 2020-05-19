@@ -4,8 +4,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-public class Client extends Application{
-    private final int APP_WIDTH = 300;
+public class ClientGUI extends Application {
+    private final int APP_WIDTH = 285;
     private final int APP_HEIGHT = 250;
 
 

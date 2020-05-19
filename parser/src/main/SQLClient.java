@@ -218,4 +218,28 @@ class SQLClient {
             LOG.error("Failed to UPDATE product REMAINS! product_id: " + productId + ", warehouse_id: " + warehouseId + ", "  + e.getMessage());
         }
     }
+
+    synchronized static String getNickname(String login, String password){
+        String query = String.format("SELECT nickname FROM users WHERE username='%s' AND password='%s'", login, password);
+        try {
+            ResultSet set = statement.executeQuery(query);
+            if (set.isClosed()) return null;
+            return set.getString(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    synchronized static int getUserRole(String nickname){
+        String query = String.format("SELECT role FROM users WHERE nickname='%s'", nickname);
+        try {
+            ResultSet set = statement.executeQuery(query);
+            if (set.isClosed()) return 4;
+            return set.getInt(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 4;
+        }
+    }
 }

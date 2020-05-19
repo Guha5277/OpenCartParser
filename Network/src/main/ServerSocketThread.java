@@ -22,7 +22,7 @@ public class ServerSocketThread extends Thread {
     @Override
     public void run() {
         listener.onThreadStart(this);
-        try (ServerSocket server = new ServerSocket(8189)) {
+        try (ServerSocket server = new ServerSocket(port)) {
             server.setSoTimeout(timeout);
             listener.onServerStart(this, server);
             Socket socket;

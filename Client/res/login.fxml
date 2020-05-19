@@ -8,11 +8,11 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="250.0" prefWidth="300.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GUIController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="250.0" prefWidth="300.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="LoginGuiController">
    <children>
       <AnchorPane prefHeight="48.0" prefWidth="300.0" style="-fx-background-color: #000000;">
          <children>
-            <Label layoutX="48.0" layoutY="8.0" text="ilfumo Parser Client" textFill="WHITE">
+            <Label layoutX="29.0" layoutY="8.0" text="ilfumo Parser ClientGUI" textFill="WHITE">
                <font>
                   <Font name="System Bold" size="22.0" />
                </font>
@@ -20,11 +20,11 @@
          </children>
       </AnchorPane>
       <TextField id="fieldIP" fx:id="fieldIP" layoutX="14.0" layoutY="56.0" promptText="ip" text="127.0.0.1" />
-      <TextField id="fieldPort" fx:id="fieldPort" layoutX="188.0" layoutY="56.0" prefHeight="25.0" prefWidth="85.0" promptText="port" text="5722" />
+      <TextField id="fieldPort" fx:id="fieldPort" layoutX="188.0" layoutY="56.0" prefHeight="25.0" prefWidth="85.0" promptText="port" text="5277" />
       <TextField id="fieldLogin" fx:id="fieldLogin" layoutX="76.0" layoutY="100.0" promptText="login" />
       <PasswordField id="fieldPassword" fx:id="fieldPassword" layoutX="76.0" layoutY="138.0" promptText="password" />
       <CheckBox id="checkboxSaveSet" fx:id="checkboxSaveSet" layoutX="37.0" layoutY="211.0" mnemonicParsing="false" text="Сохранить" />
       <Button id="btnConnect" fx:id="btnConnect" layoutX="150.0" layoutY="207.0" mnemonicParsing="false" onAction="#handleConnectButton" prefHeight="25.0" prefWidth="129.0" text="Подключиться" />
-      <Label id="lblError" fx:id="lblError" layoutX="61.0" layoutY="171.0" prefHeight="17.0" prefWidth="230.0" text="Some error text llabel" textFill="RED" visible="false" AnchorPane.leftAnchor="60.0" AnchorPane.rightAnchor="9.0" />
+      <Label id="lblError" fx:id="lblError" alignment="CENTER" layoutX="61.0" layoutY="171.0" prefHeight="17.0" prefWidth="230.0" text="Some error text llabel" textAlignment="CENTER" textFill="RED" visible="false" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
    </children>
 </AnchorPane>
