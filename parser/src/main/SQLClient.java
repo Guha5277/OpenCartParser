@@ -111,12 +111,12 @@ class SQLClient {
         }
     }
 
-    synchronized static boolean isProductAlreadyInDB(String url){
+    synchronized static boolean isProductAlreadyInDB(String url) {
         String query = String.format("SELECT name from liquids WHERE url='%s'", url);
         try {
             ResultSet set = statement.executeQuery(query);
             int size = 0;
-            if (set.next()){
+            if (set.next()) {
                 size = 1;
             }
             return size > 0;
@@ -188,6 +188,7 @@ class SQLClient {
             LOG.error("Failed to UPDATE product PRICE! product_id: " + id + ", " + e.getMessage());
         }
     }
+
     synchronized static void updateProductVolume(int id, int volume) {
         String query = String.format(Locale.CANADA, "UPDATE liquids SET volume = %d WHERE id = %d", volume, id);
         try {
@@ -215,11 +216,11 @@ class SQLClient {
                 statement.execute(insertQuery);
             }
         } catch (SQLException e) {
-            LOG.error("Failed to UPDATE product REMAINS! product_id: " + productId + ", warehouse_id: " + warehouseId + ", "  + e.getMessage());
+            LOG.error("Failed to UPDATE product REMAINS! product_id: " + productId + ", warehouse_id: " + warehouseId + ", " + e.getMessage());
         }
     }
 
-    synchronized static String getNickname(String login, String password){
+    synchronized static String getNickname(String login, String password) {
         String query = String.format("SELECT nickname FROM users WHERE username='%s' AND password='%s'", login, password);
         try {
             ResultSet set = statement.executeQuery(query);
@@ -231,7 +232,7 @@ class SQLClient {
         }
     }
 
-    synchronized static int getUserRole(String nickname){
+    synchronized static int getUserRole(String nickname) {
         String query = String.format("SELECT role FROM users WHERE nickname='%s'", nickname);
         try {
             ResultSet set = statement.executeQuery(query);
@@ -240,6 +241,30 @@ class SQLClient {
         } catch (SQLException e) {
             e.printStackTrace();
             return 4;
+        }
+    }
+
+    static int getProductsCount() {
+        String query = "SELECT COUNT(*) FROM liquids";
+        try {
+            ResultSet set = statement.executeQuery(query);
+            if (set.isClosed()) return 0;
+            return set.getInt(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    static int getWarehousesCount() {
+        String query = "SELECT COUNT(*) FROM warehouse";
+        try {
+            ResultSet set = statement.executeQuery(query);
+            if (set.isClosed()) return 0;
+            return set.getInt(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
         }
     }
 }

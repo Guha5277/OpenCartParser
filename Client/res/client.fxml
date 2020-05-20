@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="400.0" minWidth="600.0" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ClientGuiController">
@@ -22,9 +26,121 @@
             </Label>
          </children>
       </AnchorPane>
-      <TabPane layoutY="65.0" prefHeight="336.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="64.0">
+      <TabPane layoutY="65.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="64.0">
         <tabs>
-          <Tab text="Server" />
+          <Tab text="Server">
+               <content>
+                  <AnchorPane>
+                     <children>
+                        <VBox layoutX="13.0" layoutY="54.0" prefHeight="111.0" prefWidth="174.0">
+                           <children>
+                              <Label text="Продуктов:">
+                                 <font>
+                                    <Font size="13.0" />
+                                 </font>
+                                 <opaqueInsets>
+                                    <Insets />
+                                 </opaqueInsets>
+                                 <padding>
+                                    <Insets bottom="8.0" />
+                                 </padding>
+                              </Label>
+                              <Label text="Магазинов:">
+                                 <font>
+                                    <Font size="13.0" />
+                                 </font>
+                                 <opaqueInsets>
+                                    <Insets />
+                                 </opaqueInsets>
+                                 <padding>
+                                    <Insets bottom="8.0" />
+                                 </padding>
+                              </Label>
+                              <Label text="Пользователей онлайн:">
+                                 <font>
+                                    <Font size="13.0" />
+                                 </font>
+                                 <opaqueInsets>
+                                    <Insets />
+                                 </opaqueInsets>
+                                 <padding>
+                                    <Insets bottom="8.0" />
+                                 </padding>
+                              </Label>
+                           </children>
+                           <opaqueInsets>
+                              <Insets />
+                           </opaqueInsets>
+                        </VBox>
+                        <VBox layoutX="189.0" layoutY="54.0" prefHeight="102.0" prefWidth="192.0">
+                           <children>
+                              <Label text="4018">
+                                 <font>
+                                    <Font size="13.0" />
+                                 </font>
+                                 <opaqueInsets>
+                                    <Insets />
+                                 </opaqueInsets>
+                                 <padding>
+                                    <Insets bottom="8.0" />
+                                 </padding>
+                              </Label>
+                              <Label text="48">
+                                 <font>
+                                    <Font size="13.0" />
+                                 </font>
+                                 <opaqueInsets>
+                                    <Insets />
+                                 </opaqueInsets>
+                                 <padding>
+                                    <Insets bottom="8.0" />
+                                 </padding>
+                              </Label>
+                              <Label text="5">
+                                 <font>
+                                    <Font size="13.0" />
+                                 </font>
+                                 <opaqueInsets>
+                                    <Insets />
+                                 </opaqueInsets>
+                                 <padding>
+                                    <Insets bottom="8.0" />
+                                 </padding>
+                              </Label>
+                           </children>
+                        </VBox>
+                        <ToolBar prefHeight="40.0" prefWidth="400.0">
+                           <items>
+                              <Label text="Сервер онлайн">
+                                 <font>
+                                    <Font size="14.0" />
+                                 </font>
+                                 <padding>
+                                    <Insets left="15.0" />
+                                 </padding>
+                              </Label>
+                              <Label fx:id="lblServerUpTime" nodeOrientation="LEFT_TO_RIGHT">
+                                 <font>
+                                    <Font size="14.0" />
+                                 </font>
+                              </Label>
+                           </items>
+                        </ToolBar>
+                        <ToolBar nodeOrientation="RIGHT_TO_LEFT" prefHeight="40.0" AnchorPane.leftAnchor="400.0" AnchorPane.rightAnchor="0.0">
+                           <items>
+                              <Button mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #f87474;" text="Stop" />
+                              <Button disable="true" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" text="Start" />
+                           </items>
+                           <opaqueInsets>
+                              <Insets />
+                           </opaqueInsets>
+                           <padding>
+                              <Insets left="25.0" />
+                           </padding>
+                        </ToolBar>
+                     </children>
+                  </AnchorPane>
+               </content></Tab>
           <Tab fx:id="tabUpdater" disable="true" text="Updater" />
             <Tab fx:id="tabResearcher" disable="true" text="Researcher" />
             <Tab fx:id="tabProducts" disable="true" text="Products" />

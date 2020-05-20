@@ -24,7 +24,7 @@
       <TextField id="fieldLogin" fx:id="fieldLogin" layoutX="76.0" layoutY="100.0" promptText="login" />
       <PasswordField id="fieldPassword" fx:id="fieldPassword" layoutX="76.0" layoutY="138.0" promptText="password" />
       <CheckBox id="checkboxSaveSet" fx:id="checkboxSaveSet" layoutX="37.0" layoutY="211.0" mnemonicParsing="false" text="Сохранить" />
-      <Button id="btnConnect" fx:id="btnConnect" layoutX="150.0" layoutY="207.0" mnemonicParsing="false" onAction="#handleConnectButton" prefHeight="25.0" prefWidth="129.0" text="Подключиться" />
+      <Button id="btnConnect" fx:id="btnConnect" defaultButton="true" layoutX="150.0" layoutY="207.0" mnemonicParsing="false" onAction="#handleConnectButton" prefHeight="25.0" prefWidth="129.0" text="Подключиться" />
       <Label id="lblError" fx:id="lblError" alignment="CENTER" layoutX="61.0" layoutY="171.0" prefHeight="17.0" prefWidth="230.0" text="Some error text llabel" textAlignment="CENTER" textFill="RED" visible="false" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
    </children>
 </AnchorPane>

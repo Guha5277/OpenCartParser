@@ -7,6 +7,8 @@ import java.util.Vector;
 public class Server implements ServerSocketThreadListener, SocketThreadListener {
     private ServerSocketThread server;
     private long serverStartAt;
+    private int productsCount;
+    private int warehousesCount;
     private Vector<SocketThread> clients = new Vector<>();
 
     public static void main(String[] args) {
@@ -34,6 +36,8 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener 
     public void onServerStart(ServerSocketThread thread, ServerSocket server) {
         System.out.println("Server started: " + server.getLocalSocketAddress());
         SQLClient.connect();
+        productsCount = SQLClient.getProductsCount();
+        warehousesCount = SQLClient.getWarehousesCount();
     }
 
     @Override
@@ -84,17 +88,21 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener 
                 }
                 authorizeClient(client, receivedData.getData());
                 break;
-            case Library.GET_SERVER_INFO:
+            case Library.SERVER_INFO:
                 if (!client.isAuthorized()) {
-                    client.sendMessage(Library.makeJsonString(Library.GET_SERVER_INFO, Library.DENIED));
+                    client.sendMessage(Library.makeJsonString(Library.SERVER_INFO, Library.DENIED));
                     clients.remove(client);
                     client.close();
                 } else {
                     int accessLevel = client.getAccessLevel();
                     if (accessLevel == ClientThread.ADMIN || accessLevel == ClientThread.MODERATOR){
-                        client.sendMessage(Library.makeJsonString(Library.GET_SERVER_INFO, Library.ACCEPTED, String.valueOf(accessLevel)));
+                        client.sendMessage(Library.makeJsonString(Library.SERVER_INFO, Library.ACCEPTED, String.valueOf(accessLevel)));
+                        client.sendMessage(Library.makeJsonString(Library.START_TIME, String.valueOf(serverStartAt)));
+                        client.sendMessage(Library.makeJsonString(Library.PRODUCTS_COUNT, String.valueOf(productsCount)));
+                        client.sendMessage(Library.makeJsonString(Library.WAREHOUSES_COUNT, String.valueOf(warehousesCount)));
+                        client.sendMessage(Library.makeJsonString(Library.ACTIVE_USERS, String.valueOf(clients.size())));
                     } else {
-                        client.sendMessage(Library.makeJsonString(Library.GET_SERVER_INFO, Library.DENIED));
+                        client.sendMessage(Library.makeJsonString(Library.SERVER_INFO, Library.DENIED));
                         clients.remove(client);
                     }
                 }
