@@ -4,11 +4,16 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Vector;
 
-public class Server implements ServerSocketThreadListener, SocketThreadListener {
+public class Server implements ServerSocketThreadListener, SocketThreadListener, ParserEvents {
     private ServerSocketThread server;
     private long serverStartAt;
     private int productsCount;
     private int warehousesCount;
+    private int updaterTotalProd;
+    private Thread updaterThread;
+    private Updater updater;
+    private Grabber grabber;
+    private Researcher researcher;
     private Vector<SocketThread> clients = new Vector<>();
 
     public static void main(String[] args) {
@@ -106,6 +111,24 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener 
                         clients.remove(client);
                     }
                 }
+                break;
+            case Library.UPDATER:
+                if (client.getAccessLevel() > 2) {
+                    client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.DENIED));
+                    clients.remove(client);
+                    client.close();
+                    return;
+                }
+                boolean result;
+                if (header[1] == Library.START){
+                    startUpdater();
+//                    result = startUpdater();
+//                    client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.START, String.valueOf(result)));
+                } else if(header[1] == Library.STOP){
+                    stopUpdater();
+//                    result = stopUpdater();
+//                    client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.STOP, String.valueOf(result)));
+                }
         }
     }
 
@@ -117,6 +140,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener 
 
     @Override
     public void onSocketThreadException(SocketThread thread, Exception e) {
+        thread.close();
         System.out.println("ServerSocket exception: " + e.getMessage() + " " + e.getCause());
     }
 
@@ -139,6 +163,21 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener 
         }
     }
 
+    private void startUpdater(){
+        if (updaterThread != null && updaterThread.isAlive()) return;
+        updater = new Updater(this);
+        updaterThread = new Thread(updater);
+        updaterThread.start();
+    }
+
+    private void stopUpdater(){
+        if (updaterThread == null || !updaterThread.isAlive()) return;
+        updaterThread.interrupt();
+        updater.stop();
+        updaterThread = null;
+        updater = null;
+    }
+
     private ClientThread findUserByNickname(String nickname) {
         for (int i = 0; i < clients.size(); i++) {
             ClientThread client = (ClientThread) clients.get(i);
@@ -147,5 +186,98 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener 
                 return client;
         }
         return null;
+    }
+
+    private void sendMessageToAllClients(int accessLvl, String msg){
+        for (int i = 0; i < clients.size(); i++) {
+            ClientThread client = (ClientThread) clients.get(i);
+            if (!client.isAuthorized() || client.getAccessLevel() > accessLvl) continue;
+            client.sendMessage(msg);
+        }
+    }
+
+    //Services events
+    @Override
+    public void onGrabberReady() {
+
+    }
+
+    @Override
+    public void onUpdaterReady() {
+        if (clients.size() > 0){
+            sendMessageToAllClients(Library.MODERATOR, Library.makeJsonString(Library.UPDATER, Library.START));
+        }
+    }
+
+    @Override
+    public void onResearcherReady() {
+
+    }
+
+    @Override
+    public void onParserException(Exception e) {
+
+    }
+
+    @Override
+    public void onUpdateProductFailed(String url, int errorsCount) {
+        if (clients.size() > 0){
+            sendMessageToAllClients(Library.MODERATOR, Library.makeJsonString(Library.UPDATER, Library.FAILED, url, String.valueOf(errorsCount)));
+        }
+    }
+
+    @Override
+    public void onUpdateDiffsFound(int count) {
+        if (clients.size() > 0){
+            sendMessageToAllClients(Library.MODERATOR, Library.makeJsonString(Library.UPDATER, Library.FOUND, String.valueOf(count)));
+        }
+    }
+
+    @Override
+    public void onUpdaterCurrentProduct(int position, String name) {
+        if (clients.size() > 0){
+            sendMessageToAllClients(Library.MODERATOR, Library.makeJsonString(Library.UPDATER, Library.CURRENT, String.valueOf(position), String.valueOf(updaterTotalProd), name));
+        }
+    }
+
+    @Override
+    public void onUpdaterTotalProducts(int count) {
+        updaterTotalProd = count;
+        if (clients.size() > 0){
+            sendMessageToAllClients(Library.MODERATOR, Library.makeJsonString(Library.UPDATER, Library.PRODUCTS_TOTAL, String.valueOf(count)));
+        }
+    }
+
+    @Override
+    public void onGrabError() {
+
+    }
+
+    @Override
+    public void onUpdateError() {
+
+    }
+
+    @Override
+    public void onResearchError() {
+
+    }
+
+    @Override
+    public void onParseSuccessfulEnd(int count) {
+
+    }
+
+    @Override
+    public void onUpdateSuccessfulEnd(int checked, int updated) {
+        if (clients.size() > 0){
+            sendMessageToAllClients(Library.MODERATOR, Library.makeJsonString(Library.UPDATER, Library.PROCESS_END, String.valueOf(checked), String.valueOf(updated)));
+        }
+        SQLClient.commit();
+    }
+
+    @Override
+    public void onResearchSuccessfulEnd(int count) {
+
     }
 }

@@ -7,9 +7,10 @@ public interface ParserEvents {
 
     void onParserException(Exception e);
 
-    void onUpdateProductFailed(String url);
-    void onUpdaterCurrentProduct(int position);
+    void onUpdateProductFailed(String url, int errorsCount);
+    void onUpdaterCurrentProduct(int position, String name);
     void onUpdaterTotalProducts(int count);
+    void onUpdateDiffsFound(int count);
 
     void onGrabError();
     void onUpdateError();

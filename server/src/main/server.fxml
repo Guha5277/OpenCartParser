@@ -5,7 +5,7 @@
 <?import javafx.scene.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
-<AnchorPane maxHeight="418.0" maxWidth="600.0" minHeight="400.0" minWidth="600.0" prefHeight="418.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="LoginGuiController">
+<AnchorPane maxHeight="418.0" maxWidth="600.0" minHeight="400.0" minWidth="600.0" prefHeight="418.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="LoginGUIController">
    <cursor>
       <Cursor fx:constant="DEFAULT" />
    </cursor>

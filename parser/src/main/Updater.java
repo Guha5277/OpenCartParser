@@ -1,6 +1,5 @@
 package main;
 
-
 import org.jsoup.select.Elements;
 import main.product.Group;
 import main.product.Product;
@@ -15,6 +14,8 @@ class Updater extends Parser implements Runnable {
     private final ParserEvents listener;
     private int current = 1;
     private boolean isInterrupt;
+    private int updates;
+    private int errors;
 
     Updater(ParserEvents listener) {
         this.listener = listener;
@@ -41,12 +42,13 @@ class Updater extends Parser implements Runnable {
 
         for (Product product : products) {
             if (isInterrupt) return totalUpdated;
-            listener.onUpdaterCurrentProduct(current);
+            listener.onUpdaterCurrentProduct(current, product.getName());
             String URL = product.getURL();
             Product actualProduct = parseProduct(URL);
             if(actualProduct == null) {
-                listener.onUpdateProductFailed(URL);
+                errors++;
                 current++;
+                listener.onUpdateProductFailed(URL, errors);
                 continue;
             }
             if (compareProducts(actualProduct, product)) totalUpdated++;
@@ -58,6 +60,7 @@ class Updater extends Parser implements Runnable {
     }
 
     private boolean compareProducts(Product actualProduct, Product oldProduct) {
+        boolean productHaveUpdate = false;
         int id = oldProduct.getId();
         long time = System.currentTimeMillis();
         boolean result = false;
@@ -79,31 +82,42 @@ class Updater extends Parser implements Runnable {
             LOG.info("\t\tDifferences of Names!: (actual)" + actualName + " <-> " + "(old)" + oldName);
             result = true;
             SQLClient.updateProductName(id, actualName);
+            productHaveUpdate = true;
         }
         if (!(actualGroupName.equals(oldGroupName))) {
             LOG.info("\t\tdifferences of Groups!: (actual)" + actualGroupName + " <-> " + "(old)" + oldGroupName);
             result = true;
             SQLClient.updateProductGroupName(id, actualGroupName);
+            productHaveUpdate = true;
         }
         if (actualCategoryId != oldCategoryId) {
             LOG.info("\t\tdifferences of Categories!: (actual)" + actualCategoryId + " <-> " + "(old)" + oldCategoryId);
             result = true;
             SQLClient.updateProductCategory(id, actualCategoryId);
+            productHaveUpdate = true;
         }
         if (actualPrice != oldPrice) {
             LOG.info("\t\tdifferences of Price!: (actual)" + actualPrice + " <-> " + "(old)" + oldPrice);
             result = true;
             SQLClient.updateProductPrice(id, actualPrice);
+            productHaveUpdate = true;
         }
         if (actualVolume != oldVolume) {
             LOG.info("\t\tdifferences of Volume!: (actual)" + actualVolume + " <-> " + "(old)" + oldVolume);
             result = true;
             SQLClient.updateProductVolume(id, actualVolume);
+            productHaveUpdate = true;
         }
         if (actualStrength != oldStrength) {
             LOG.info("\t\tdifferences of Strength!: (actual)" + actualVolume + " <-> " + "(old)" + oldVolume);
             result = true;
             SQLClient.updateProductStrength(id, actualStrength);
+            productHaveUpdate = true;
+        }
+
+        if (productHaveUpdate) {
+            updates++;
+            listener.onUpdateDiffsFound(updates);
         }
         time = System.currentTimeMillis() - time;
         return result;
