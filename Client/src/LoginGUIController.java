@@ -79,6 +79,15 @@ public class LoginGUIController {
         });
     }
 
+    void multiplySession(String nickname) {
+        Platform.runLater(() -> {
+            setDisableAll(false);
+            showAlertDialog(Alert.AlertType.ERROR, "Ошибка подключения!",
+                    "Пользователь с ником " + nickname + " уже подключён!",
+                    "Закройте все активные соединения и попробуйте заново").showAndWait();
+        });
+    }
+
     private void setDisableAll(boolean state) {
         fieldIP.setDisable(state);
         fieldPort.setDisable(state);
@@ -128,4 +137,6 @@ public class LoginGUIController {
         alert.setContentText(context);
         return alert;
     }
+
+
 }

@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.Locale;
 
 class SQLClient {
@@ -265,6 +266,70 @@ class SQLClient {
         } catch (SQLException e) {
             e.printStackTrace();
             return 0;
+        }
+    }
+
+    synchronized static String getUpdaterLastRun() {
+        String query = "SELECT last_run FROM info WHERE process='updater'";
+        try {
+            ResultSet set = statement.executeQuery(query);
+            if (set.isClosed()) return null;
+            return set.getString(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    static String getResearcherLastRun() {
+        String query = "SELECT last_run FROM info WHERE process='researcher'";
+        try {
+            ResultSet set = statement.executeQuery(query);
+            if (set.isClosed()) return null;
+            return set.getString(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    synchronized static void updateUpdaterLastRun(int pausedAt, int totalUpdated, int totalFails) {
+        LocalDate date = LocalDate.now();
+        String query = String.format("UPDATE info SET last_run='%d-%d-%d', paused_at=%d, total_updated=%d, total_fails=%d WHERE process='updater'", date.getYear(), date.getMonthValue(), date.getDayOfMonth(), pausedAt, totalUpdated, totalFails);
+        String insertQuery = String.format("INSERT INTO info (process, last_runs, paused_at, total_updated, total_fails) VALUES ('updater', '%d-%d-%d', %d, %d, %d)", date.getYear(), date.getMonthValue(), date.getDayOfMonth(), pausedAt, totalUpdated, totalFails);
+        try {
+            int count = statement.executeUpdate(query);
+            if (count == 0) {
+                statement.execute(insertQuery);
+            }
+        } catch (SQLException e) {
+            LOG.error("Failed to UPDATE INFO! product_id: " + e.getMessage());
+        }
+    }
+
+    synchronized  static int getLastUpdatedProductPosition() {
+        String query = "select paused_at from info where process='updater'";
+        try {
+            ResultSet set = statement.executeQuery(query);
+            if (set.isClosed()) return 0;
+            return set.getInt(1);
+        } catch (SQLException e) {
+            LOG.error("Failed to UPDATE INFO! product_id: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    synchronized static void updateResearcherLastRun(int totalFound) {
+        LocalDate date = LocalDate.now();
+        String query = String.format("UPDATE info SET last_run='%d-%d-%d', total_updated=%d WHERE process='researcher'", date.getYear(), date.getMonthValue(), date.getDayOfMonth(), totalFound);
+        String insertQuery = String.format("INSERT INTO info (process, last_runs, total_updated) VALUES ('researcher', '%d-%d-%d', %d)", date.getYear(), date.getMonthValue(), date.getDayOfMonth(), totalFound);
+        try {
+            int count = statement.executeUpdate(query);
+            if (count == 0) {
+                statement.execute(insertQuery);
+            }
+        } catch (SQLException e) {
+            LOG.error("Failed to UPDATE INFO! product_id: " + e.getMessage());
         }
     }
 }

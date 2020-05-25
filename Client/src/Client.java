@@ -1,4 +1,3 @@
-import javafx.application.Platform;
 import main.DataProtocol;
 import main.Library;
 import main.SocketThread;
@@ -7,6 +6,7 @@ import main.SocketThreadListener;
 import java.io.IOException;
 import java.net.Socket;
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 
 public class Client implements SocketThreadListener {
     private ClientGUI app;
@@ -17,6 +17,8 @@ public class Client implements SocketThreadListener {
     private String password;
     private int updaterProductsTotal;
     private double updaterProgressPoint;
+    private int researcherProductsTotal;
+    private double researcherProgressPoint;
 
     Client(ClientGUI app) {
         this.app = app;
@@ -58,12 +60,25 @@ public class Client implements SocketThreadListener {
         socketThread.close();
     }
 
-    void startUpdater() {
-        socketThread.sendMessage(Library.makeJsonString(Library.UPDATER, Library.START));
+    void startUpdater(boolean continueUpdate) {
+        socketThread.sendMessage(Library.makeJsonString(Library.UPDATER, Library.START, String.valueOf(continueUpdate)));
     }
 
     void stopUpdater() {
         socketThread.sendMessage(Library.makeJsonString(Library.UPDATER, Library.STOP));
+    }
+
+
+    void startResearcher() {
+        socketThread.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.START));
+    }
+
+    void stopResearcher() {
+        socketThread.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.STOP));
+    }
+
+    void kickUser(String nickname) {
+        socketThread.sendMessage(Library.makeJsonString(Library.USERS, Library.DISCONNECT, nickname));
     }
 
     //Socket events
@@ -93,7 +108,10 @@ public class Client implements SocketThreadListener {
                     thread.sendMessage(Library.makeJsonString(Library.SERVER_INFO));
                 } else if (header[1] == Library.DENIED) {
                     loginController.authDenied();
-                    thread.close();
+                    //thread.close();
+                } else if (header[1] == Library.MULTIPLY_SESSION) {
+                    loginController.multiplySession(receivedData.getData());
+                    //thread.close();
                 }
                 break;
             case Library.SERVER_INFO:
@@ -102,7 +120,7 @@ public class Client implements SocketThreadListener {
                     thread.close();
                 } else if (header[1] == Library.ACCEPTED) {
                     app.showClient();
-                    app.closeLoginForm();
+                    app.closeLoginStage();
                     int access = Integer.parseInt(receivedData.getData());
                     if (access == Library.ADMIN) {
                         if (clientController != null)
@@ -128,20 +146,41 @@ public class Client implements SocketThreadListener {
             case Library.WAREHOUSES_COUNT:
                 clientController.setWarehousesCount(receivedData.getData());
                 break;
-            case Library.ACTIVE_USERS:
-                clientController.setActiveUsersCount(receivedData.getData());
+            case Library.USERS:
+                switch (header[1]) {
+                    case Library.COUNT:
+                        clientController.setActiveUsersCount(receivedData.getData());
+                        break;
+                    case Library.LIST:
+                        clientController.updateUsersList(receivedData.getData().split(Library.DELIMITER));
+                        break;
+                    case Library.DISCONNECT:
+                        if (header.length > 2 && header[2] == Library.DENIED) {
+                            clientController.failedToKickUser(receivedData.getData());
+                        } else {
+                            clientController.kickedFromTheServer(receivedData.getData());
+                            app.closeClientStage();
+                        }
+                        break;
+                }
                 break;
             case Library.UPDATER:
                 switch (header[1]) {
                     case Library.DENIED:
                         /*TODO - generate some alert dialog and close window*/
                         break;
+                    case Library.LAST_RUN:
+                        clientController.setUpdaterLastRun(parseStringDate(receivedData.getData()));
+                        break;
+                    case Library.LAST_POSITION:
+                        clientController.setLastPositionCheckboxVisible(Integer.parseInt(receivedData.getData()) > 0);
+                        break;
                     case Library.START:
                         clientController.updaterStart();
                         break;
-//                    case Library.STOP:
-//                        clientController.updaterStop();
-//                        break;
+                    case Library.PROCESS_END:
+                        clientController.updaterStop();
+                        break;
                     case Library.PRODUCTS_TOTAL:
                         updaterProductsTotal = Integer.parseInt(receivedData.getData());
                         updaterProgressPoint = (double) 1 / updaterProductsTotal;
@@ -149,7 +188,7 @@ public class Client implements SocketThreadListener {
                     case Library.CURRENT:
                         String[] arr = receivedData.getData().split(Library.DELIMITER);
                         int position = Integer.parseInt(arr[0]);
-                        if (updaterProductsTotal == 0){
+                        if (updaterProductsTotal == 0) {
                             updaterProductsTotal = Integer.parseInt(arr[1]);
                             updaterProgressPoint = (double) 1 / updaterProductsTotal;
                         }
@@ -157,14 +196,69 @@ public class Client implements SocketThreadListener {
                         clientController.setUpdaterCurrentProduct(arr[2]);
                         break;
                     case Library.FOUND:
-                        clientController.setUpdatesFound(receivedData.getData());
+                        String[] diffs = receivedData.getData().split(Library.DELIMITER);
+                        clientController.setUpdatesFound(diffs[0]);
+                        clientController.appendDifferencesFound(diffs[1]);
                         break;
                     case Library.FAILED:
-                        clientController.setUpdatesFailed(receivedData.getData());
+                        String[] failsMsg = receivedData.getData().split(Library.DELIMITER);
+                        clientController.setUpdatesFailed(failsMsg[1]);
+                        break;
+                    case Library.EXCEPTION:
+                        String[] exMsg = receivedData.getData().split(Library.DELIMITER);
+                        if (exMsg.length >= 3) {
+                            clientController.appendErrorToUpdaterLogger(exMsg[0], exMsg[1], exMsg[2]);
+                        } else {
+                            clientController.appendErrorToUpdaterLogger("SQLException", exMsg[0]);
+                        }
+                        break;
+                }
+                break;
+            case Library.RESEARCHER:
+                switch (header[1]) {
+                    case Library.DENIED:
+                        /*TODO - generate some alert dialog and close window*/
+                        break;
+                    case Library.LAST_RUN:
+                        clientController.setResearcherLastUpdate(parseStringDate(receivedData.getData()));
+                        break;
+                    case Library.START:
+                        clientController.researcherStart();
                         break;
                     case Library.PROCESS_END:
-                        clientController.updaterStop();
+                        clientController.researcherEnd();
                         break;
+                    case Library.PRODUCTS_TOTAL:
+                        researcherProductsTotal = Integer.parseInt(receivedData.getData());
+                        researcherProgressPoint = (double) 1 / researcherProductsTotal;
+                        break;
+                    case Library.CURRENT:
+                        String[] arr = receivedData.getData().split(Library.DELIMITER);
+                        int position = Integer.parseInt(arr[0]);
+                        clientController.setResearcherProgress(researcherProgressPoint * position, position + "/" + researcherProductsTotal);
+                        clientController.setResearcherCurrentGroup(arr[1]);
+                        break;
+                    case Library.CURRENT_CATEGORY:
+                        String[] currCat = receivedData.getData().split(Library.DELIMITER);
+                        clientController.setResearcherCurrentCategory(currCat[0] + "/" + currCat[1], currCat[2]);
+                        break;
+                    case Library.FOUND:
+                        String[] diffs = receivedData.getData().split(Library.DELIMITER);
+                        clientController.appendResearcherFoundProd(diffs[0]);
+                        clientController.setResearcherTotalFounds(diffs[1]);
+                        break;
+//                    case Library.FAILED:
+//                        String[] failsMsg = receivedData.getData().split(Library.DELIMITER);
+//                        clientController.setResearchFailed(failsMsg[1]);
+//                        break;
+//                    case Library.EXCEPTION:
+//                        String[] exMsg = receivedData.getData().split(Library.DELIMITER);
+//                        if (exMsg.length >= 3) {
+//                            clientController.appendErrorToResearcherLog(exMsg[0], exMsg[1], exMsg[2]);
+//                        } else {
+//                            clientController.appendErrorToUpdaterLogger("SQLException", exMsg[0]);
+//                        }
+//                        break;
                 }
                 break;
         }
@@ -172,7 +266,8 @@ public class Client implements SocketThreadListener {
 
     @Override
     public void onSocketThreadStop(SocketThread thread) {
-
+//        clientController.connectionLost();
+//        app.closeClientStage();
     }
 
     @Override
@@ -264,5 +359,21 @@ public class Client implements SocketThreadListener {
         return null;
     }
 
+    private String parseStringDate(String date) {
+        String[] arr = date.split("-");
+        String pattern = "dd.MM.uuuu";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
+        int year = Integer.parseInt(arr[0]);
+        int month = Integer.parseInt(arr[1]);
+        int day = Integer.parseInt(arr[2]);
+        LocalDate newDate = LocalDate.of(year, month, day);
+        LocalDate currDate = LocalDate.now();
+
+        if (newDate.isEqual(currDate)) return "сегодня";
+        if (newDate.getYear() == currDate.getYear()
+                && newDate.getMonth() == currDate.getMonth()
+                && newDate.getDayOfMonth() + 1 == currDate.getDayOfMonth()) return "вчера";
+        return newDate.format(formatter);
+    }
 
 }

@@ -101,7 +101,12 @@ class Grabber extends Parser implements Runnable {
         Elements innerLiquids = getInnerLiquids(url);
         if (innerLiquids != null && innerLiquids.size() > 0) {
             for (Element element1Liq : innerLiquids) {
-                Product resultLiq = parseProduct(element1Liq.attr("href"));
+                Product resultLiq = null;
+                try {
+                    resultLiq = parseProduct(element1Liq.attr("href"));
+                } catch (IOException e) {
+                    listener.onParserException(e);
+                }
                 if (resultLiq == null) continue;
                 resultLiq.setGroup(resultGroup);
                 resultLiq.setCategoryID(category.getCategoryID());

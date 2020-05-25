@@ -2,21 +2,27 @@ package main;
 
 public interface ParserEvents {
     void onGrabberReady();
-    void onUpdaterReady();
-    void onResearcherReady();
-
     void onParserException(Exception e);
+    void onUpdaterSQLException(Exception e);
+    void onGrabError();
+    void onParseSuccessfulEnd(int count);
 
+
+    //updater
     void onUpdateProductFailed(String url, int errorsCount);
     void onUpdaterCurrentProduct(int position, String name);
     void onUpdaterTotalProducts(int count);
-    void onUpdateDiffsFound(int count);
-
-    void onGrabError();
+    void onUpdateDiffsFound(int count, String differences);
     void onUpdateError();
-    void onResearchError();
+    void onUpdateSuccessfulEnd(int checked, int updated, int errors);
+    void onUpdaterReady();
+    void onUpdaterException(int id, String url, Exception e);
 
-    void onParseSuccessfulEnd(int count);
-    void onUpdateSuccessfulEnd(int checked, int updated);
+    //researcher
     void onResearchSuccessfulEnd(int count);
+    void onResearchError();
+    void onResearcherReady();
+    void onResearcherCurrentCategory(int categoriesCount, int currentCategory, String name);
+    void onResearcherCurrentGroup(int groupsCount, int currentGroup, String name);
+    void onResearcherFoundNewProduct(String name, int totalInserts);
 }

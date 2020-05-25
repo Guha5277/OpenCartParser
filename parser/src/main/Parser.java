@@ -65,7 +65,7 @@ class Parser {
         });
     }
 
-    Product parseProduct(String url) {
+    Product parseProduct(String url) throws IOException{
         Product result = null;
         String name;
         String groupName;
@@ -73,7 +73,7 @@ class Parser {
         int price;
         int categoryID;
 
-        try {
+
             Document document = Jsoup.connect(url).get();
             Elements elements = document.body().getElementsByClass("breadcrumb").select("li");
             if (elements.size() == 0) {
@@ -102,13 +102,6 @@ class Parser {
             if (result.getVolume() > 0 && result.getStrength() < 0){
                 result.setStrength(3.0);
             }
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-
         //return new Product(name, url, price, new Group(groupName, null), categoryID, volume, strength);
         return result;
     }
