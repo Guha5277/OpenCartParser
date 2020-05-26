@@ -13,7 +13,6 @@ import java.util.List;
 public class Researcher extends Parser implements Runnable {
     private final String URL;
     private final ParserEvents listener;
-    private int categoriesCount;
     private int currentCategory = 1;
     private int categoryGroupsCount;
     private int currentGroup;
@@ -43,7 +42,7 @@ public class Researcher extends Parser implements Runnable {
     }
 
     private void findNewProducts(ArrayList<Category> categories) {
-        categoriesCount = categories.size();
+        int categoriesCount = categories.size();
         ArrayList<Element> list;
         for (Category category : categories) {
             if (isInterrupt) return;
@@ -97,7 +96,7 @@ public class Researcher extends Parser implements Runnable {
 
     private void checkProduct(String url) {
         if (!isProductAlreadyInDB(url)) {
-            Product product = null;
+            Product product;
             try {
                 product = parseProduct(url);
                 String name = product.getName();

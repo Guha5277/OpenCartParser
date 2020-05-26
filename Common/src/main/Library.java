@@ -82,4 +82,12 @@ public class Library {
         DataProtocol message = new DataProtocol(new byte[]{header});
         return GSON.toJson(message);
     }
+
+    public static String warehouseToJson(){
+        return null;
+    }
+
+    public static String warehouseFromJson(){
+        return null;
+    }
 }

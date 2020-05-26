@@ -40,13 +40,11 @@ public class SocketThread extends Thread {
         }
     }
 
-    public synchronized boolean sendMessage(String msg) {
+    public synchronized void sendMessage(String msg) {
         try {
             out.writeUTF(msg);
-            return true;
         } catch (IOException e) {
             listener.onSocketThreadException(this, e);
-            return false;
         }
     }
 

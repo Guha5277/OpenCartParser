@@ -5,13 +5,13 @@ public class DataProtocol {
     private int dataLength;
     private String data;
 
-    public DataProtocol(byte[] header, String data){
+    DataProtocol(byte[] header, String data){
         this.header = header;
         this.data = data;
         dataLength = data.length();
     }
 
-    public DataProtocol(byte[] header){
+    DataProtocol(byte[] header){
         this.header = header;
         dataLength = 0;
     }

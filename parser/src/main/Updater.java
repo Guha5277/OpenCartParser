@@ -1,14 +1,12 @@
 package main;
 
-import org.jsoup.select.Elements;
-import main.product.Group;
 import main.product.Product;
 import main.product.Warehouse;
+import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 
 class Updater extends Parser implements Runnable {
     private final ParserEvents listener;
@@ -27,7 +25,7 @@ class Updater extends Parser implements Runnable {
 
     @Override
     public void run() {
-        ArrayList<Product> products = getProductsListFromDB();
+        List<Product> products = SQLClient.getAllProducts();
         if (products == null) {
             listener.onUpdateError();
             return;
@@ -36,12 +34,12 @@ class Updater extends Parser implements Runnable {
         listener.onUpdateSuccessfulEnd(current, totalUpdated, errors);
     }
 
-    private int updateProductsInfo(ArrayList<Product> products) {
+    private int updateProductsInfo(List<Product> products) {
         int overall = products.size();
         listener.onUpdaterTotalProducts(overall);
         int totalUpdated = 0;
 
-        ArrayList<Warehouse> warehousesList = getWarehousesFromDB();
+        List<Warehouse> warehousesList = SQLClient.getAllWarehouses();
 
         for (int i = startPosition; i < products.size(); i++){
             if (isInterrupt) return totalUpdated;
@@ -89,10 +87,9 @@ class Updater extends Parser implements Runnable {
     }
 
     private boolean compareProducts(Product actualProduct, Product oldProduct) {
-        boolean productHaveUpdate = false;;
+        boolean productHaveUpdate = false;
         StringBuilder diffBuild = new StringBuilder();
         int id = oldProduct.getId();
-        long time = System.currentTimeMillis();
         boolean result = false;
         String actualName = actualProduct.getName();
         String oldName = oldProduct.getName();
@@ -188,59 +185,61 @@ class Updater extends Parser implements Runnable {
             updates++;
             listener.onUpdateDiffsFound(updates, diffBuild.toString());
         }
-        time = System.currentTimeMillis() - time;
         return result;
     }
 
     private ArrayList<Product> getProductsListFromDB() {
-        ArrayList<Product> list = new ArrayList<>();
-        ResultSet set = SQLClient.getAllProducts();
-        if (set != null) {
-            try {
-                while (set.next()) {
-                    int id = set.getInt(1);
-                    String name = set.getString(2);
-                    String url = set.getString(3);
-                    int price = set.getInt(4);
-                    int category = set.getInt(5);
-                    String groupName = set.getString(6);
-                    double strength = set.getDouble(7);
-                    int volume = set.getInt(8);
+//        ArrayList<Product> list = new ArrayList<>();
+//        ResultSet set = SQLClient.getAllProducts();
 
-                    list.add(new Product(id, name, url, price, new Group(groupName, ""), category, volume, strength));
-                }
-            } catch (SQLException e) {
-                LOG.error("Error to parse a ResultSet from DB query");
-                listener.onParserException(e);
-            }
-        } else {
-            listener.onUpdateError();
-            return null;
-        }
-        return list;
+        List<Product> list = SQLClient.getAllProducts();
+        //list = SQLClient.getAllProducts();
+//        if (set != null) {
+//            try {
+//                while (set.next()) {
+//                    int id = set.getInt(1);
+//                    String name = set.getString(2);
+//                    String url = set.getString(3);
+//                    int price = set.getInt(4);
+//                    int category = set.getInt(5);
+//                    String groupName = set.getString(6);
+//                    double strength = set.getDouble(7);
+//                    int volume = set.getInt(8);
+//
+//                    list.add(new Product(id, name, url, price, new Group(groupName, ""), category, volume, strength));
+//                }
+//            } catch (SQLException e) {
+//                LOG.error("Error to parse a ResultSet from DB query");
+//                listener.onParserException(e);
+//            }
+//        } else {
+//            listener.onUpdateError();
+//            return null;
+//        }
+        return null;
     }
 
-    private ArrayList<Warehouse> getWarehousesFromDB() {
-        ArrayList<Warehouse> warehousesList = new ArrayList<>();
+//    private ArrayList<Warehouse> getWarehousesFromDB() {
+//        ArrayList<Warehouse> warehousesList = new ArrayList<>();
+//
+//        ResultSet set = SQLClient.getAllWarehouses();
+//        try {
+//            if (set != null) {
+//                while (set.next()) {
+//                    warehousesList.add(new Warehouse(set.getInt("id"), set.getString("alt_name")));
+//                }
+//            } else {
+//                listener.onUpdateError();
+//                return null;
+//            }
+//        } catch (SQLException e) {
+//            LOG.error("Failed to get Warehouses List");
+//            listener.onUpdaterSQLException(e);
+//        }
+//        return warehousesList;
+//    }
 
-        ResultSet set = SQLClient.getAllWarehouses();
-        try {
-            if (set != null) {
-                while (set.next()) {
-                    warehousesList.add(new Warehouse(set.getInt("id"), set.getString("alt_name")));
-                }
-            } else {
-                listener.onUpdateError();
-                return null;
-            }
-        } catch (SQLException e) {
-            LOG.error("Failed to get Warehouses List");
-            listener.onUpdaterSQLException(e);
-        }
-        return warehousesList;
-    }
-
-    private void updateProductRemains(ArrayList<Warehouse> warehousesList, Product product) {
+    private void updateProductRemains(List<Warehouse> warehousesList, Product product) {
         ArrayList<Warehouse> warehouses = new ArrayList<>(warehousesList);
         Elements remainsElements;
         try {

@@ -3,19 +3,13 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 
-import java.net.URL;
 import java.util.Optional;
-import java.util.ResourceBundle;
 
 
 public class ClientGUIController {
     private Client client;
     private boolean isUpdaterRun;
     private boolean isResearcherRun;
-    @FXML
-    private ResourceBundle resources;
-    @FXML
-    private URL location;
     //Header
     @FXML
     private Label lblNickname;

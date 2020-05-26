@@ -1,11 +1,13 @@
 package main;
 
+import main.product.Warehouse;
+
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 import java.util.Vector;
 
 public class Server implements ServerSocketThreadListener, SocketThreadListener, ParserEvents {
-    private ServerSocketThread server;
     private long serverStartAt;
     private int productsCount;
     private int warehousesCount;
@@ -16,7 +18,8 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private Thread updaterThread;
     private Thread researcherThread;
     private Updater updater;
-    private Grabber grabber;
+    private List<Warehouse> warehouses;
+    //private Grabber grabber;
     private Researcher researcher;
     private Vector<SocketThread> clients = new Vector<>();
 
@@ -25,14 +28,8 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     }
 
     private Server() {
-        server = new ServerSocketThread(this, "server", 5277, 200);
+        new ServerSocketThread(this, "server", 5277, 200);
         serverStartAt = System.currentTimeMillis();
-    }
-
-    public boolean stop() {
-        if (server == null || !server.isAlive()) return false;
-        server.interrupt();
-        return true;
     }
 
     //Server Events
@@ -253,8 +250,8 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     }
 
     private ClientThread findUserByNickname(String nickname) {
-        for (int i = 0; i < clients.size(); i++) {
-            ClientThread client = (ClientThread) clients.get(i);
+        for (SocketThread thread : clients) {
+            ClientThread client = (ClientThread) thread;
             if (!client.isAuthorized()) continue;
             if (client.getNickname().equals(nickname))
                 return client;
@@ -263,8 +260,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     }
 
     private void sendMsgToModersAndAdmins(String msg) {
-        for (int i = 0; i < clients.size(); i++) {
-            ClientThread client = (ClientThread) clients.get(i);
+        if (clients.size() == 0) return;
+        for (SocketThread thread : clients) {
+            ClientThread client = (ClientThread) thread;
             if (!client.isAuthorized() || client.getAccessLevel() > Library.MODERATOR) continue;
             client.sendMessage(msg);
         }
@@ -272,8 +270,8 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     private String getListOfClients() {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < clients.size(); i++) {
-            ClientThread client = (ClientThread) clients.get(i);
+        for (SocketThread thread : clients) {
+            ClientThread client = (ClientThread) thread;
             if (!client.isAuthorized()) continue;
             sb.append(client.getNickname());
             sb.append(Library.DELIMITER);
@@ -289,16 +287,12 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     @Override
     public void onUpdaterReady() {
-        if (clients.size() > 0) {
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.START));
-        }
     }
 
     @Override
     public void onResearcherReady() {
-        if (clients.size() > 0) {
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.START));
-        }
     }
 
     @Override
@@ -308,45 +302,33 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     @Override
     public void onUpdaterException(int id, String url, Exception e) {
-        if (clients.size() > 0) {
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.EXCEPTION, String.valueOf(id), url, e.getMessage()));
-        }
     }
 
     @Override
     public void onUpdaterSQLException(Exception e) {
-        if (clients.size() > 0) {
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.EXCEPTION, e.getMessage()));
-        }
     }
 
     @Override
     public void onUpdateProductFailed(String url, int errorsCount) {
-        if (clients.size() > 0) {
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.FAILED, url, String.valueOf(errorsCount)));
-        }
     }
 
     @Override
     public void onUpdateDiffsFound(int count, String differences) {
-        if (clients.size() > 0) {
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.FOUND, String.valueOf(count), differences));
-        }
     }
 
     @Override
     public void onUpdaterCurrentProduct(int position, String name) {
-        if (clients.size() > 0) {
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.CURRENT, String.valueOf(position), String.valueOf(updaterTotalProd), name));
-        }
     }
 
     @Override
     public void onUpdaterTotalProducts(int count) {
         updaterTotalProd = count;
-        if (clients.size() > 0) {
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.PRODUCTS_TOTAL, String.valueOf(count)));
-        }
     }
 
     @Override
@@ -368,7 +350,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     @Override
     public void onUpdateSuccessfulEnd(int checked, int updated, int errors) {
-        if (checked == updaterTotalProd) {
+        if (checked-1 == updaterTotalProd) {
             SQLClient.updateUpdaterLastRun(0, updated, errors);
         } else {
             SQLClient.updateUpdaterLastRun(checked, updated, errors);
@@ -378,11 +360,10 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         lastUpdatedProductPosition = SQLClient.getLastUpdatedProductPosition();
         updaterLastRunDate = SQLClient.getUpdaterLastRun();
 
-        if (clients.size() > 0) {
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.PROCESS_END, String.valueOf(checked), String.valueOf(updated)));
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_RUN, updaterLastRunDate));
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.PRODUCTS_COUNT, String.valueOf(productsCount)));
-        }
+//            sendMsgToModersAndAdmins(Library.makeJsonString(Library.PRODUCTS_COUNT, String.valueOf(productsCount)));
+            sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_POSITION, String.valueOf(lastUpdatedProductPosition)));
     }
 
     @Override
@@ -393,33 +374,25 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         researcherLastRunDate = SQLClient.getResearcherLastRun();
         productsCount = SQLClient.getProductsCount();
 
-        if (clients.size() > 0) {
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.PROCESS_END, String.valueOf(count)));
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate));
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate));
-        }
     }
 
     @Override
     public void onResearcherCurrentCategory(int categoriesCount, int currentCategory, String name) {
-        if (clients.size() > 0) {
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.CURRENT_CATEGORY, String.valueOf(currentCategory), String.valueOf(categoriesCount), name));
-        }
     }
 
     @Override
     public void onResearcherCurrentGroup(int groupsCount, int currentGroup, String name) {
-        if (clients.size() > 0) {
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.PRODUCTS_TOTAL, String.valueOf(groupsCount)));
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.CURRENT, String.valueOf(currentGroup), name));
-        }
     }
 
     @Override
     public void onResearcherFoundNewProduct(String name, int totalInserts) {
-        if (clients.size() > 0) {
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.FOUND, name, String.valueOf(totalInserts)));
-        }
     }
 
     @Override

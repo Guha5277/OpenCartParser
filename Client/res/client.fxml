@@ -344,10 +344,10 @@
                               <ComboBox prefHeight="25.0" prefWidth="171.0" />
                               <CheckBox mnemonicParsing="false" text="в наличии">
                                  <padding>
-                                    <Insets right="50.0" />
+                                    <Insets right="40.0" />
                                  </padding>
                               </CheckBox>
-                              <Button mnemonicParsing="false" text="Button" />
+                              <Button mnemonicParsing="false" text="Фильтр" />
                               <Button mnemonicParsing="false" text="Показать" />
                            </items>
                         </ToolBar>

@@ -1,10 +1,15 @@
 package main;
 
+import main.product.Group;
+import main.product.Product;
+import main.product.Warehouse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 class SQLClient {
@@ -128,7 +133,7 @@ class SQLClient {
         return true;
     }
 
-    synchronized static ResultSet getAllProducts() {
+    synchronized static ResultSet getAllProductsz() {
         String query = "SELECT * from liquids";
         try {
             return statement.executeQuery(query);
@@ -138,7 +143,34 @@ class SQLClient {
         }
     }
 
-    synchronized static ResultSet getAllWarehouses() {
+    synchronized static List<Product> getAllProducts() {
+        String query = "SELECT * from liquids";
+        try {
+            ResultSet set = statement.executeQuery(query);
+            if (set != null) {
+                List<Product> list = new ArrayList<>();
+                while (set.next()) {
+                    int id = set.getInt(1);
+                    String name = set.getString(2);
+                    String url = set.getString(3);
+                    int price = set.getInt(4);
+                    int category = set.getInt(5);
+                    String groupName = set.getString(6);
+                    double strength = set.getDouble(7);
+                    int volume = set.getInt(8);
+
+                    list.add(new Product(id, name, url, price, new Group(groupName, ""), category, volume, strength));
+                }
+                return list;
+            }
+        } catch (SQLException e) {
+            LOG.error("Error when trying to get all Products from DB" + e.getMessage());
+            return null;
+        }
+        return null;
+    }
+
+    synchronized static ResultSet getAllWarehousessss() {
         String query = "SELECT * from warehouse";
         try {
             return statement.executeQuery(query);
@@ -146,6 +178,24 @@ class SQLClient {
             LOG.error("Error when trying to get all product.Warehouse from DB" + e.getMessage());
             return null;
         }
+    }
+
+    synchronized static List<Warehouse> getAllWarehouses() {
+        String query = "SELECT * from warehouse";
+        try {
+            ResultSet set = statement.executeQuery(query);
+            List<Warehouse> warehousesList = new ArrayList<>();
+            if (set != null) {
+                while (set.next()) {
+                    warehousesList.add(new Warehouse(set.getInt("id"), set.getString("alt_name"), set.getInt("region")));
+                }
+                return warehousesList;
+            }
+        } catch (SQLException e) {
+            LOG.error("Error when trying to get all product.Warehouse from DB" + e.getMessage());
+            return null;
+        }
+        return null;
     }
 
     private static String returnValidString(String wrongString, int index) {
@@ -307,7 +357,7 @@ class SQLClient {
         }
     }
 
-    synchronized  static int getLastUpdatedProductPosition() {
+    synchronized static int getLastUpdatedProductPosition() {
         String query = "select paused_at from info where process='updater'";
         try {
             ResultSet set = statement.executeQuery(query);
