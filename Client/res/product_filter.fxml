@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="380.0" prefWidth="370.0" xmlns="http://javafx.com/javafx/8.0.181" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <ComboBox disable="true" layoutX="127.0" layoutY="14.0" prefHeight="25.0" prefWidth="219.0" promptText="Все города" />
+      <CheckBox layoutX="20.0" layoutY="18.0" mnemonicParsing="false" text="В наличии" />
+      <ComboBox disable="true" layoutX="14.0" layoutY="52.0" prefHeight="25.0" prefWidth="332.0" promptText="Все магазины" />
+      <Label layoutX="33.0" layoutY="110.0" text="Крепость от" AnchorPane.leftAnchor="20.0" />
+      <Separator layoutX="-1.0" layoutY="93.0" prefHeight="0.0" prefWidth="377.0" />
+      <Label layoutX="178.0" layoutY="110.0" text="до" AnchorPane.leftAnchor="138.0" />
+      <TextField layoutX="108.0" layoutY="106.0" prefHeight="25.0" prefWidth="39.0" AnchorPane.leftAnchor="90.0" AnchorPane.topAnchor="105.0" />
+      <TextField layoutX="198.0" layoutY="106.0" prefHeight="25.0" prefWidth="39.0" AnchorPane.leftAnchor="160.0" AnchorPane.topAnchor="105.0" />
+      <CheckBox layoutX="250.0" layoutY="110.0" mnemonicParsing="false" text="salt">
+         <font>
+            <Font size="11.0" />
+         </font>
+      </CheckBox>
+      <CheckBox layoutX="302.0" layoutY="110.0" mnemonicParsing="false" text="classic">
+         <font>
+            <Font size="11.0" />
+         </font>
+      </CheckBox>
+      <Label layoutX="33.0" layoutY="144.0" text="Объём    от" AnchorPane.leftAnchor="20.0" />
+      <TextField layoutX="108.0" layoutY="140.0" prefHeight="25.0" prefWidth="39.0" AnchorPane.leftAnchor="90.0" AnchorPane.topAnchor="140.0" />
+      <TextField layoutX="198.0" layoutY="140.0" prefHeight="25.0" prefWidth="39.0" AnchorPane.leftAnchor="160.0" AnchorPane.topAnchor="140.0" />
+      <Label layoutX="178.0" layoutY="144.0" text="до" AnchorPane.leftAnchor="138.0" />
+      <Label layoutX="33.0" layoutY="179.0" text="Цена       от" AnchorPane.leftAnchor="20.0" />
+      <TextField layoutX="108.0" layoutY="175.0" prefHeight="25.0" prefWidth="39.0" AnchorPane.leftAnchor="90.0" AnchorPane.topAnchor="175.0" />
+      <TextField layoutX="198.0" layoutY="175.0" prefHeight="25.0" prefWidth="39.0" AnchorPane.leftAnchor="160.0" />
+      <Label layoutX="178.0" layoutY="179.0" text="до" AnchorPane.leftAnchor="138.0" />
+      <Label layoutX="207.0" layoutY="110.0" text="мг/мл" AnchorPane.leftAnchor="207.0" />
+      <Label layoutX="207.0" layoutY="144.0" text="мл" AnchorPane.leftAnchor="207.0" />
+      <Label layoutX="207.0" layoutY="179.0" text="руб." AnchorPane.leftAnchor="207.0" />
+      <ComboBox layoutX="18.0" layoutY="230.0" prefHeight="25.0" prefWidth="219.0" promptText="Вкус" />
+      <Button layoutX="280.0" layoutY="230.0" mnemonicParsing="false" text="уточнить" />
+      <Separator layoutX="-1.0" layoutY="215.0" prefHeight="0.0" prefWidth="377.0" />
+      <Button defaultButton="true" layoutX="240.0" layoutY="325.0" mnemonicParsing="false" text="ОК">
+         <font>
+            <Font size="13.0" />
+         </font>
+      </Button>
+      <Button layoutX="31.0" layoutY="325.0" mnemonicParsing="false" text="Сбросить">
+         <font>
+            <Font size="13.0" />
+         </font>
+      </Button>
+      <Button layoutX="280.0" layoutY="325.0" mnemonicParsing="false" text="Отмена">
+         <font>
+            <Font size="13.0" />
+         </font>
+      </Button>
+   </children>
+</AnchorPane>

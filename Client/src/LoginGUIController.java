@@ -2,6 +2,8 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Properties;
@@ -38,8 +40,13 @@ public class LoginGUIController {
     void initialize() {
         try {
             //load settings from properties file
+            File props = new File(CONFIG);
+            if (!props.exists()){
+                props.createNewFile();
+            }
             Properties configProp = new Properties();
-            configProp.load(getClass().getResourceAsStream(CONFIG));
+//            configProp.load(getClass().getResourceAsStream(CONFIG));
+            configProp.load(new FileInputStream(props));
             boolean saveSetState = Boolean.valueOf(configProp.getProperty("saveSettings"));
 
             if (saveSetState) {
@@ -49,7 +56,6 @@ public class LoginGUIController {
                 fieldLogin.setText(login);
                 fieldPassword.setText(password);
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }

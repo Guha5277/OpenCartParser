@@ -217,7 +217,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     private void startUpdater(boolean continueUpdate) {
         if (updaterThread != null && updaterThread.isAlive()) return;
-        if (continueUpdate) {
+        if (continueUpdate && lastUpdatedProductPosition < productsCount) {
             updater = new Updater(this, lastUpdatedProductPosition);
         } else {
             updater = new Updater(this, 0);
