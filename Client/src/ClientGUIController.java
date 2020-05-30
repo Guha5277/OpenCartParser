@@ -1,8 +1,11 @@
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 
@@ -10,6 +13,8 @@ public class ClientGUIController {
     private Client client;
     private boolean isUpdaterRun;
     private boolean isResearcherRun;
+    private String prevProdSelectedItem;
+
     //Header
     @FXML
     private Label lblNickname;
@@ -108,6 +113,25 @@ public class ClientGUIController {
     @FXML
     private TextArea researcherLogArea;
 
+    //products part
+    @FXML
+    private ComboBox<String> combCity;
+    @FXML
+    private ComboBox<String> combStore;
+    @FXML
+    private CheckBox chkStock;
+    @FXML
+    private Button btnFilter;
+    @FXML
+    private Button btnShow;
+
+    @FXML
+    void initialize(){
+        combCity.getItems().add("Все города");
+        combCity.getSelectionModel().select(0);
+        combStore.getItems().add("Все магазины");
+        combStore.getSelectionModel().select(0);
+    }
 
     void setClient(Client client) {
         this.client = client;
@@ -407,6 +431,42 @@ public class ClientGUIController {
         });
     }
 
+    //products
+    void addCityToComb(String city){
+        Platform.runLater(() -> {
+            combCity.getItems().add(city);
+        });
+    }
+
+    void resetProductComboBoxes(){
+        Platform.runLater(() -> {
+            chkStock.setSelected(false);
+            combStore.setDisable(true);
+            combCity.getSelectionModel().select(0);
+            combStore.getSelectionModel().select(0);
+        });
+    }
+
+    void updateProductComboBoxes(boolean stock, String city, String store) {
+        Platform.runLater(() -> {
+            chkStock.setSelected(stock);
+            combStore.setDisable(!stock);
+            if (city == null){
+                combCity.getSelectionModel().select(0);
+                combStore.getSelectionModel().select(0);
+                return;
+            }
+            else if (!combCity.getSelectionModel().getSelectedItem().equals(city)){
+                combCity.getSelectionModel().select(city);
+                List<String> list = client.getStoreList(city);
+                if (list != null){
+                    combStore.getItems().setAll(list);
+                }
+            }
+            combStore.getSelectionModel().select(store);
+        });
+    }
+
     //common
     private Alert showDialog(Alert.AlertType type, String title, String header, String context) {
         Alert alert = new Alert(type);
@@ -427,6 +487,8 @@ public class ClientGUIController {
             showDialog(Alert.AlertType.ERROR, "Соединение прервано!", "Вы были отключены от сервера пользователем: " + nickname, "").showAndWait();
         });
     }
+
+
 
     //Event Handlers
     @FXML
@@ -501,5 +563,31 @@ public class ClientGUIController {
         }
     }
 
+    @FXML
+    void handleCityCombEvent(ActionEvent event) {
+        String selectedItem = combCity.getSelectionModel().getSelectedItem();
+        if (selectedItem == null || selectedItem.equals("Все города")){
+            combStore.setDisable(true);
+        } else {
+            combStore.setDisable(false);
+            combStore.getItems().clear();
+            combStore.getItems().addAll(client.getStoreList(selectedItem));
+
+            /*TODO разобраться с этиим костылём ниже (есть ли какие-то альтернативы для корректного ресайза выпадающего списка?)*/
+            combStore.show();
+            combStore.hide();
+            //            combStore.autosize();
+        }
+        combStore.getSelectionModel().select(0);
+    }
+
+    @FXML
+    void handleShowProductFilter(ActionEvent event) {
+            client.showProductFilterStage(chkStock.isSelected(), combCity.getItems(), combCity.getSelectionModel().getSelectedIndex(), combStore.getItems(), combStore.getSelectionModel().getSelectedIndex());
+
+//        System.out.println(combCity.getSelectionModel().getSelectedItem());
+//        System.out.println(combStore.getSelectionModel().getSelectedItem());
+        //client.showProductFilter();
+    }
 
 }

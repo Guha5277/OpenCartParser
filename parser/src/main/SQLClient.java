@@ -187,7 +187,7 @@ class SQLClient {
             List<Warehouse> warehousesList = new ArrayList<>();
             if (set != null) {
                 while (set.next()) {
-                    warehousesList.add(new Warehouse(set.getInt("id"), set.getString("alt_name"), set.getInt("region")));
+                    warehousesList.add(new Warehouse(set.getInt("id"), set.getString("alt_name"), set.getInt("region"), set.getString("city"), set.getString("address")));
                 }
                 return warehousesList;
             }

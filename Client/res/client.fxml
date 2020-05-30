@@ -334,21 +334,21 @@
                      </children>
                   </AnchorPane>
                </content></Tab>
-            <Tab fx:id="tabProducts" closable="false" text="Products">
+            <Tab fx:id="tabProducts" closable="false" disable="true" text="Products">
                <content>
                   <AnchorPane prefHeight="200.0" prefWidth="200.0">
                      <children>
                         <ToolBar prefHeight="40.0" prefWidth="600.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <items>
-                              <ComboBox prefWidth="150.0" />
-                              <ComboBox prefHeight="25.0" prefWidth="171.0" />
-                              <CheckBox mnemonicParsing="false" text="в наличии">
+                              <ComboBox fx:id="combCity" onAction="#handleCityCombEvent" prefWidth="150.0" promptText="Все города" />
+                              <ComboBox fx:id="combStore" disable="true" prefHeight="25.0" prefWidth="171.0" promptText="Все магазины" />
+                              <CheckBox fx:id="chkStock" mnemonicParsing="false" text="в наличии">
                                  <padding>
                                     <Insets right="40.0" />
                                  </padding>
                               </CheckBox>
-                              <Button mnemonicParsing="false" text="Фильтр" />
-                              <Button mnemonicParsing="false" text="Показать" />
+                              <Button fx:id="btnFilter" mnemonicParsing="false" onAction="#handleShowProductFilter" text="Фильтр" />
+                              <Button fx:id="btnShow" mnemonicParsing="false" text="Показать" />
                            </items>
                         </ToolBar>
                         <AnchorPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="40.0" />

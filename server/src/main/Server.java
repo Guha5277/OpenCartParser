@@ -114,6 +114,10 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                         sendMsgToModersAndAdmins(Library.makeJsonString(Library.USERS, Library.COUNT, String.valueOf(clients.size())));
                         sendMsgToModersAndAdmins(Library.makeJsonString(Library.USERS, Library.LIST, getListOfClients()));
                         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_POSITION, String.valueOf(lastUpdatedProductPosition)));
+
+                        //send warehouses list to client
+                        sendWarehousesList(thread);
+
                         if (updaterLastRunDate != null) {
                             client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.LAST_RUN, updaterLastRunDate));
                         }
@@ -178,6 +182,14 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                         break;
                 }
         }
+    }
+
+    private void sendWarehousesList(SocketThread thread) {
+        if (warehouses == null) warehouses = SQLClient.getAllWarehouses();
+        for (Warehouse w : warehouses){
+            thread.sendMessage(Library.warehouseToJson(w));
+        }
+        thread.sendMessage(Library.makeJsonString(Library.WAREHOUSE_LIST_END));
     }
 
     @Override

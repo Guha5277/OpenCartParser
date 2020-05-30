@@ -1,6 +1,11 @@
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,6 +20,7 @@ public class LoginGUIController {
     private final String INVALID_PORT = "Неверно указан порт!";
     private final String AUTH_ERROR = "Ошибка авторизации!";
     private final String CONFIG = "config.properties";
+//    private final String CONFIG = "\\res\\config.properties";
     private Client client;
 
     @FXML
@@ -40,13 +46,13 @@ public class LoginGUIController {
     void initialize() {
         try {
             //load settings from properties file
-            File props = new File(CONFIG);
-            if (!props.exists()){
-                props.createNewFile();
-            }
+//            File props = new File(CONFIG);
+//            if (!props.exists()){
+//                props.createNewFile();
+//            }
             Properties configProp = new Properties();
-//            configProp.load(getClass().getResourceAsStream(CONFIG));
-            configProp.load(new FileInputStream(props));
+            configProp.load(getClass().getResourceAsStream(CONFIG));
+//            configProp.load(new FileInputStream(props));
             boolean saveSetState = Boolean.valueOf(configProp.getProperty("saveSettings"));
 
             if (saveSetState) {

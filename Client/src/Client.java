@@ -1,12 +1,12 @@
-import main.DataProtocol;
-import main.Library;
-import main.SocketThread;
-import main.SocketThreadListener;
+import javafx.collections.ObservableList;
+import main.*;
+import main.product.Warehouse;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 public class Client implements SocketThreadListener {
     private ClientGUI app;
@@ -19,6 +19,8 @@ public class Client implements SocketThreadListener {
     private double updaterProgressPoint;
     private int researcherProductsTotal;
     private double researcherProgressPoint;
+    private List<Warehouse> warehouses = new ArrayList<>();
+    private Map<String, List<String>> someNewMap = new HashMap<>();
 
     Client(ClientGUI app) {
         this.app = app;
@@ -81,6 +83,38 @@ public class Client implements SocketThreadListener {
         socketThread.sendMessage(Library.makeJsonString(Library.USERS, Library.DISCONNECT, nickname));
     }
 
+    //Some old method of generate list for store ComboBox
+//    List getStoreList3(String selectedCity) {
+//        long time = System.nanoTime();
+//        List<String> list = new ArrayList<>();
+//        list.add("Все магазины");
+//        for (Warehouse w : warehouses) {
+//            if (w.getCity().equals(selectedCity)) list.add(w.getAddress());
+//        }
+//        System.out.println(System.nanoTime() - time);
+//        return list;
+//    }
+
+    List getStoreList(String selectedCity) {
+        return someNewMap.get(selectedCity);
+    }
+
+    void showProductFilterStage(boolean inStockSelected, ObservableList<String> cityList, int selectedCity, ObservableList<String> storeList, int selectedStore) {
+        app.showProductFilter(inStockSelected, cityList, selectedCity, storeList, selectedStore);
+    }
+
+    void applyProductFilter(boolean stock, String city, String store, int strengthStart, int strengthEnd, int volumeStart, int volumeEnd, int priceStart, int priceEnd) {
+        if (!stock && city == null && store == null
+                && strengthStart == -1 && strengthEnd == -1
+                && volumeStart == -1 && volumeEnd == -1
+                && priceStart == -1 && priceEnd == -1) {
+            clientController.resetProductComboBoxes();
+            return;
+        }
+
+        clientController.updateProductComboBoxes(stock, city, store);
+    }
+
     //Socket events
     @Override
     public void onSocketThreadStart(SocketThread thread, Socket socket) {
@@ -108,12 +142,41 @@ public class Client implements SocketThreadListener {
                     thread.sendMessage(Library.makeJsonString(Library.SERVER_INFO));
                 } else if (header[1] == Library.DENIED) {
                     loginController.authDenied();
-                    //thread.close();
                 } else if (header[1] == Library.MULTIPLY_SESSION) {
                     loginController.multiplySession(receivedData.getData());
-                    //thread.close();
                 }
                 break;
+            case Library.WAREHOUSE_LIST:
+                warehouses.add(Library.warehouseFromJson(receivedData.getData()));
+                break;
+
+            case Library.WAREHOUSE_LIST_END:
+                ArrayList<Warehouse> list = new ArrayList<>(warehouses);
+                int index = 0;
+                while (list.size() > 0) {
+                    int region = list.get(index).getRegion();
+                    String city = list.get(index).getCity();
+                    clientController.addCityToComb(city);
+                    Iterator<Warehouse> iterator = list.iterator();
+
+                    while (iterator.hasNext()) {
+                        Warehouse warehouse = iterator.next();
+                        if (warehouse.getRegion() == region) {
+                            if (!someNewMap.containsKey(city)) {
+                                List<String> tempList = new ArrayList<>();
+                                tempList.add("Все магазины");
+                                tempList.add(warehouse.getAddress());
+                                someNewMap.put(city, tempList);
+                            } else {
+                                someNewMap.get(city).add(warehouse.getAddress());
+                            }
+                            iterator.remove();
+                            index = 0;
+                        }
+                    }
+                }
+                break;
+
             case Library.SERVER_INFO:
                 if (header[1] == Library.DENIED) {
                     loginController.failedToGetData();
@@ -375,5 +438,6 @@ public class Client implements SocketThreadListener {
                 && newDate.getDayOfMonth() + 1 == currDate.getDayOfMonth()) return "вчера";
         return newDate.format(formatter);
     }
+
 
 }
