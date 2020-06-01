@@ -110,9 +110,35 @@ public class Client implements SocketThreadListener {
                 && priceStart == -1 && priceEnd == -1) {
             clientController.resetProductComboBoxes();
             return;
-        }
+        } else {
+            ProductRequest request;
+            if (!stock) {
+                request = new ProductRequest(false, -1, -1, strengthStart, strengthEnd, volumeStart, volumeEnd, priceStart, priceEnd);
+            } else {
+                int regionID = -1;
+                int storeID = -1;
 
-        clientController.updateProductComboBoxes(stock, city, store);
+                if (city != null) {
+                    for (Warehouse w : warehouses) {
+                        if (w.getCity().equals(city)) {
+                            regionID = w.getRegion();
+                            break;
+                        }
+                    }
+                }
+                if (store != null) {
+                    for (Warehouse w : warehouses) {
+                        if (w.getAddress().equals(store)) {
+                            storeID = w.getId();
+                            break;
+                        }
+                    }
+                }
+                request = new ProductRequest(stock, regionID, storeID, strengthStart, strengthEnd, volumeStart, volumeEnd, priceStart, priceEnd);
+            }
+            socketThread.sendMessage(Library.productRequestToJson(request));
+            clientController.updateProductComboBoxes(stock, city, store);
+        }
     }
 
     //Socket events

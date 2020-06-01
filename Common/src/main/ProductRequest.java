@@ -23,7 +23,7 @@ public class ProductRequest {
         this.priceEnd = priceEnd;
     }
 
-    public boolean isStock() {
+    public boolean isInStock() {
         return stock;
     }
 

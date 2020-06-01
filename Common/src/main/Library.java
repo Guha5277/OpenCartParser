@@ -42,19 +42,10 @@ public class Library {
     public static final byte CURRENT_CATEGORY = 27;
     public static final byte WAREHOUSE_LIST = 28;
     public static final byte WAREHOUSE_LIST_END = 29;
-    public static final byte GET = 30;
-    public static final byte PRODUCTS = 31;
-    public static final byte CITY = 32;
-    public static final byte STORE = 33;
-    public static final byte STRENGTH_START = 34;
-    public static final byte STRENGTH_END = 35;
-    public static final byte VOLUME_START = 36;
-    public static final byte VOLUME_END = 37;
-    public static final byte PRICE_START = 38;
-    public static final byte PRICE_END = 39;
-    public static final byte TASTE = 40;
+    public static final byte PRODUCT_REQUEST = 30;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+
 
 
     public static String getAuthRequest(String login, String password){
@@ -101,18 +92,22 @@ public class Library {
     }
 
     public static String warehouseToJson(Warehouse warehouse){
-        DataProtocol message = new DataProtocol(new byte[]{WAREHOUSE_LIST}, warehouse.getId() + DELIMITER + warehouse.getAltName() + DELIMITER + warehouse.getRegion() + DELIMITER + warehouse.getCity() + DELIMITER + warehouse.getAddress());
+        String data = GSON.toJson(warehouse);
+        DataProtocol message = new DataProtocol(new byte[]{WAREHOUSE_LIST}, data);
         return GSON.toJson(message);
     }
 
-    public synchronized static Warehouse warehouseFromJson(String data){
-        String[] arr = data.split(DELIMITER);
-        int id = Integer.parseInt(arr[0]);
-        String altName = arr[1];
-        int region = Integer.parseInt(arr[2]);
-        String city = arr[3];
-        String address = arr[4];
+    public static Warehouse warehouseFromJson(String data){
+        return GSON.fromJson(data, Warehouse.class);
+    }
 
-        return new Warehouse(id, altName, region, city, address);
+    public static String productRequestToJson(ProductRequest request){
+        String data = GSON.toJson(request);
+        DataProtocol message = new DataProtocol(new byte[]{PRODUCT_REQUEST}, data);
+        return GSON.toJson(message);
+    }
+
+    public static ProductRequest productRequestFromJson(String request){
+        return GSON.fromJson(request, ProductRequest.class);
     }
 }

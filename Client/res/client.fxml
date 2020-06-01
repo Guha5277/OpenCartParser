@@ -16,6 +16,8 @@
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.control.TreeTableColumn?>
+<?import javafx.scene.control.TreeTableView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
@@ -334,7 +336,7 @@
                      </children>
                   </AnchorPane>
                </content></Tab>
-            <Tab fx:id="tabProducts" closable="false" disable="true" text="Products">
+            <Tab fx:id="tabProducts" closable="false" text="Products">
                <content>
                   <AnchorPane prefHeight="200.0" prefWidth="200.0">
                      <children>
@@ -351,7 +353,30 @@
                               <Button fx:id="btnShow" mnemonicParsing="false" text="Показать" />
                            </items>
                         </ToolBar>
-                        <AnchorPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="40.0" />
+                        <AnchorPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="40.0">
+                           <children>
+                              <TreeTableView AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                <columns>
+                                  <TreeTableColumn maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="415.0" text="Жидкость">
+                                       <columns>
+                                        <TreeTableColumn prefWidth="53.0" text="ID" />
+                                          <TreeTableColumn prefWidth="85.0" text="Название" />
+                                          <TreeTableColumn prefWidth="56.0" text="Цена" />
+                                          <TreeTableColumn prefWidth="62.0" text="Крепость" />
+                                          <TreeTableColumn prefWidth="50.0" text="Объем" />
+                                          <TreeTableColumn prefWidth="68.0" text="Категория" />
+                                       </columns>
+                                    </TreeTableColumn>
+                                    <TreeTableColumn maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="260.0" text="Остаток">
+                                       <columns>
+                                          <TreeTableColumn prefWidth="47.0" text="Остаток" />
+                                          <TreeTableColumn prefWidth="103.0" text="ID склада" />
+                                          <TreeTableColumn prefWidth="75.0" text="Адресс склада" />
+                                       </columns>
+                                    </TreeTableColumn>
+                                </columns>
+                              </TreeTableView>
+                           </children></AnchorPane>
                      </children>
                   </AnchorPane>
                </content></Tab>

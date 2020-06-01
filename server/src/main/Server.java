@@ -1,9 +1,11 @@
 package main;
 
+import main.product.Product;
 import main.product.Warehouse;
 
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -181,12 +183,128 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                     case Library.BAN:
                         break;
                 }
+                break;
+            case Library.PRODUCT_REQUEST:
+                ProductRequest request = Library.productRequestFromJson(receivedData.getData());
+                List<Product> products = getProductsByFilter(request);
+                break;
         }
+    }
+
+    private List<Product> getProductsByFilter(ProductRequest request) {
+        ArrayList<Product> result = new ArrayList<>();
+        String query = makeProductQuery(request);
+        System.out.println(query);
+        SQLClient.getProductsListByQuery(query);
+        return null;
+    }
+
+    private String makeProductQuery(ProductRequest request) {
+        StringBuilder query = new StringBuilder();
+        boolean hasWhere = false;
+        boolean stockRequired = request.isInStock();
+        String delimiter;
+        if (stockRequired) {
+            delimiter = " AND";
+            int regionID = request.getRegionID();
+            int storeID = request.getStoreID();
+
+            boolean singleStore = false;
+            String stockFilter;
+
+            if (regionID == -1 && storeID == -1){
+                stockFilter = " AND product_remains.remains > 0";
+            } else if (storeID != -1) {
+                stockFilter = " AND product_remains.remains > 0 AND warehouse.id=" + storeID;
+                singleStore = true;
+            } else {
+                stockFilter = " AND product_remains.remains > 0 AND warehouse.region=" + regionID;
+            }
+
+            if (singleStore){
+                query.append("SELECT liquids.id, liquids.name, liquids.price, liquids.volume, liquids.strength, liquids.category, product_remains.remains from product_remains ");
+            } else {
+                query.append("SELECT liquids.id, liquids.name, liquids.price, liquids.volume, liquids.strength, liquids.category, product_remains.remains, warehouse.id, warehouse.address from product_remains ");
+            }
+            query.append("inner join warehouse on product_remains.warehouse_id = warehouse.id ");
+            query.append("inner join liquids on product_remains.product_id = liquids.id");
+
+        } else {
+            delimiter = " WHERE";
+            query.append("SELECT id, name, price, volume, strength, category, url from liquids");
+        }
+        int strengthStart = request.getStrengthStart();
+        int strengthEnd = request.getStrengthEnd();
+        int volumeStart = request.getVolumeStart();
+        int volumeEnd = request.getVolumeEnd();
+        int priceStart = request.getPriceStart();
+        int priceEnd = request.getPriceEnd();
+
+        if (strengthStart > -1 || strengthEnd > -1) {
+            hasWhere = true;
+            query.append(delimiter);
+            query.append(" strength");
+            if (strengthStart > -1 && strengthEnd > -1) {
+                query.append(" BETWEEN ");
+                query.append(strengthStart);
+                query.append(" AND ");
+                query.append(strengthEnd);
+            } else if (strengthStart > -1) {
+                query.append(" > ");
+                query.append(strengthStart);
+            } else {
+                query.append(" < ");
+                query.append(strengthEnd);
+            }
+        }
+
+        if (volumeStart > -1 || volumeEnd > -1) {
+            if (hasWhere) {
+                query.append(" AND volume");
+            } else {
+                hasWhere = true;
+                query.append(" WHERE volume");
+            }
+            if (volumeStart > -1 && volumeEnd > -1) {
+                query.append(" BETWEEN ");
+                query.append(volumeStart);
+                query.append(" AND ");
+                query.append(volumeEnd);
+            } else if (volumeStart > -1) {
+                query.append(" > ");
+                query.append(volumeStart);
+            } else {
+                query.append(" < ");
+                query.append(volumeEnd);
+            }
+        }
+
+        if (priceStart > -1 || priceEnd > -1) {
+            if (hasWhere) {
+                query.append(" AND price");
+            } else {
+                query.append(" WHERE price");
+            }
+            if (priceStart > -1 && priceEnd > -1) {
+                query.append(" BETWEEN ");
+                query.append(priceStart);
+                query.append(" AND ");
+                query.append(priceEnd);
+            } else if (priceStart > -1) {
+                query.append(" > ");
+                query.append(priceStart);
+            } else {
+                query.append(" < ");
+                query.append(priceEnd);
+            }
+        }
+
+        return query.toString();
     }
 
     private void sendWarehousesList(SocketThread thread) {
         if (warehouses == null) warehouses = SQLClient.getAllWarehouses();
-        for (Warehouse w : warehouses){
+        for (Warehouse w : warehouses) {
             thread.sendMessage(Library.warehouseToJson(w));
         }
         thread.sendMessage(Library.makeJsonString(Library.WAREHOUSE_LIST_END));
@@ -299,12 +417,12 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     @Override
     public void onUpdaterReady() {
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.START));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.START));
     }
 
     @Override
     public void onResearcherReady() {
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.START));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.START));
     }
 
     @Override
@@ -314,33 +432,33 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     @Override
     public void onUpdaterException(int id, String url, Exception e) {
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.EXCEPTION, String.valueOf(id), url, e.getMessage()));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.EXCEPTION, String.valueOf(id), url, e.getMessage()));
     }
 
     @Override
     public void onUpdaterSQLException(Exception e) {
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.EXCEPTION, e.getMessage()));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.EXCEPTION, e.getMessage()));
     }
 
     @Override
     public void onUpdateProductFailed(String url, int errorsCount) {
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.FAILED, url, String.valueOf(errorsCount)));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.FAILED, url, String.valueOf(errorsCount)));
     }
 
     @Override
     public void onUpdateDiffsFound(int count, String differences) {
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.FOUND, String.valueOf(count), differences));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.FOUND, String.valueOf(count), differences));
     }
 
     @Override
     public void onUpdaterCurrentProduct(int position, String name) {
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.CURRENT, String.valueOf(position), String.valueOf(updaterTotalProd), name));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.CURRENT, String.valueOf(position), String.valueOf(updaterTotalProd), name));
     }
 
     @Override
     public void onUpdaterTotalProducts(int count) {
         updaterTotalProd = count;
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.PRODUCTS_TOTAL, String.valueOf(count)));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.PRODUCTS_TOTAL, String.valueOf(count)));
     }
 
     @Override
@@ -354,7 +472,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     }
 
 
-
     @Override
     public void onParseSuccessfulEnd(int count) {
 
@@ -362,7 +479,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     @Override
     public void onUpdateSuccessfulEnd(int checked, int updated, int errors) {
-        if (checked-1 == updaterTotalProd) {
+        if (checked - 1 == updaterTotalProd) {
             SQLClient.updateUpdaterLastRun(0, updated, errors);
         } else {
             SQLClient.updateUpdaterLastRun(checked, updated, errors);
@@ -372,10 +489,10 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         lastUpdatedProductPosition = SQLClient.getLastUpdatedProductPosition();
         updaterLastRunDate = SQLClient.getUpdaterLastRun();
 
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.PROCESS_END, String.valueOf(checked), String.valueOf(updated)));
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_RUN, updaterLastRunDate));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.PROCESS_END, String.valueOf(checked), String.valueOf(updated)));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_RUN, updaterLastRunDate));
 //            sendMsgToModersAndAdmins(Library.makeJsonString(Library.PRODUCTS_COUNT, String.valueOf(productsCount)));
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_POSITION, String.valueOf(lastUpdatedProductPosition)));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_POSITION, String.valueOf(lastUpdatedProductPosition)));
     }
 
     @Override
@@ -386,25 +503,25 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         researcherLastRunDate = SQLClient.getResearcherLastRun();
         productsCount = SQLClient.getProductsCount();
 
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.PROCESS_END, String.valueOf(count)));
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate));
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.PROCESS_END, String.valueOf(count)));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate));
     }
 
     @Override
     public void onResearcherCurrentCategory(int categoriesCount, int currentCategory, String name) {
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.CURRENT_CATEGORY, String.valueOf(currentCategory), String.valueOf(categoriesCount), name));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.CURRENT_CATEGORY, String.valueOf(currentCategory), String.valueOf(categoriesCount), name));
     }
 
     @Override
     public void onResearcherCurrentGroup(int groupsCount, int currentGroup, String name) {
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.PRODUCTS_TOTAL, String.valueOf(groupsCount)));
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.CURRENT, String.valueOf(currentGroup), name));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.PRODUCTS_TOTAL, String.valueOf(groupsCount)));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.CURRENT, String.valueOf(currentGroup), name));
     }
 
     @Override
     public void onResearcherFoundNewProduct(String name, int totalInserts) {
-            sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.FOUND, name, String.valueOf(totalInserts)));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.FOUND, name, String.valueOf(totalInserts)));
     }
 
     @Override

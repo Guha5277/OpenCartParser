@@ -7,8 +7,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.Border;
 
 public class ProductFilterGuiController {
     Client client;
@@ -46,6 +44,8 @@ public class ProductFilterGuiController {
     private Button btnCancel;
 
     private boolean stateInitialize;
+    private boolean wrongProductFilterRange;
+    private int wrongProductFilterRangeCount;
     private boolean stock;
     private boolean nicSalt;
     private boolean nicClassic;
@@ -62,12 +62,12 @@ public class ProductFilterGuiController {
 
     @FXML
     void initialize() {
-        fieldStrengthStart.textProperty().addListener(new FieldListener(fieldStrengthStart, fieldStrengthEnd, true));
-        fieldStrengthEnd.textProperty().addListener(new FieldListener(fieldStrengthEnd, fieldStrengthStart, false));
-        fieldVolumeStart.textProperty().addListener(new FieldListener(fieldVolumeStart, fieldVolumeEnd, true));
-        fieldVolumeEnd.textProperty().addListener(new FieldListener(fieldVolumeEnd, fieldVolumeStart, false));
-        fieldPriceStart.textProperty().addListener(new FieldListener(fieldPriceStart, fieldPriceEnd, true));
-        fieldPriceEnd.textProperty().addListener(new FieldListener(fieldPriceEnd, fieldPriceStart, false));
+        fieldStrengthStart.textProperty().addListener(new FieldListener(fieldStrengthStart));
+        fieldStrengthEnd.textProperty().addListener(new FieldListener(fieldStrengthEnd));
+        fieldVolumeStart.textProperty().addListener(new FieldListener(fieldVolumeStart));
+        fieldVolumeEnd.textProperty().addListener(new FieldListener(fieldVolumeEnd));
+        fieldPriceStart.textProperty().addListener(new FieldListener(fieldPriceStart));
+        fieldPriceEnd.textProperty().addListener(new FieldListener(fieldPriceEnd));
         defaultFieldStyle = fieldStrengthStart.getStyle();
     }
 
@@ -87,7 +87,7 @@ public class ProductFilterGuiController {
     }
 
     private void checkStatement() {
-        if (!stateInitialize) return;
+        if (!stateInitialize || wrongProductFilterRange) return;
         btnOk.setDisable(!(!stock == chkStock.isSelected() ||
                 !city.equals(combCity.getSelectionModel().getSelectedItem()) ||
                 !store.equals(combStore.getSelectionModel().getSelectedItem()) ||
@@ -117,12 +117,61 @@ public class ProductFilterGuiController {
         checkStatement();
     }
 
+    private void checkRanges() {
+        String txtStrStart = fieldStrengthStart.getText();
+        String txtStrEnd = fieldStrengthEnd.getText();
+        String txtVolumeStart = fieldVolumeStart.getText();
+        String txtVolumeEnd = fieldVolumeEnd.getText();
+        String txtPriceStart = fieldPriceStart.getText();
+        String txtPriceEnd = fieldPriceEnd.getText();
+
+        int wrongRangesCount = 0;
+
+        if (!txtStrStart.equals("") && !txtStrEnd.equals("")) {
+            if (Integer.parseInt(txtStrStart) > Integer.parseInt(txtStrEnd)) {
+                wrongRange(fieldStrengthStart, fieldStrengthEnd);
+                wrongRangesCount++;
+            } else {
+                validRange(fieldStrengthStart, fieldStrengthEnd);
+            }
+        }
+        if (!txtVolumeStart.equals("") && !txtVolumeEnd.equals("")) {
+            if (Integer.parseInt(txtVolumeStart) > Integer.parseInt(txtVolumeEnd)) {
+                wrongRange(fieldVolumeStart, fieldVolumeEnd);
+                wrongRangesCount++;
+            } else {
+                validRange(fieldVolumeStart, fieldVolumeEnd);
+            }
+        }
+        if (!txtPriceStart.equals("") && !txtPriceEnd.equals("")) {
+            if (Integer.parseInt(txtPriceStart) > Integer.parseInt(txtPriceEnd)) {
+                wrongRange(fieldPriceStart, fieldPriceEnd);
+                wrongRangesCount++;
+            } else {
+                validRange(fieldPriceStart, fieldPriceEnd);
+            }
+        }
+        wrongProductFilterRange = wrongRangesCount > 0;
+        btnOk.setDisable(wrongProductFilterRange);
+    }
+
+    private void wrongRange(TextField field, TextField field2) {
+        field.setStyle("-fx-text-fill: red; -fx-border-color: red;");
+        field2.setStyle("-fx-text-fill: red; -fx-border-color: red;");
+    }
+
+    private void validRange(TextField field, TextField field2) {
+        field.setStyle(defaultFieldStyle);
+        field2.setStyle(defaultFieldStyle);
+    }
+
+
     @FXML
     void handleCheckBoxStock(ActionEvent event) {
         boolean enable = chkStock.isSelected();
         combCity.setDisable(!enable);
         combStore.setDisable(combCity.getSelectionModel().getSelectedItem().equals("Все города") || !enable);
-        if (enable != stock) {
+        if (enable != stock && !wrongProductFilterRange) {
             btnOk.setDisable(false);
         } else {
             checkStatement();
@@ -139,7 +188,7 @@ public class ProductFilterGuiController {
             combStore.getItems().clear();
             combStore.getItems().addAll(client.getStoreList(selectedItem));
 
-            if (stateInitialize && !city.equals(selectedItem)) {
+            if (stateInitialize && !city.equals(selectedItem) && !wrongProductFilterRange) {
                 btnOk.setDisable(false);
             } else {
                 checkStatement();
@@ -157,7 +206,7 @@ public class ProductFilterGuiController {
     @FXML
     void handleStoreCombEvent(ActionEvent event) {
         String selectedItem = combStore.getSelectionModel().getSelectedItem();
-        if (stateInitialize && !store.equals(selectedItem)) {
+        if (stateInitialize && !store.equals(selectedItem) && !wrongProductFilterRange) {
             btnOk.setDisable(false);
         } else {
             checkStatement();
@@ -168,7 +217,7 @@ public class ProductFilterGuiController {
     void handleCheckBoxNicSalt(ActionEvent event) {
         boolean selected = chkNicSalt.isSelected();
         if (selected) chkNicClassic.setSelected(false);
-        if (stateInitialize && !nicSalt == selected) {
+        if (stateInitialize && !nicSalt == selected && !wrongProductFilterRange) {
             btnOk.setDisable(false);
         } else {
             checkStatement();
@@ -179,7 +228,7 @@ public class ProductFilterGuiController {
     void handleCheckBoxNicClassic(ActionEvent event) {
         boolean selected = chkNicClassic.isSelected();
         if (selected) chkNicSalt.setSelected(false);
-        if (stateInitialize && !nicClassic == selected) {
+        if (stateInitialize && !nicClassic == selected && !wrongProductFilterRange) {
             btnOk.setDisable(false);
         } else {
             checkStatement();
@@ -188,6 +237,7 @@ public class ProductFilterGuiController {
 
     @FXML
     void handleDiscardButton() {
+        wrongProductFilterRange = false;
         chkStock.setSelected(false);
         combCity.getSelectionModel().select(0);
         combCity.setDisable(true);
@@ -202,6 +252,12 @@ public class ProductFilterGuiController {
         fieldVolumeEnd.setText("");
         fieldPriceStart.setText("");
         fieldPriceEnd.setText("");
+        fieldStrengthStart.setStyle(defaultFieldStyle);
+        fieldStrengthEnd.setStyle(defaultFieldStyle);
+        fieldVolumeStart.setStyle(defaultFieldStyle);
+        fieldVolumeEnd.setStyle(defaultFieldStyle);
+        fieldPriceStart.setStyle(defaultFieldStyle);
+        fieldPriceEnd.setStyle(defaultFieldStyle);
         btnOk.setDisable(false);
         //checkStatement();
     }
@@ -215,24 +271,22 @@ public class ProductFilterGuiController {
             cityName = combCity.getSelectionModel().getSelectedItem();
             storeName = combStore.getSelectionModel().getSelectedItem();
         }
-        String strengthStart = fieldStrengthStart.getText();
-        String strengthEnd = fieldStrengthEnd.getText();
-        String volumeStart = fieldVolumeStart.getText();
-        String volumeEnd = fieldVolumeEnd.getText();
-        String priceStart = fieldPriceStart.getText();
-        String priceEnd = fieldPriceEnd.getText();
+        String txtStrengthStart = fieldStrengthStart.getText();
+        String txtStrengthEnd = fieldStrengthEnd.getText();
+        String txtVolumeStart = fieldVolumeStart.getText();
+        String txtVolumeEnd = fieldVolumeEnd.getText();
+        String txtPriceStart = fieldPriceStart.getText();
+        String txtPriceEnd = fieldPriceEnd.getText();
 
-        int strengthS = strengthStart.equals("") ? -1 : Integer.parseInt(strengthStart);
-        int strengthE = strengthEnd.equals("") ? -1 : Integer.parseInt(strengthEnd);
-        int volumeS = volumeStart.equals("") ? -1 : Integer.parseInt(volumeStart);
-        int volumeE = volumeEnd.equals("") ? -1 : Integer.parseInt(volumeEnd);
-        int priceS = priceStart.equals("") ? -1 : Integer.parseInt(priceStart);
-        int priceE = priceEnd.equals("") ? -1 : Integer.parseInt(priceEnd);
+        int strengthStart = txtStrengthStart.equals("") ? -1 : Integer.parseInt(txtStrengthStart);
+        int strengthEnd = txtStrengthEnd.equals("") ? -1 : Integer.parseInt(txtStrengthEnd);
+        int volumeStart = txtVolumeStart.equals("") ? -1 : Integer.parseInt(txtVolumeStart);
+        int volumeEnd = txtVolumeEnd.equals("") ? -1 : Integer.parseInt(txtVolumeEnd);
+        int priceStart = txtPriceStart.equals("") ? -1 : Integer.parseInt(txtPriceStart);
+        int priceEnd = txtPriceEnd.equals("") ? -1 : Integer.parseInt(txtPriceEnd);
 
-        /*TODO taste comb*/
         /*TODO nicotine checkboxes*/
-        client.applyProductFilter(stockChecked, cityName, storeName, strengthS, strengthE, volumeS, volumeE, priceS, priceE);
-        //updateStatement();
+        client.applyProductFilter(stockChecked, cityName, storeName, strengthStart, strengthEnd, volumeStart, volumeEnd, priceStart, priceEnd);
         fieldStrengthEnd.getScene().getWindow().hide();
     }
 
@@ -243,13 +297,9 @@ public class ProductFilterGuiController {
 
     class FieldListener implements ChangeListener<String> {
         TextField field;
-        TextField fieldToCompare;
-        boolean lowerValue;
 
-        FieldListener(TextField field, TextField fieldToCompare, boolean lowerValue) {
+        FieldListener(TextField field) {
             this.field = field;
-            this.fieldToCompare = fieldToCompare;
-            this.lowerValue = lowerValue;
         }
 
         @Override
@@ -257,38 +307,7 @@ public class ProductFilterGuiController {
             if (!newValue.matches("\\d*")) {
                 field.setText(newValue.replaceAll("[^\\d]", ""));
             }
-            String fieldSelf = field.getText();
-            String fieldComp = fieldToCompare.getText();
-
-            if (!fieldSelf.equals("") && !fieldComp.equals("")) {
-                int intField = Integer.parseInt(fieldSelf);
-                int intComp = Integer.parseInt(fieldComp);
-                if (lowerValue) {
-                    if (intField > intComp) {
-                        wrongRange();
-                    } else {
-                        validRange();
-                    }
-                } else {
-                    if (intField < intComp) {
-                        wrongRange();
-                    } else {
-                        validRange();
-                    }
-                }
-            }
-        }
-
-        void wrongRange() {
-            btnOk.setDisable(true);
-            field.setStyle("-fx-text-fill: red; -fx-border-color: red;");
-            fieldToCompare.setStyle("-fx-text-fill: red; -fx-border-color: red;");
-        }
-
-        void validRange() {
-            field.setStyle(defaultFieldStyle);
-            fieldToCompare.setStyle(defaultFieldStyle);
-            checkStatement();
+            checkRanges();
         }
     }
 }

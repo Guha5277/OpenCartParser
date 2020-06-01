@@ -1,5 +1,8 @@
 package main.product;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Product {
     private String name;
     private final String URL;
@@ -10,6 +13,7 @@ public class Product {
     private final int price;
     private int volume;
     private double strength;
+    private List<Warehouse> remains;
 
     public Product(String name, String URL, int price) {
         this.name = name;
@@ -93,6 +97,13 @@ public class Product {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void addRemain(Warehouse warehouse){
+        if (remains == null){
+            remains = new ArrayList<>();
+        }
+        remains.add(warehouse);
     }
 
     @Override
