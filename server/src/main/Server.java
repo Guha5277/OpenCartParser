@@ -37,7 +37,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     //Server Events
     @Override
     public void onThreadStart(ServerSocketThread thread) {
-
+        System.out.println("Server Socket Thread Start");
     }
 
     @Override
@@ -228,6 +228,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
             }
             query.append("inner join warehouse on product_remains.warehouse_id = warehouse.id ");
             query.append("inner join liquids on product_remains.product_id = liquids.id");
+            query.append(stockFilter);
 
         } else {
             delimiter = " WHERE";

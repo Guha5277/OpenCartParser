@@ -160,39 +160,50 @@ class SQLClient {
         return null;
     }
 
-    synchronized static List<Product> getProductsListByQuery(String query){
+    synchronized static List<Product> getProductsListByQuery(String query) {
         try {
             ResultSet set = statement.executeQuery(query);
 
             if (set != null) {
-                 int columnCount = set.getMetaData().getColumnCount();
-                 String label = set.getMetaData().getColumnLabel(7);
-                 if (columnCount > 7){
-                     while (set.next()) {
-                         System.out.print(set.getInt(1) + ", ");
-                         System.out.print(set.getString(2) + ", ");
-                         System.out.print(set.getInt(3) + ", ");
-                         System.out.print(set.getInt(4) + ", ");
-                         System.out.print(set.getInt(5) + ", ");
-                         System.out.print(set.getInt(6) + ", ");
-                         System.out.print(set.getInt(7) + ", ");
-                         System.out.print(set.getInt(8) + ", ");
-                         System.out.print(set.getString(9) + "\n");
-                     }
-                 } else {
-                     while (set.next()) {
-                         System.out.print(set.getInt(1) + ", ");
-                         System.out.print(set.getString(2) + ", ");
-                         System.out.print(set.getInt(3) + ", ");
-                         System.out.print(set.getInt(4) + ", ");
-                         System.out.print(set.getInt(5) + ", ");
-                         System.out.print(set.getInt(6) + ", ");
-                         System.out.print(set.getString(7) + "\n");
-                     }
-                 }
+                int columnCount = set.getMetaData().getColumnCount();
+                String label = set.getMetaData().getColumnLabel(7);
+                if (columnCount > 7) {
+                    while (set.next()) {
+                        System.out.print(set.getInt(1) + ", ");
+                        System.out.print(set.getString(2) + ", ");
+                        System.out.print(set.getInt(3) + ", ");
+                        System.out.print(set.getInt(4) + ", ");
+                        System.out.print(set.getInt(5) + ", ");
+                        System.out.print(set.getInt(6) + ", ");
+                        System.out.print(set.getInt(7) + ", ");
+                        System.out.print(set.getInt(8) + ", ");
+                        System.out.print(set.getString(9) + "\n");
+                    }
+                } else if (label.equals("url")) {
+                    while (set.next()) {
+                        System.out.print(set.getInt(1) + ", ");
+                        System.out.print(set.getString(2) + ", ");
+                        System.out.print(set.getInt(3) + ", ");
+                        System.out.print(set.getInt(4) + ", ");
+                        System.out.print(set.getInt(5) + ", ");
+                        System.out.print(set.getInt(6) + ", ");
+                        System.out.print(set.getString(7) + "\n");
+                    }
+                } else {
+                    while (set.next()) {
+                        System.out.print(set.getInt(1) + ", ");
+                        System.out.print(set.getString(2) + ", ");
+                        System.out.print(set.getInt(3) + ", ");
+                        System.out.print(set.getInt(4) + ", ");
+                        System.out.print(set.getInt(5) + ", ");
+                        System.out.print(set.getInt(6) + ", ");
+                        System.out.print(set.getString(7) + "\n");
+                    }
+                }
 
             }
         } catch (SQLException e) {
+            e.printStackTrace();
             return null;
         }
         return null;
