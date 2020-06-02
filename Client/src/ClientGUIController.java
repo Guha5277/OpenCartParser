@@ -2,9 +2,11 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.TreeItemPropertyValueFactory;
 import javafx.scene.input.MouseEvent;
+import main.product.Product;
+import main.product.Warehouse;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -124,13 +126,73 @@ public class ClientGUIController {
     private Button btnFilter;
     @FXML
     private Button btnShow;
+    @FXML
+    private TreeTableView<Product> productTreeTableView;
+    @FXML
+    private TreeTableColumn<Product, Integer> columnProdID;
+    @FXML
+    private TreeTableColumn<Product, String> colProductName;
+    @FXML
+    private TreeTableColumn<Product, Integer> colProductPrice;
+    @FXML
+    private TreeTableColumn<Product, Integer> colProductStrength;
+    @FXML
+    private TreeTableColumn<Product, Integer> colProductVolume;
+    @FXML
+    private TreeTableColumn<Product, Integer> colProductCategory;
+    @FXML
+    private TreeTableColumn<Product, Integer> colProductUrl;
+    @FXML
+    private TreeTableColumn<Warehouse, Integer> colRemains;
+    @FXML
+    private TreeTableColumn<Warehouse, Integer> colWarehouseId;
+    @FXML
+    private TreeTableColumn<Warehouse, String> colWarehouseName;
+
 
     @FXML
-    void initialize(){
+    void initialize() {
         combCity.getItems().add("Все города");
         combCity.getSelectionModel().select(0);
         combStore.getItems().add("Все магазины");
         combStore.getSelectionModel().select(0);
+
+        Product product = new Product(0, "Hello", "http://", 100, 1, 120, 3.0d);
+        Product product2 = new Product(0, "Hello2", "http://", 100, 1, 120, 3.0d);
+        Product product3 = new Product(0, "Hello3", "http://", 100, 1, 120, 3.0d);
+        Product product4 = new Product(0, "Hello4", "http://", 100, 1, 120, 3.0d);
+        Product product5 = new Product(0, "Hello3", "http://", 100, 1, 120, 3.0d);
+        Product product6 = new Product(0, "Hello4", "http://", 100, 1, 120, 3.0d);
+
+//        Warehouse warehouse = new Warehouse(1, "Выборная 1312312", 10);
+//        Warehouse warehouse2 = new Warehouse(2, "Восход 3000", 4);
+//        Warehouse warehouse3 = new Warehouse(6, "Высоцкого 2131", 9);
+
+        TreeItem<Product> rootItem = new TreeItem<>(product);
+        TreeItem<Product> item2 = new TreeItem<>(product2);
+        TreeItem<Product> item3 = new TreeItem<>(product3);
+        TreeItem<Product> item4 = new TreeItem<>(product4);
+
+        TreeItem<Product> item5 = new TreeItem<>(product5);
+        TreeItem<Product> item6 = new TreeItem<>(product6);
+        item2.getChildren().addAll(item5, item6);
+
+        rootItem.getChildren().addAll(item2, item3, item4);
+
+        productTreeTableView.setRoot(rootItem);
+        productTreeTableView.setShowRoot(false);
+
+        columnProdID.setCellValueFactory(new TreeItemPropertyValueFactory<>("id"));
+        colProductName.setCellValueFactory(new TreeItemPropertyValueFactory<>("name"));
+        colProductPrice.setCellValueFactory(new TreeItemPropertyValueFactory<>("price"));
+        colProductStrength.setCellValueFactory(new TreeItemPropertyValueFactory<>("strength"));
+        colProductVolume.setCellValueFactory(new TreeItemPropertyValueFactory<>("volume"));
+        colProductCategory.setCellValueFactory(new TreeItemPropertyValueFactory<>("categoryID"));
+        colProductUrl.setCellValueFactory(new TreeItemPropertyValueFactory<>("URL"));
+//        colRemains.setCellValueFactory(new TreeItemPropertyValueFactory<>("remains"));
+//        colWarehouseId.setCellValueFactory(new TreeItemPropertyValueFactory<>("id"));
+//        colWarehouseName.setCellValueFactory(new TreeItemPropertyValueFactory<>("altName"));
+
     }
 
     void setClient(Client client) {
@@ -405,11 +467,11 @@ public class ClientGUIController {
         });
     }
 
-    void setResearcherTotalFounds(String count){
+    void setResearcherTotalFounds(String count) {
         /*TODO*/
     }
 
-    void appendResearcherFoundProd(String diff){
+    void appendResearcherFoundProd(String diff) {
         Platform.runLater(() -> {
             if (researcherLogArea.isDisable()) researcherLogArea.setDisable(false);
             researcherLogArea.appendText(diff + "\n");
@@ -432,13 +494,13 @@ public class ClientGUIController {
     }
 
     //products
-    void addCityToComb(String city){
+    void addCityToComb(String city) {
         Platform.runLater(() -> {
             combCity.getItems().add(city);
         });
     }
 
-    void resetProductComboBoxes(){
+    void resetProductComboBoxes() {
         Platform.runLater(() -> {
             chkStock.setSelected(false);
             combStore.setDisable(true);
@@ -451,15 +513,14 @@ public class ClientGUIController {
         Platform.runLater(() -> {
             chkStock.setSelected(stock);
             combStore.setDisable(!stock);
-            if (city == null){
+            if (city == null) {
                 combCity.getSelectionModel().select(0);
                 combStore.getSelectionModel().select(0);
                 return;
-            }
-            else if (!combCity.getSelectionModel().getSelectedItem().equals(city)){
+            } else if (!combCity.getSelectionModel().getSelectedItem().equals(city)) {
                 combCity.getSelectionModel().select(city);
                 List<String> list = client.getStoreList(city);
-                if (list != null){
+                if (list != null) {
                     combStore.getItems().setAll(list);
                 }
             }
@@ -487,7 +548,6 @@ public class ClientGUIController {
             showDialog(Alert.AlertType.ERROR, "Соединение прервано!", "Вы были отключены от сервера пользователем: " + nickname, "").showAndWait();
         });
     }
-
 
 
     //Event Handlers
@@ -566,7 +626,7 @@ public class ClientGUIController {
     @FXML
     void handleCityCombEvent(ActionEvent event) {
         String selectedItem = combCity.getSelectionModel().getSelectedItem();
-        if (selectedItem == null || selectedItem.equals("Все города")){
+        if (selectedItem == null || selectedItem.equals("Все города")) {
             combStore.setDisable(true);
         } else {
             combStore.setDisable(false);
@@ -583,7 +643,7 @@ public class ClientGUIController {
 
     @FXML
     void handleShowProductFilter(ActionEvent event) {
-            client.showProductFilterStage(chkStock.isSelected(), combCity.getItems(), combCity.getSelectionModel().getSelectedIndex(), combStore.getItems(), combStore.getSelectionModel().getSelectedIndex());
+        client.showProductFilterStage(chkStock.isSelected(), combCity.getItems(), combCity.getSelectionModel().getSelectedIndex(), combStore.getItems(), combStore.getSelectionModel().getSelectedIndex());
 
 //        System.out.println(combCity.getSelectionModel().getSelectedItem());
 //        System.out.println(combStore.getSelectionModel().getSelectedItem());

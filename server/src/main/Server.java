@@ -222,9 +222,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
             }
 
             if (singleStore){
-                query.append("SELECT liquids.id, liquids.name, liquids.price, liquids.volume, liquids.strength, liquids.category, product_remains.remains from product_remains ");
+                query.append("SELECT liquids.id, liquids.name, liquids.price, liquids.volume, liquids.strength, liquids.category, liquids.url, product_remains.remains from product_remains ");
             } else {
-                query.append("SELECT liquids.id, liquids.name, liquids.price, liquids.volume, liquids.strength, liquids.category, product_remains.remains, warehouse.id, warehouse.address from product_remains ");
+                query.append("SELECT liquids.id, liquids.name, liquids.price, liquids.volume, liquids.strength, liquids.category, liquids.url, product_remains.remains, warehouse.id, warehouse.address from product_remains ");
             }
             query.append("inner join warehouse on product_remains.warehouse_id = warehouse.id ");
             query.append("inner join liquids on product_remains.product_id = liquids.id");

@@ -355,22 +355,23 @@
                         </ToolBar>
                         <AnchorPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="40.0">
                            <children>
-                              <TreeTableView AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                              <TreeTableView fx:id="productTreeTableView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                 <columns>
                                   <TreeTableColumn maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="415.0" text="Жидкость">
                                        <columns>
-                                        <TreeTableColumn prefWidth="53.0" text="ID" />
-                                          <TreeTableColumn prefWidth="85.0" text="Название" />
-                                          <TreeTableColumn prefWidth="56.0" text="Цена" />
-                                          <TreeTableColumn prefWidth="62.0" text="Крепость" />
-                                          <TreeTableColumn prefWidth="50.0" text="Объем" />
-                                          <TreeTableColumn prefWidth="68.0" text="Категория" />
+                                        <TreeTableColumn fx:id="columnProdID" prefWidth="53.0" text="ID" />
+                                          <TreeTableColumn fx:id="colProductName" prefWidth="85.0" text="Название" />
+                                          <TreeTableColumn fx:id="colProductPrice" prefWidth="56.0" text="Цена" />
+                                          <TreeTableColumn fx:id="colProductStrength" prefWidth="62.0" text="Крепость" />
+                                          <TreeTableColumn fx:id="colProductVolume" prefWidth="50.0" text="Объем" />
+                                          <TreeTableColumn fx:id="colProductCategory" prefWidth="68.0" text="Категория" />
+                                          <TreeTableColumn fx:id="colProductUrl" prefWidth="68.0" text="URL" />
                                        </columns>
                                     </TreeTableColumn>
                                     <TreeTableColumn maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="260.0" text="Остаток">
                                        <columns>
-                                          <TreeTableColumn prefWidth="47.0" text="Остаток" />
-                                          <TreeTableColumn prefWidth="103.0" text="ID склада" />
+                                          <TreeTableColumn prefWidth="61.0" text="Остаток" />
+                                          <TreeTableColumn prefWidth="89.0" text="ID склада" />
                                           <TreeTableColumn prefWidth="75.0" text="Адресс склада" />
                                        </columns>
                                     </TreeTableColumn>

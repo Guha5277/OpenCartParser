@@ -6,17 +6,20 @@ public class Warehouse {
     private int region;
     private String city;
     private String address;
+    private int remains;
 
-    public Warehouse(int id, String altName, int region) {
+    public Warehouse(int id, String altName, int region, String city, String address) {
         this.id = id;
         this.altName = altName;
         this.region = region;
-    }
-
-    public Warehouse(int id, String altName, int region, String city, String address) {
-        this(id, altName, region);
         this.city = city;
         this.address = address;
+    }
+
+    public Warehouse(int id, String altName, int remains) {
+        this.id = id;
+        this.altName = altName;
+        this.remains = remains;
     }
 
     public int getId() {

@@ -161,43 +161,63 @@ class SQLClient {
     }
 
     synchronized static List<Product> getProductsListByQuery(String query) {
+        List<Product> result;
         try {
             ResultSet set = statement.executeQuery(query);
-
+            result = new ArrayList<>();
             if (set != null) {
                 int columnCount = set.getMetaData().getColumnCount();
                 String label = set.getMetaData().getColumnLabel(7);
-                if (columnCount > 7) {
+                if (columnCount == 10) {
                     while (set.next()) {
-                        System.out.print(set.getInt(1) + ", ");
-                        System.out.print(set.getString(2) + ", ");
-                        System.out.print(set.getInt(3) + ", ");
-                        System.out.print(set.getInt(4) + ", ");
-                        System.out.print(set.getInt(5) + ", ");
-                        System.out.print(set.getInt(6) + ", ");
-                        System.out.print(set.getInt(7) + ", ");
-                        System.out.print(set.getInt(8) + ", ");
-                        System.out.print(set.getString(9) + "\n");
+                        //region (city) stock request
+                        int productID = set.getInt(1);
+                        String productName = set.getString(2);
+                        int price = set.getInt(3);
+                        int volume = set.getInt(4);
+                        int strength = set.getInt(5);
+                        int category = set.getInt(6);
+                        String url = set.getString(7);
+                        int productRemains = set.getInt(8);
+                        int warehouseId = set.getInt(9);
+                        String warehouseName = set.getString(10);
+                        Product product = new Product(productID, productName, url, price, category, volume, strength);
+                        if (result.contains(product)) {
+                            int index = result.indexOf(product);
+                            System.out.println(product);
+                            result.get(index).addRemain(new Warehouse(warehouseId, warehouseName, productRemains));
+                        } else {
+                            product.addRemain(new Warehouse(warehouseId, warehouseName, productRemains));
+                            result.add(product);
+                        }
                     }
-                } else if (label.equals("url")) {
+                } else if (columnCount == 7) {
                     while (set.next()) {
-                        System.out.print(set.getInt(1) + ", ");
-                        System.out.print(set.getString(2) + ", ");
-                        System.out.print(set.getInt(3) + ", ");
-                        System.out.print(set.getInt(4) + ", ");
-                        System.out.print(set.getInt(5) + ", ");
-                        System.out.print(set.getInt(6) + ", ");
-                        System.out.print(set.getString(7) + "\n");
+                        //products without remains
+                        int productID = set.getInt(1);
+                        String productName = set.getString(2);
+                        int price = set.getInt(3);
+                        int volume = set.getInt(4);
+                        int strength = set.getInt(5);
+                        int category = set.getInt(6);
+                        String url = set.getString(7);
+                        Product product = new Product(productID, productName, url, price, category, volume, strength);
+                        result.add(product);
                     }
                 } else {
                     while (set.next()) {
-                        System.out.print(set.getInt(1) + ", ");
-                        System.out.print(set.getString(2) + ", ");
-                        System.out.print(set.getInt(3) + ", ");
-                        System.out.print(set.getInt(4) + ", ");
-                        System.out.print(set.getInt(5) + ", ");
-                        System.out.print(set.getInt(6) + ", ");
-                        System.out.print(set.getString(7) + "\n");
+                        //single store remains request
+                        int productID = set.getInt(1);
+                        String productName = set.getString(2);
+                        int price = set.getInt(3);
+                        int volume = set.getInt(4);
+                        int strength = set.getInt(5);
+                        int category = set.getInt(6);
+                        String url = set.getString(7);
+                        int productRemains = set.getInt(8);
+                        Product product = new Product(productID, productName, url, price, category, volume, strength);
+                        product.addRemain(new Warehouse(0, "", productRemains));
+                        result.add(product);
                     }
                 }
 
@@ -206,7 +226,7 @@ class SQLClient {
             e.printStackTrace();
             return null;
         }
-        return null;
+        return result;
     }
 
     synchronized static List<Warehouse> getAllWarehouses() {

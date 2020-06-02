@@ -15,6 +15,7 @@ public class Product {
     private double strength;
     private List<Warehouse> remains;
 
+
     public Product(String name, String URL, int price) {
         this.name = name;
         this.URL = URL;
@@ -25,6 +26,14 @@ public class Product {
         this(name, URL, price);
         this.id = id;
         this.group = group;
+        this.categoryID = categoryID;
+        this.volume = volume;
+        this.strength = strength;
+    }
+
+    public Product(int id, String name, String URL, int price, int categoryID, int volume, double strength) {
+        this(name, URL, price);
+        this.id = id;
         this.categoryID = categoryID;
         this.volume = volume;
         this.strength = strength;
@@ -99,6 +108,10 @@ public class Product {
         this.name = name;
     }
 
+    public int getRemainsCount(){
+        return remains.size();
+    }
+
     public void addRemain(Warehouse warehouse){
         if (remains == null){
             remains = new ArrayList<>();
@@ -116,5 +129,11 @@ public class Product {
                 + "\n\tprice: " + price
                 + "\n\tvolume: " + volume
                 + "\n\tstrength: " + strength + ">>";
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Product)) return false;
+        return ((Product) obj).getURL().equals(URL);
     }
 }
