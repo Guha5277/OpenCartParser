@@ -37,4 +37,7 @@ public class Warehouse {
     public String getAddress() {
         return address;
     }
+    public int getRemains() {
+        return remains;
+    }
 }

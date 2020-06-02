@@ -1,5 +1,6 @@
 import javafx.collections.ObservableList;
 import main.*;
+import main.product.Product;
 import main.product.Warehouse;
 
 import java.io.IOException;
@@ -21,6 +22,7 @@ public class Client implements SocketThreadListener {
     private double researcherProgressPoint;
     private List<Warehouse> warehouses = new ArrayList<>();
     private Map<String, List<String>> someNewMap = new HashMap<>();
+    private ArrayList<Product> products = new ArrayList<>();
 
     Client(ClientGUI app) {
         this.app = app;
@@ -349,6 +351,20 @@ public class Client implements SocketThreadListener {
 //                        }
 //                        break;
                 }
+                break;
+            case Library.PRODUCT_REQUEST:
+                if (header[1] == Library.EMPTY) {
+                    clientController.productsNotFound();
+                }
+                break;
+            case Library.PRODUCT_LIST:
+                products.add(Library.productFromJson(receivedData.getData()));
+                break;
+            case Library.PRODUCT_LIST_START:
+                products.clear();
+                break;
+            case Library.PRODUCT_LIST_END:
+                clientController.updateProductTableContent(products);
                 break;
         }
     }

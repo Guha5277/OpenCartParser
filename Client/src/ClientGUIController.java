@@ -1,12 +1,15 @@
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.TreeItemPropertyValueFactory;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import main.product.Product;
-import main.product.Warehouse;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -127,27 +130,24 @@ public class ClientGUIController {
     @FXML
     private Button btnShow;
     @FXML
-    private TreeTableView<Product> productTreeTableView;
+    private TableView<Product> productTableView;
     @FXML
-    private TreeTableColumn<Product, Integer> columnProdID;
+    private TableColumn<Product, Integer> colProdID;
     @FXML
-    private TreeTableColumn<Product, String> colProductName;
+    private TableColumn<Product, String> colProductName;
     @FXML
-    private TreeTableColumn<Product, Integer> colProductPrice;
+    private TableColumn<Product, Integer> colProductPrice;
     @FXML
-    private TreeTableColumn<Product, Integer> colProductStrength;
+    private TableColumn<Product, Integer> colProductStrength;
     @FXML
-    private TreeTableColumn<Product, Integer> colProductVolume;
+    private TableColumn<Product, Integer> colProductVolume;
     @FXML
-    private TreeTableColumn<Product, Integer> colProductCategory;
+    private TableColumn<Product, Integer> colProductCategory;
     @FXML
-    private TreeTableColumn<Product, Integer> colProductUrl;
+    private TableColumn<Product, Integer> colProductUrl;
     @FXML
-    private TreeTableColumn<Warehouse, Integer> colRemains;
-    @FXML
-    private TreeTableColumn<Warehouse, Integer> colWarehouseId;
-    @FXML
-    private TreeTableColumn<Warehouse, String> colWarehouseName;
+    private Label totalProductShow;
+    ObservableList<Product> tableList;
 
 
     @FXML
@@ -157,42 +157,33 @@ public class ClientGUIController {
         combStore.getItems().add("Все магазины");
         combStore.getSelectionModel().select(0);
 
-        Product product = new Product(0, "Hello", "http://", 100, 1, 120, 3.0d);
-        Product product2 = new Product(0, "Hello2", "http://", 100, 1, 120, 3.0d);
-        Product product3 = new Product(0, "Hello3", "http://", 100, 1, 120, 3.0d);
-        Product product4 = new Product(0, "Hello4", "http://", 100, 1, 120, 3.0d);
-        Product product5 = new Product(0, "Hello3", "http://", 100, 1, 120, 3.0d);
-        Product product6 = new Product(0, "Hello4", "http://", 100, 1, 120, 3.0d);
 
-//        Warehouse warehouse = new Warehouse(1, "Выборная 1312312", 10);
-//        Warehouse warehouse2 = new Warehouse(2, "Восход 3000", 4);
-//        Warehouse warehouse3 = new Warehouse(6, "Высоцкого 2131", 9);
+        colProdID.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colProductName.setCellValueFactory(new PropertyValueFactory<>("name"));
+        colProductPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
+        colProductStrength.setCellValueFactory(new PropertyValueFactory<>("strength"));
+        colProductVolume.setCellValueFactory(new PropertyValueFactory<>("volume"));
+        colProductCategory.setCellValueFactory(new PropertyValueFactory<>("categoryID"));
+        colProductUrl.setCellValueFactory(new PropertyValueFactory<>("URL"));
 
-        TreeItem<Product> rootItem = new TreeItem<>(product);
-        TreeItem<Product> item2 = new TreeItem<>(product2);
-        TreeItem<Product> item3 = new TreeItem<>(product3);
-        TreeItem<Product> item4 = new TreeItem<>(product4);
 
-        TreeItem<Product> item5 = new TreeItem<>(product5);
-        TreeItem<Product> item6 = new TreeItem<>(product6);
-        item2.getChildren().addAll(item5, item6);
+        productTableView.setItems(tableList);
 
-        rootItem.getChildren().addAll(item2, item3, item4);
-
-        productTreeTableView.setRoot(rootItem);
-        productTreeTableView.setShowRoot(false);
-
-        columnProdID.setCellValueFactory(new TreeItemPropertyValueFactory<>("id"));
-        colProductName.setCellValueFactory(new TreeItemPropertyValueFactory<>("name"));
-        colProductPrice.setCellValueFactory(new TreeItemPropertyValueFactory<>("price"));
-        colProductStrength.setCellValueFactory(new TreeItemPropertyValueFactory<>("strength"));
-        colProductVolume.setCellValueFactory(new TreeItemPropertyValueFactory<>("volume"));
-        colProductCategory.setCellValueFactory(new TreeItemPropertyValueFactory<>("categoryID"));
-        colProductUrl.setCellValueFactory(new TreeItemPropertyValueFactory<>("URL"));
-//        colRemains.setCellValueFactory(new TreeItemPropertyValueFactory<>("remains"));
-//        colWarehouseId.setCellValueFactory(new TreeItemPropertyValueFactory<>("id"));
-//        colWarehouseName.setCellValueFactory(new TreeItemPropertyValueFactory<>("altName"));
-
+        productTableView.setRowFactory(tv -> {
+            TableRow<Product> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (!row.isEmpty() && event.getButton() == MouseButton.PRIMARY) {
+                    Product productZ = row.getItem();
+                    System.out.println(productZ.getRemainsCount());
+                    if (productZ.getRemainsCount() > 0){
+                        productZ.getRemainsList().forEach(remain -> {
+                            System.out.println(remain.getId() + ", " + remain.getAltName() + ", " + remain.getRemains());
+                        });
+                    }
+                }
+            });
+            return row;
+        });
     }
 
     void setClient(Client client) {
@@ -528,6 +519,30 @@ public class ClientGUIController {
         });
     }
 
+    void updateProductTableContent(List<Product> products) {
+        Platform.runLater(() -> {
+            if (tableList == null) {
+                tableList = FXCollections.observableArrayList(products);
+            } else {
+                tableList.removeAll(tableList);
+                tableList.addAll(products);
+            }
+
+            totalProductShow.setText("Всего найдено: " + products.size());
+
+            productTableView.setItems(tableList);
+//            productTableView.refresh();
+        });
+    }
+
+    void productsNotFound() {
+        Platform.runLater(() -> {
+            showDialog(Alert.AlertType.INFORMATION, "Нет данных",
+                    "По вашему запросу не было найдено соответствий продуктам",
+                    "Измените ваш запрос (уменьшите количество условий, измените его содержание");
+        });
+    }
+
     //common
     private Alert showDialog(Alert.AlertType type, String title, String header, String context) {
         Alert alert = new Alert(type);
@@ -649,5 +664,6 @@ public class ClientGUIController {
 //        System.out.println(combStore.getSelectionModel().getSelectedItem());
         //client.showProductFilter();
     }
+
 
 }

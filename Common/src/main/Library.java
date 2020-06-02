@@ -2,6 +2,7 @@ package main;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import main.product.Product;
 import main.product.Warehouse;
 
 import javax.print.DocFlavor;
@@ -43,6 +44,10 @@ public class Library {
     public static final byte WAREHOUSE_LIST = 28;
     public static final byte WAREHOUSE_LIST_END = 29;
     public static final byte PRODUCT_REQUEST = 30;
+    public static final byte PRODUCT_LIST = 31;
+    public static final byte PRODUCT_LIST_START = 32;
+    public static final byte PRODUCT_LIST_END = 33;
+    public static final byte EMPTY = 34;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
@@ -109,5 +114,15 @@ public class Library {
 
     public static ProductRequest productRequestFromJson(String request){
         return GSON.fromJson(request, ProductRequest.class);
+    }
+
+    public static String productToJson(Product product){
+        String data = GSON.toJson(product);
+        DataProtocol message = new DataProtocol(new byte[]{PRODUCT_LIST}, data);
+        return GSON.toJson(message);
+    }
+
+    public static Product productFromJson(String data){
+        return GSON.fromJson(data, Product.class);
     }
 }

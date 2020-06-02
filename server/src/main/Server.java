@@ -187,16 +187,14 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
             case Library.PRODUCT_REQUEST:
                 ProductRequest request = Library.productRequestFromJson(receivedData.getData());
                 List<Product> products = getProductsByFilter(request);
+                sendProductList(products);
                 break;
         }
     }
 
     private List<Product> getProductsByFilter(ProductRequest request) {
-        ArrayList<Product> result = new ArrayList<>();
         String query = makeProductQuery(request);
-        System.out.println(query);
-        SQLClient.getProductsListByQuery(query);
-        return null;
+        return SQLClient.getProductsListByQuery(query);
     }
 
     private String makeProductQuery(ProductRequest request) {
@@ -301,6 +299,21 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         }
 
         return query.toString();
+    }
+
+    private void sendProductList(List<Product> list){
+        if (list == null){
+            System.out.println("Product list is null!");
+            sendMsgToModersAndAdmins(Library.makeJsonString(Library.PRODUCT_REQUEST, Library.EMPTY));
+            return;
+        }
+
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.PRODUCT_LIST_START));
+
+        for (Product p : list){
+            sendMsgToModersAndAdmins(Library.productToJson(p));
+        }
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.PRODUCT_LIST_END));
     }
 
     private void sendWarehousesList(SocketThread thread) {

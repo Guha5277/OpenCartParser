@@ -119,6 +119,10 @@ public class Product {
         remains.add(warehouse);
     }
 
+    public List<Warehouse> getRemainsList(){
+        return remains;
+    }
+
     @Override
     public String toString() {
         return "<<product.Product: " + name

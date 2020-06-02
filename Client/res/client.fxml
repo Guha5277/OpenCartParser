@@ -13,15 +13,15 @@
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToolBar?>
-<?import javafx.scene.control.TreeTableColumn?>
-<?import javafx.scene.control.TreeTableView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="400.0" minWidth="600.0" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ClientGUIController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="400.0" minWidth="600.0" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.181" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ClientGUIController">
    <children>
       <AnchorPane prefHeight="65.0" prefWidth="600.0" style="-fx-background-color: #000000;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
@@ -346,37 +346,27 @@
                               <ComboBox fx:id="combStore" disable="true" prefHeight="25.0" prefWidth="171.0" promptText="Все магазины" />
                               <CheckBox fx:id="chkStock" mnemonicParsing="false" text="в наличии">
                                  <padding>
-                                    <Insets right="40.0" />
+                                    <Insets right="20.0" />
                                  </padding>
                               </CheckBox>
                               <Button fx:id="btnFilter" mnemonicParsing="false" onAction="#handleShowProductFilter" text="Фильтр" />
                               <Button fx:id="btnShow" mnemonicParsing="false" text="Показать" />
+                              <Label fx:id="totalProductShow" />
                            </items>
                         </ToolBar>
                         <AnchorPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="40.0">
                            <children>
-                              <TreeTableView fx:id="productTreeTableView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                              <TableView fx:id="productTableView" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                 <columns>
-                                  <TreeTableColumn maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="415.0" text="Жидкость">
-                                       <columns>
-                                        <TreeTableColumn fx:id="columnProdID" prefWidth="53.0" text="ID" />
-                                          <TreeTableColumn fx:id="colProductName" prefWidth="85.0" text="Название" />
-                                          <TreeTableColumn fx:id="colProductPrice" prefWidth="56.0" text="Цена" />
-                                          <TreeTableColumn fx:id="colProductStrength" prefWidth="62.0" text="Крепость" />
-                                          <TreeTableColumn fx:id="colProductVolume" prefWidth="50.0" text="Объем" />
-                                          <TreeTableColumn fx:id="colProductCategory" prefWidth="68.0" text="Категория" />
-                                          <TreeTableColumn fx:id="colProductUrl" prefWidth="68.0" text="URL" />
-                                       </columns>
-                                    </TreeTableColumn>
-                                    <TreeTableColumn maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="260.0" text="Остаток">
-                                       <columns>
-                                          <TreeTableColumn prefWidth="61.0" text="Остаток" />
-                                          <TreeTableColumn prefWidth="89.0" text="ID склада" />
-                                          <TreeTableColumn prefWidth="75.0" text="Адресс склада" />
-                                       </columns>
-                                    </TreeTableColumn>
+                                  <TableColumn fx:id="colProdID" prefWidth="60.0" text="id" />
+                                  <TableColumn fx:id="colProductName" prefWidth="215.0" text="Наименование" />
+                                    <TableColumn fx:id="colProductPrice" prefWidth="65.0" text="Цена" />
+                                    <TableColumn fx:id="colProductStrength" prefWidth="65.0" text="Крепость" />
+                                    <TableColumn fx:id="colProductVolume" prefWidth="65.0" text="Объем" />
+                                    <TableColumn fx:id="colProductCategory" prefWidth="65.0" text="Категория" />
+                                    <TableColumn fx:id="colProductUrl" prefWidth="65.0" text="URL" />
                                 </columns>
-                              </TreeTableView>
+                              </TableView>
                            </children></AnchorPane>
                      </children>
                   </AnchorPane>

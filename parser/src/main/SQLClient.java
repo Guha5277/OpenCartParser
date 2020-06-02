@@ -167,7 +167,6 @@ class SQLClient {
             result = new ArrayList<>();
             if (set != null) {
                 int columnCount = set.getMetaData().getColumnCount();
-                String label = set.getMetaData().getColumnLabel(7);
                 if (columnCount == 10) {
                     while (set.next()) {
                         //region (city) stock request
@@ -184,7 +183,6 @@ class SQLClient {
                         Product product = new Product(productID, productName, url, price, category, volume, strength);
                         if (result.contains(product)) {
                             int index = result.indexOf(product);
-                            System.out.println(product);
                             result.get(index).addRemain(new Warehouse(warehouseId, warehouseName, productRemains));
                         } else {
                             product.addRemain(new Warehouse(warehouseId, warehouseName, productRemains));
@@ -193,7 +191,7 @@ class SQLClient {
                     }
                 } else if (columnCount == 7) {
                     while (set.next()) {
-                        //products without remains
+                        //product without remains
                         int productID = set.getInt(1);
                         String productName = set.getString(2);
                         int price = set.getInt(3);
