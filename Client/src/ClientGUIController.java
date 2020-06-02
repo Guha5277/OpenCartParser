@@ -8,8 +8,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import main.product.Product;
+import main.product.Warehouse;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -147,7 +147,20 @@ public class ClientGUIController {
     private TableColumn<Product, Integer> colProductUrl;
     @FXML
     private Label totalProductShow;
-    ObservableList<Product> tableList;
+
+    @FXML
+    private TableView<Warehouse> remainsTableView;
+    @FXML
+    private TableColumn<?, ?> colRemainsMain;
+    @FXML
+    private TableColumn<Warehouse, Integer> colRemainsID;
+    @FXML
+    private TableColumn<Warehouse, String> colRemainsWarehouse;
+    @FXML
+    private TableColumn<Warehouse, Integer> colRemainsCount;
+    ObservableList<Product> productsList;
+    ObservableList<Warehouse> remainsList;
+
 
 
     @FXML
@@ -157,7 +170,7 @@ public class ClientGUIController {
         combStore.getItems().add("Все магазины");
         combStore.getSelectionModel().select(0);
 
-
+        //Set content for Products Column
         colProdID.setCellValueFactory(new PropertyValueFactory<>("id"));
         colProductName.setCellValueFactory(new PropertyValueFactory<>("name"));
         colProductPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
@@ -166,8 +179,25 @@ public class ClientGUIController {
         colProductCategory.setCellValueFactory(new PropertyValueFactory<>("categoryID"));
         colProductUrl.setCellValueFactory(new PropertyValueFactory<>("URL"));
 
+        colRemainsID.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colRemainsWarehouse.setCellValueFactory(new PropertyValueFactory<>("altName"));
+        colRemainsCount.setCellValueFactory(new PropertyValueFactory<>("remains"));
 
-        productTableView.setItems(tableList);
+        //Set adaptive size for columns
+        colProdID.prefWidthProperty().bind(productTableView.widthProperty().divide(12));
+        colProductName.prefWidthProperty().bind(productTableView.widthProperty().divide(3));
+        colProductPrice.prefWidthProperty().bind(productTableView.widthProperty().divide(12));
+        colProductStrength.prefWidthProperty().bind(productTableView.widthProperty().divide(10));
+        colProductVolume.prefWidthProperty().bind(productTableView.widthProperty().divide(11));
+        colProductCategory.prefWidthProperty().bind(productTableView.widthProperty().divide(9));
+        colProductUrl.prefWidthProperty().bind(productTableView.widthProperty().divide(5));
+
+        colRemainsMain.prefWidthProperty().bind(remainsTableView.widthProperty());
+        colRemainsID.prefWidthProperty().bind(remainsTableView.widthProperty().divide(4));
+        colRemainsWarehouse.prefWidthProperty().bind(remainsTableView.widthProperty().divide(2));
+        colRemainsCount.prefWidthProperty().bind(remainsTableView.widthProperty().divide(4));
+
+        productTableView.setItems(productsList);
 
         productTableView.setRowFactory(tv -> {
             TableRow<Product> row = new TableRow<>();
@@ -176,9 +206,22 @@ public class ClientGUIController {
                     Product productZ = row.getItem();
                     System.out.println(productZ.getRemainsCount());
                     if (productZ.getRemainsCount() > 0){
-                        productZ.getRemainsList().forEach(remain -> {
-                            System.out.println(remain.getId() + ", " + remain.getAltName() + ", " + remain.getRemains());
-                        });
+                        String store = combStore.getSelectionModel().getSelectedItem();
+                        List<Warehouse> list = productZ.getRemainsList();
+                        if (!store.equals("Все магазины")){
+//                            list.forEach(remain -> {
+//                                remain.setAltName(store);
+//                            });
+                            list.get(0).setAltName(store);
+                        }
+                        if (remainsList == null) {
+                            remainsList = FXCollections.observableArrayList(list);
+                        } else {
+                            remainsList.removeAll(remainsList);
+                            remainsList.addAll(list);
+                        }
+
+                        remainsTableView.setItems(remainsList);
                     }
                 }
             });
@@ -521,16 +564,16 @@ public class ClientGUIController {
 
     void updateProductTableContent(List<Product> products) {
         Platform.runLater(() -> {
-            if (tableList == null) {
-                tableList = FXCollections.observableArrayList(products);
+            if (productsList == null) {
+                productsList = FXCollections.observableArrayList(products);
             } else {
-                tableList.removeAll(tableList);
-                tableList.addAll(products);
+                productsList.removeAll(productsList);
+                productsList.addAll(products);
             }
 
             totalProductShow.setText("Всего найдено: " + products.size());
 
-            productTableView.setItems(tableList);
+            productTableView.setItems(productsList);
 //            productTableView.refresh();
         });
     }

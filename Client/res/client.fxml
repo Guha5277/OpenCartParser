@@ -11,6 +11,7 @@
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableColumn?>
@@ -21,7 +22,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="400.0" minWidth="600.0" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.181" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ClientGUIController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="400.0" minWidth="600.0" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ClientGUIController">
    <children>
       <AnchorPane prefHeight="65.0" prefWidth="600.0" style="-fx-background-color: #000000;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
@@ -356,17 +357,40 @@
                         </ToolBar>
                         <AnchorPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="40.0">
                            <children>
-                              <TableView fx:id="productTableView" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                <columns>
-                                  <TableColumn fx:id="colProdID" prefWidth="60.0" text="id" />
-                                  <TableColumn fx:id="colProductName" prefWidth="215.0" text="Наименование" />
-                                    <TableColumn fx:id="colProductPrice" prefWidth="65.0" text="Цена" />
-                                    <TableColumn fx:id="colProductStrength" prefWidth="65.0" text="Крепость" />
-                                    <TableColumn fx:id="colProductVolume" prefWidth="65.0" text="Объем" />
-                                    <TableColumn fx:id="colProductCategory" prefWidth="65.0" text="Категория" />
-                                    <TableColumn fx:id="colProductUrl" prefWidth="65.0" text="URL" />
-                                </columns>
-                              </TableView>
+                              <SplitPane dividerPositions="0.6264150943396226" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                <items>
+                                  <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
+                                       <children>
+                                          <TableView fx:id="productTableView" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                            <columns>
+                                              <TableColumn fx:id="colProdID" prefWidth="60.0" text="id" />
+                                              <TableColumn fx:id="colProductName" prefWidth="215.0" text="Наименование" />
+                                                <TableColumn fx:id="colProductPrice" prefWidth="65.0" text="Цена" />
+                                                <TableColumn fx:id="colProductStrength" prefWidth="65.0" text="Крепость" />
+                                                <TableColumn fx:id="colProductVolume" prefWidth="65.0" text="Объем" />
+                                                <TableColumn fx:id="colProductCategory" prefWidth="65.0" text="Категория" />
+                                                <TableColumn fx:id="colProductUrl" prefWidth="65.0" text="URL" />
+                                            </columns>
+                                          </TableView>
+                                       </children>
+                                    </AnchorPane>
+                                  <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
+                                       <children>
+                                          <TableView fx:id="remainsTableView" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                            <columns>
+                                              <TableColumn fx:id="colRemainsMain" prefWidth="597.0" text="Наличие">
+                                                   <columns>
+                                                    <TableColumn fx:id="colRemainsID" prefWidth="75.0" text="id" />
+                                                      <TableColumn fx:id="colRemainsWarehouse" prefWidth="75.0" text="Склад" />
+                                                      <TableColumn fx:id="colRemainsCount" prefWidth="75.0" text="Остаток" />
+                                                   </columns>
+                                                </TableColumn>
+                                            </columns>
+                                          </TableView>
+                                       </children>
+                                    </AnchorPane>
+                                </items>
+                              </SplitPane>
                            </children></AnchorPane>
                      </children>
                   </AnchorPane>
