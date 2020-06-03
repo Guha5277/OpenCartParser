@@ -109,6 +109,7 @@ public class Product {
     }
 
     public int getRemainsCount(){
+        if (remains == null) return 0;
         return remains.size();
     }
 

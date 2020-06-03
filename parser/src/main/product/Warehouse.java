@@ -40,4 +40,7 @@ public class Warehouse {
     public int getRemains() {
         return remains;
     }
+    public void setAltName(String altName) {
+        this.altName = altName;
+    }
 }

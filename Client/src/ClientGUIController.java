@@ -198,6 +198,7 @@ public class ClientGUIController {
         colRemainsCount.prefWidthProperty().bind(remainsTableView.widthProperty().divide(4));
 
         productTableView.setItems(productsList);
+        remainsTableView.setVisible(false);
 
         productTableView.setRowFactory(tv -> {
             TableRow<Product> row = new TableRow<>();
@@ -206,12 +207,10 @@ public class ClientGUIController {
                     Product productZ = row.getItem();
                     System.out.println(productZ.getRemainsCount());
                     if (productZ.getRemainsCount() > 0){
+                        remainsTableView.setVisible(true);
                         String store = combStore.getSelectionModel().getSelectedItem();
                         List<Warehouse> list = productZ.getRemainsList();
                         if (!store.equals("Все магазины")){
-//                            list.forEach(remain -> {
-//                                remain.setAltName(store);
-//                            });
                             list.get(0).setAltName(store);
                         }
                         if (remainsList == null) {
@@ -222,6 +221,8 @@ public class ClientGUIController {
                         }
 
                         remainsTableView.setItems(remainsList);
+                    } else {
+                        remainsTableView.setVisible(false);
                     }
                 }
             });
