@@ -505,7 +505,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.PROCESS_END, String.valueOf(checked), String.valueOf(updated)));
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_RUN, updaterLastRunDate));
-//            sendMsgToModersAndAdmins(Library.makeJsonString(Library.PRODUCTS_COUNT, String.valueOf(productsCount)));
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_POSITION, String.valueOf(lastUpdatedProductPosition)));
     }
 

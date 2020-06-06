@@ -126,7 +126,7 @@ public class LoginGUIController {
     void connectionFailed(Throwable cause) {
         Platform.runLater(() -> {
             setDisableAll(false);
-            showErrorLabel(CONNECTION_FAILED);
+            showErrorLabel(CONNECTION_FAILED + " " + cause);
         });
     }
 

@@ -85,18 +85,6 @@ public class Client implements SocketThreadListener {
         socketThread.sendMessage(Library.makeJsonString(Library.USERS, Library.DISCONNECT, nickname));
     }
 
-    //Some old method of generate list for store ComboBox
-//    List getStoreList3(String selectedCity) {
-//        long time = System.nanoTime();
-//        List<String> list = new ArrayList<>();
-//        list.add("Все магазины");
-//        for (Warehouse w : warehouses) {
-//            if (w.getCity().equals(selectedCity)) list.add(w.getAddress());
-//        }
-//        System.out.println(System.nanoTime() - time);
-//        return list;
-//    }
-
     List getStoreList(String selectedCity) {
         return someNewMap.get(selectedCity);
     }

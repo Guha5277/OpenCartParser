@@ -75,7 +75,7 @@
                         </ToolBar>
                         <AnchorPane layoutX="-1.0" layoutY="40.0" prefHeight="267.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.topAnchor="40.0">
                            <children>
-                              <ScrollPane disable="true" layoutX="16.0" prefHeight="200.0" prefWidth="337.0" AnchorPane.bottomAnchor="44.0" AnchorPane.topAnchor="22.0" />
+                              <ScrollPane layoutX="16.0" prefHeight="200.0" prefWidth="337.0" AnchorPane.bottomAnchor="44.0" AnchorPane.topAnchor="22.0" />
                               <ListView fx:id="updaterUsersListView" disable="true" onMouseClicked="#handleListViewAction" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="44.0" AnchorPane.rightAnchor="22.0" AnchorPane.topAnchor="22.0" />
                               <Button fx:id="btnBanUser" disable="true" layoutX="157.0" layoutY="235.0" maxHeight="24.0" maxWidth="67.0" mnemonicParsing="false" onAction="#handleBanUserButton" prefHeight="24.0" prefWidth="67.0" text="Забанить" AnchorPane.bottomAnchor="13.0" AnchorPane.rightAnchor="22.0" />
                               <Button fx:id="btnKickUser" disable="true" layoutX="73.0" layoutY="229.0" maxHeight="24.0" maxWidth="80.0" mnemonicParsing="false" onAction="#handleKickUserButton" prefHeight="24.0" text="Отключить" AnchorPane.bottomAnchor="13.0" AnchorPane.rightAnchor="95.0" />
@@ -337,7 +337,7 @@
                      </children>
                   </AnchorPane>
                </content></Tab>
-            <Tab fx:id="tabProducts" closable="false" text="Products">
+            <Tab fx:id="tabProducts" closable="false" disable="true" text="Products">
                <content>
                   <AnchorPane prefHeight="200.0" prefWidth="200.0">
                      <children>

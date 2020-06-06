@@ -161,8 +161,6 @@ public class ClientGUIController {
     ObservableList<Product> productsList;
     ObservableList<Warehouse> remainsList;
 
-
-
     @FXML
     void initialize() {
         combCity.getItems().add("Все города");
@@ -205,7 +203,6 @@ public class ClientGUIController {
             row.setOnMouseClicked(event -> {
                 if (!row.isEmpty() && event.getButton() == MouseButton.PRIMARY) {
                     Product productZ = row.getItem();
-                    System.out.println(productZ.getRemainsCount());
                     if (productZ.getRemainsCount() > 0){
                         remainsTableView.setVisible(true);
                         String store = combStore.getSelectionModel().getSelectedItem();
@@ -288,7 +285,6 @@ public class ClientGUIController {
             updaterUsersListView.getItems().clear();
             String ownNick = lblNickname.getText();
             for (String nickname : users) {
-//                if(ownNick.equals(nickname)) nickname = nickname + " (вы)";
                 if (ownNick.equals(nickname)) continue;
                 updaterUsersListView.getItems().add(new Label(nickname));
             }
@@ -423,12 +419,6 @@ public class ClientGUIController {
             btnUpdManualUpdate.setDisable(false);
         });
     }
-
-//    void connectionLost() {
-//        Platform.runLater(() -> {
-//            showDialog(Alert.AlertType.ERROR, "Ошибка!", "Потеряно соединение с сервером", "").showAndWait();
-//        });
-//    }
 
     //researcher
     void setResearcherLastUpdate(String date) {
@@ -608,7 +598,6 @@ public class ClientGUIController {
         });
     }
 
-
     //Event Handlers
     @FXML
     void handleUpdaterStartButton() {
@@ -695,7 +684,6 @@ public class ClientGUIController {
             /*TODO разобраться с этиим костылём ниже (есть ли какие-то альтернативы для корректного ресайза выпадающего списка?)*/
             combStore.show();
             combStore.hide();
-            //            combStore.autosize();
         }
         combStore.getSelectionModel().select(0);
     }
@@ -703,10 +691,6 @@ public class ClientGUIController {
     @FXML
     void handleShowProductFilter(ActionEvent event) {
         client.showProductFilterStage(chkStock.isSelected(), combCity.getItems(), combCity.getSelectionModel().getSelectedIndex(), combStore.getItems(), combStore.getSelectionModel().getSelectedIndex());
-
-//        System.out.println(combCity.getSelectionModel().getSelectedItem());
-//        System.out.println(combStore.getSelectionModel().getSelectedItem());
-        //client.showProductFilter();
     }
 
 
