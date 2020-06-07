@@ -2,10 +2,13 @@ package main;
 
 import main.product.Product;
 import main.product.Warehouse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Vector;
 
@@ -24,6 +27,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     //private Grabber grabber;
     private Researcher researcher;
     private Vector<SocketThread> clients = new Vector<>();
+    private static final Logger SERVER_LOGGER = LogManager.getLogger("ServerLogger");
+    private static final Logger USERS_LOGGER = LogManager.getLogger("UsersLogger");
+    private static final Logger PARSER_LOGGER = LogManager.getLogger("ParserLogger");
 
     public static void main(String[] args) {
         new Server();
@@ -37,18 +43,26 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     //Server Events
     @Override
     public void onThreadStart(ServerSocketThread thread) {
-        System.out.println("Server Socket Thread Start");
+        SERVER_LOGGER.info("Server Thread Started");
     }
 
     @Override
     public void onServerStart(ServerSocketThread thread, ServerSocket server) {
-        System.out.println("Server started: " + server.getLocalSocketAddress());
         SQLClient.connect();
         productsCount = SQLClient.getProductsCount();
         warehousesCount = SQLClient.getWarehousesCount();
         updaterLastRunDate = SQLClient.getUpdaterLastRun();
         researcherLastRunDate = SQLClient.getResearcherLastRun();
         lastUpdatedProductPosition = SQLClient.getLastUpdatedProductPosition();
+        String address = "";
+        String name = "";
+        try {
+            address = InetAddress.getLocalHost().getHostAddress();
+            name = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        SERVER_LOGGER.info("Server Started " + name + " " + address);
     }
 
     @Override
@@ -58,30 +72,37 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     @Override
     public void onSocketAccepted(ServerSocket server, Socket socket) {
-        System.out.println("Socket accepted");
+        SERVER_LOGGER.info("Client Socket accepted: " + socket.getInetAddress());
         new ClientThread(this, "client", socket);
     }
 
     @Override
     public void onServerException(ServerSocketThread thread, Exception e) {
-        System.out.println("Server exceprion");
+        SERVER_LOGGER.error("Exception: " + e.getMessage());
     }
 
     @Override
     public void onThreadStop(ServerSocketThread thread) {
-        System.out.println("Server stop");
+        SERVER_LOGGER.info("Server Thread Stopped");
         SQLClient.disconnect();
     }
 
     //SocketEvents
     @Override
     public void onSocketThreadStart(SocketThread thread, Socket socket) {
-        System.out.println("ServerSocket thread start");
+        SERVER_LOGGER.info("Client SocketThread started "  + socket.getInetAddress());
+    }
+
+    @Override
+    public void onSocketReady(SocketThread thread, Socket socket) {
+        SERVER_LOGGER.info("Client SocketThread ready and added to list"  + socket.getInetAddress());
+        clients.add(thread);
     }
 
     @Override
     public void onSocketThreadStop(SocketThread thread) {
-        System.out.println("ServerSocket thread stop");
+        ClientThread clientThread = (ClientThread) thread;
+        USERS_LOGGER.info("Client disconnected: " + clientThread.getNickname());
         clients.remove(thread);
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.USERS, Library.COUNT, String.valueOf(clients.size())));
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.USERS, Library.LIST, getListOfClients()));
@@ -89,7 +110,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     @Override
     public void onReceiveString(SocketThread thread, Socket socket, String msg) {
-        System.out.println("ServerSocket thread received msg");
+        SERVER_LOGGER.info("Received message from client ("+ msg.length() +")");
         ClientThread client = (ClientThread) thread;
         DataProtocol receivedData = Library.jsonToObject(msg);
         byte[] header = receivedData.getHeader();
@@ -97,6 +118,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
             case Library.AUTH:
                 if (header.length < 2 || header[1] != Library.REQUEST) {
                     client.msgFormatError(Library.makeJsonString(Library.MESSAGE_FORMAT_ERROR));
+                    USERS_LOGGER.warn("AUTH FAILED cause MESSAGE FORMAT ERROR header length: " + header.length);
                     return;
                 }
                 authorizeClient(client, receivedData.getData());
@@ -325,14 +347,8 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     }
 
     @Override
-    public void onSocketReady(SocketThread thread, Socket socket) {
-        System.out.println("ServerSocket Ready");
-        clients.add(thread);
-    }
-
-    @Override
     public void onSocketThreadException(SocketThread thread, Exception e) {
-        thread.close();
+        //thread.close();
         System.out.println("ServerSocket exception: " + e.getMessage() + " " + e.getCause());
     }
 
@@ -340,9 +356,11 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         String[] data = userData.split(Library.DELIMITER);
         String login = data[0];
         String password = data[1];
+        USERS_LOGGER.info("AUTH REQUEST for " + login);
 
         String nickname = SQLClient.getNickname(login, password);
         if (nickname == null) {
+            USERS_LOGGER.error("AUTH FAILED for " + login + "! Invalid login/password");
             clientThread.authFailed(Library.makeJsonString(Library.AUTH, Library.DENIED));
             clientThread.close();
         } else {
@@ -352,9 +370,11 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 clientThread.sendMessage(Library.makeJsonString(Library.AUTH, Library.ACCEPTED, nickname));
                 int userAccessLevel = SQLClient.getUserRole(nickname);
                 clientThread.setAccessLevel(userAccessLevel);
+                USERS_LOGGER.info("AUTH SUCCESS for " + login + " with nickname: + " + nickname);
             } else {
                 client.sendMessage(Library.makeJsonString(Library.AUTH, Library.MULTIPLY_SESSION, client.getNickname()));
                 clientThread.close();
+                USERS_LOGGER.error("AUTH FAILED for " + login + "! Client connected already");
             }
         }
     }
