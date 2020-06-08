@@ -1,5 +1,6 @@
 package main;
 
+import com.sun.org.apache.bcel.internal.generic.LoadClass;
 import main.product.Product;
 import main.product.Warehouse;
 import org.apache.logging.log4j.LogManager;
@@ -9,6 +10,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Vector;
 
@@ -48,6 +50,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     @Override
     public void onServerStart(ServerSocketThread thread, ServerSocket server) {
+        SERVER_LOGGER.info("Server initializing...");
         SQLClient.connect();
         productsCount = SQLClient.getProductsCount();
         warehousesCount = SQLClient.getWarehousesCount();
@@ -62,6 +65,8 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+        SERVER_LOGGER.info("Products: " + productsCount);
+        SERVER_LOGGER.info("Warehouses: " + warehousesCount);
         SERVER_LOGGER.info("Server Started " + name + " " + address);
     }
 
@@ -118,19 +123,21 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
             case Library.AUTH:
                 if (header.length < 2 || header[1] != Library.REQUEST) {
                     client.msgFormatError(Library.makeJsonString(Library.MESSAGE_FORMAT_ERROR));
-                    USERS_LOGGER.warn("AUTH FAILED cause MESSAGE FORMAT ERROR header length: " + header.length);
+                    USERS_LOGGER.error("AUTH FAILED cause MESSAGE FORMAT ERROR header length: " + header.length);
                     return;
                 }
                 authorizeClient(client, receivedData.getData());
                 break;
             case Library.SERVER_INFO:
                 if (!client.isAuthorized()) {
+                    USERS_LOGGER.error("GET SERVER_INFO FAILED cause client is not authorized!");
                     client.sendMessage(Library.makeJsonString(Library.SERVER_INFO, Library.DENIED));
                     clients.remove(client);
                     client.close();
                 } else {
                     int accessLevel = client.getAccessLevel();
                     if (accessLevel == ClientThread.ADMIN || accessLevel == ClientThread.MODERATOR) {
+                        USERS_LOGGER.info("GET SERVER_INFO ACCEPTED for " + client.getNickname());
                         client.sendMessage(Library.makeJsonString(Library.SERVER_INFO, Library.ACCEPTED, String.valueOf(accessLevel)));
                         client.sendMessage(Library.makeJsonString(Library.START_TIME, String.valueOf(serverStartAt)));
                         client.sendMessage(Library.makeJsonString(Library.PRODUCTS_COUNT, String.valueOf(productsCount)));
@@ -149,30 +156,39 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                             client.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate));
                         }
                     } else {
+                        USERS_LOGGER.error("GET SERVER_INFO FAILED cause client access level is lower than required: " + accessLevel);
                         client.sendMessage(Library.makeJsonString(Library.SERVER_INFO, Library.DENIED));
-                        clients.remove(client);
+                        //clients.remove(client);
                     }
                 }
                 break;
             case Library.UPDATER:
-                if (client.getAccessLevel() > 2) {
+                USERS_LOGGER.info("UPDATER...");
+                int accessLevel = client.getAccessLevel();
+                String nickname = client.getNickname();
+                if (accessLevel > 2) {
+                    USERS_LOGGER.error("ACCESS TO UPDATER DENIED cause client access level is lower than required: " + accessLevel);
                     client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.DENIED));
-                    clients.remove(client);
-                    client.close();
+//                    clients.remove(client);
+//                    client.close();
                     return;
                 }
                 switch (header[1]) {
                     case Library.START:
+                        USERS_LOGGER.info("UPDATER STARTED by " + nickname );
                         startUpdater(Boolean.valueOf(receivedData.getData()));
                         break;
                     case Library.STOP:
+                        USERS_LOGGER.info("UPDATER STOPPED by " + nickname );
                         stopUpdater();
                         break;
                 }
                 break;
 
             case Library.RESEARCHER:
+                USERS_LOGGER.info("RESEARCHER...");
                 if (client.getAccessLevel() > 2) {
+                    USERS_LOGGER.error("ACCESS TO RESEARCHER DENIED cause client access level is lower than required: " + client.getAccessLevel());
                     client.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.DENIED));
                     clients.remove(client);
                     client.close();
@@ -180,24 +196,29 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 }
                 switch (header[1]) {
                     case Library.START:
+                        USERS_LOGGER.info("RESEARCHER STARTED by " + client.getNickname() );
                         startResearcher();
                         break;
                     case Library.STOP:
+                        USERS_LOGGER.info("RESEARCHER STOPPED by " + client.getNickname() );
                         stopResearcher();
                         break;
                 }
                 break;
             case Library.USERS:
+                USERS_LOGGER.info("USER MODERATION...");
                 switch (header[1]) {
                     case Library.DISCONNECT:
-                        String nickname = receivedData.getData();
+                        String nicname2 = receivedData.getData();
                         int initiatorLvl = client.getAccessLevel();
-                        ClientThread clientShouldBeKicked = findUserByNickname(nickname);
+                        ClientThread clientShouldBeKicked = findUserByNickname(nicname2);
                         if (clientShouldBeKicked != null) {
                             if (initiatorLvl < clientShouldBeKicked.getAccessLevel()) {
+                                USERS_LOGGER.info("USER " + clientShouldBeKicked.getNickname() + " was disconnected by " + client.getNickname());
                                 clientShouldBeKicked.sendMessage(Library.makeJsonString(Library.USERS, Library.DISCONNECT, client.getNickname()));
                                 clientShouldBeKicked.close();
                             } else {
+                                USERS_LOGGER.error("FAILED TO DISCONNECT USER " + clientShouldBeKicked.getNickname() + " by  " + client.getNickname() + " cause permission of " + client.getNickname() + " is the same or lower than  permission of " + clientShouldBeKicked.getNickname());
                                 client.sendMessage(Library.makeJsonString(Library.USERS, Library.DISCONNECT, Library.DENIED, clientShouldBeKicked.getNickname()));
                             }
                         }
@@ -207,9 +228,10 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 }
                 break;
             case Library.PRODUCT_REQUEST:
+                USERS_LOGGER.info("PRODUCT REQUEST...");
                 ProductRequest request = Library.productRequestFromJson(receivedData.getData());
                 List<Product> products = getProductsByFilter(request);
-                sendProductList(products);
+                sendProductList(products, client);
                 break;
         }
     }
@@ -323,19 +345,24 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         return query.toString();
     }
 
-    private void sendProductList(List<Product> list){
-        if (list == null){
-            System.out.println("Product list is null!");
+    private void sendProductList(List<Product> list, ClientThread client){
+        int listSize = list.size();
+        if (listSize == 0){
+            SERVER_LOGGER.info("No result found for PRODUCT_REQUEST");
             sendMsgToModersAndAdmins(Library.makeJsonString(Library.PRODUCT_REQUEST, Library.EMPTY));
             return;
         }
 
-        sendMsgToModersAndAdmins(Library.makeJsonString(Library.PRODUCT_LIST_START));
+        SERVER_LOGGER.info(listSize + " products found for PRODUCT_REQUEST");
+
+        client.sendMessage(Library.makeJsonString(Library.PRODUCT_LIST_START));
 
         for (Product p : list){
-            sendMsgToModersAndAdmins(Library.productToJson(p));
+            client.sendMessage(Library.productToJson(p));
         }
-        sendMsgToModersAndAdmins(Library.makeJsonString(Library.PRODUCT_LIST_END));
+        client.sendMessage(Library.makeJsonString(Library.PRODUCT_LIST_END));
+
+        SERVER_LOGGER.info(listSize + " products sent to client successful");
     }
 
     private void sendWarehousesList(SocketThread thread) {
@@ -388,6 +415,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         }
         updaterThread = new Thread(updater);
         updaterThread.start();
+        SERVER_LOGGER.info("Updater started");
     }
 
     private void stopUpdater() {

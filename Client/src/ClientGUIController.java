@@ -571,14 +571,14 @@ public class ClientGUIController {
 
     void productsNotFound() {
         Platform.runLater(() -> {
-            showDialog(Alert.AlertType.INFORMATION, "Нет данных",
+            makeDialogWindow(Alert.AlertType.INFORMATION, "Нет данных",
                     "По вашему запросу не было найдено соответствий продуктам",
-                    "Измените ваш запрос (уменьшите количество условий, измените его содержание");
+                    "Измените ваш запрос (уменьшите количество условий, измените его содержание").showAndWait();
         });
     }
 
     //common
-    private Alert showDialog(Alert.AlertType type, String title, String header, String context) {
+    private Alert makeDialogWindow(Alert.AlertType type, String title, String header, String context) {
         Alert alert = new Alert(type);
         alert.setTitle(title);
         alert.setHeaderText(header);
@@ -588,13 +588,13 @@ public class ClientGUIController {
 
     void failedToKickUser(String nickname) {
         Platform.runLater(() -> {
-            showDialog(Alert.AlertType.ERROR, "Ошибка!", "Невозможно отключить пользователя: " + nickname, "Недостаточный уровень прав!").showAndWait();
+            makeDialogWindow(Alert.AlertType.ERROR, "Ошибка!", "Невозможно отключить пользователя: " + nickname, "Недостаточный уровень прав!").showAndWait();
         });
     }
 
     void kickedFromTheServer(String nickname) {
         Platform.runLater(() -> {
-            showDialog(Alert.AlertType.ERROR, "Соединение прервано!", "Вы были отключены от сервера пользователем: " + nickname, "").showAndWait();
+            makeDialogWindow(Alert.AlertType.ERROR, "Соединение прервано!", "Вы были отключены от сервера пользователем: " + nickname, "").showAndWait();
         });
     }
 
@@ -641,7 +641,7 @@ public class ClientGUIController {
 
     @FXML
     void handleBanUserButton() {
-        Optional<ButtonType> result = showDialog(Alert.AlertType.CONFIRMATION, "", "", "").showAndWait();
+        Optional<ButtonType> result = makeDialogWindow(Alert.AlertType.CONFIRMATION, "", "", "").showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             /*TODO handle ban user action*/
         }
@@ -650,7 +650,7 @@ public class ClientGUIController {
     @FXML
     void handleKickUserButton() {
         String nickname = updaterUsersListView.getSelectionModel().getSelectedItem().getText();
-        Optional<ButtonType> result = showDialog(Alert.AlertType.CONFIRMATION, "Отключение пользователя", "Вы действительно хотите отключить пользователя " + nickname + "?", "").showAndWait();
+        Optional<ButtonType> result = makeDialogWindow(Alert.AlertType.CONFIRMATION, "Отключение пользователя", "Вы действительно хотите отключить пользователя " + nickname + "?", "").showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             client.kickUser(nickname);
         }
