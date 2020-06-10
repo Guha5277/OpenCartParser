@@ -68,11 +68,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     }
 
     @Override
-    public void onServerAcceptTimeout(ServerSocketThread thread, ServerSocket server) {
-
-    }
-
-    @Override
     public void onSocketAccepted(ServerSocket server, Socket socket) {
         SERVER_LOGGER.info("Client Socket accepted: " + socket.getInetAddress());
         new ClientThread(this, "client", socket);
@@ -469,41 +464,47 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     //Services events
     @Override
     public void onGrabberReady() {
-
+        SERVER_LOGGER.info("Grabber ready");
     }
 
     @Override
     public void onUpdaterReady() {
+        SERVER_LOGGER.info("Updater ready");
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.START));
     }
 
     @Override
     public void onResearcherReady() {
+        SERVER_LOGGER.info("Researcher ready");
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.START));
     }
 
     @Override
     public void onParserException(Exception e) {
-
+        SERVER_LOGGER.error("Parser exception: " + e.getMessage());
     }
 
     @Override
     public void onUpdaterException(int id, String url, Exception e) {
+        SERVER_LOGGER.error("Updater exception: " + e.getMessage());
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.EXCEPTION, String.valueOf(id), url, e.getMessage()));
     }
 
     @Override
     public void onUpdaterSQLException(Exception e) {
+        SERVER_LOGGER.error("Updater SQL exception: " + e.getMessage());
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.EXCEPTION, e.getMessage()));
     }
 
     @Override
     public void onUpdateProductFailed(String url, int errorsCount) {
+        SERVER_LOGGER.error("Update product failed");
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.FAILED, url, String.valueOf(errorsCount)));
     }
 
     @Override
     public void onUpdateDiffsFound(int count, String differences) {
+        SERVER_LOGGER.info("Updater difference found: " + differences);
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.FOUND, String.valueOf(count), differences));
     }
 
@@ -514,27 +515,29 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     @Override
     public void onUpdaterTotalProducts(int count) {
+        SERVER_LOGGER.info("Update total products: " + count);
         updaterTotalProd = count;
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.PRODUCTS_TOTAL, String.valueOf(count)));
     }
 
     @Override
     public void onGrabError() {
-
+        SERVER_LOGGER.error("Grabber error");
     }
 
     @Override
     public void onUpdateError() {
-
+        SERVER_LOGGER.error("Updater error");
     }
 
     @Override
     public void onParseSuccessfulEnd(int count) {
-
+        SERVER_LOGGER.info("Parser successful end, total updates: " + count);
     }
 
     @Override
     public void onUpdateSuccessfulEnd(int checked, int updated, int errors) {
+        SERVER_LOGGER.info("Updater successful end, total checked: " + checked + ", updates: " + updated + ", errors: " + errors);
         if (checked - 1 == updaterTotalProd) {
             SQLClient.updateUpdaterLastRun(0, updated, errors);
         } else {
@@ -552,6 +555,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     @Override
     public void onResearchSuccessfulEnd(int count) {
+        SERVER_LOGGER.info("Researcher successful end, total updates: " + count);
         SQLClient.updateResearcherLastRun(count);
 
         SQLClient.commit();
@@ -581,6 +585,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     @Override
     public void onResearchError() {
-        /*TODO*/
+        SERVER_LOGGER.error("Researcher error");
     }
 }

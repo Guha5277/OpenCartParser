@@ -604,6 +604,7 @@ public class ClientGUIController {
         });
     }
 
+
     //Event Handlers
     @FXML
     void handleUpdaterStartButton() {

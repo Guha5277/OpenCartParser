@@ -1,3 +1,4 @@
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import main.*;
 import main.product.Product;
@@ -24,6 +25,8 @@ public class Client implements SocketThreadListener {
     private Map<String, List<String>> someNewMap = new HashMap<>();
     private ArrayList<Product> products = new ArrayList<>();
     private boolean isConnected;
+    private long serverStartTime;
+    private Timer serverStartTimeTimer;
 
     Client(ClientGUI app) {
         this.app = app;
@@ -62,7 +65,11 @@ public class Client implements SocketThreadListener {
     }
 
     void disconnect() {
+        isConnected = false;
         socketThread.close();
+        if (serverStartTimeTimer != null) serverStartTimeTimer.cancel();
+//        Platform.exit();
+//        System.exit(0);
     }
 
     void startUpdater(boolean continueUpdate) {
@@ -220,7 +227,10 @@ public class Client implements SocketThreadListener {
                 }
                 break;
             case Library.START_TIME:
-                clientController.setServerUpTime(serverUpTime(Long.valueOf(receivedData.getData())));
+                serverStartTime = Long.valueOf(receivedData.getData());
+                clientController.setServerUpTime(parseServerTime(serverStartTime));
+                serverStartTimeTimer = new Timer();
+                serverStartTimeTimer.schedule(new TimeUpdater(), 0, 60000);
                 break;
             case Library.PRODUCTS_COUNT:
                 clientController.setProductsCount(receivedData.getData());
@@ -363,7 +373,7 @@ public class Client implements SocketThreadListener {
     @Override
     public void onSocketThreadStop(SocketThread thread) {
         System.out.println("socket thread stop");
-        if (isConnected){
+        if (isConnected) {
             clientController.connectionLost();
             app.hideClientStage();
             app.showLoginStage();
@@ -376,7 +386,7 @@ public class Client implements SocketThreadListener {
         System.out.println(e.getMessage());
     }
 
-    private String serverUpTime(Long time) {
+    private String parseServerTime(Long time) {
         LocalDateTime currentTime = LocalDateTime.now();
         LocalDateTime serverStartTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneId.systemDefault());
         Duration duration = Duration.between(serverStartTime, currentTime);
@@ -452,7 +462,7 @@ public class Client implements SocketThreadListener {
                     case 5:
                         return "минут";
                     case 1:
-                        return "минута";
+                        return "минуту";
                     case 2:
                         return "минуты";
                 }
@@ -477,5 +487,10 @@ public class Client implements SocketThreadListener {
         return newDate.format(formatter);
     }
 
-
+    private class TimeUpdater extends TimerTask {
+        @Override
+        public void run() {
+            clientController.setServerUpTime(parseServerTime(serverStartTime));
+        }
+    }
 }
