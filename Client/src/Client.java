@@ -1,8 +1,9 @@
-import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import main.*;
 import main.product.Product;
 import main.product.Warehouse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -27,6 +28,7 @@ public class Client implements SocketThreadListener {
     private boolean isConnected;
     private long serverStartTime;
     private Timer serverStartTimeTimer;
+    private static final Logger LOGGER = LogManager.getLogger("ClientLogger");
 
     Client(ClientGUI app) {
         this.app = app;
@@ -51,20 +53,24 @@ public class Client implements SocketThreadListener {
             return;
         }
         try {
+            LOGGER.info("Connecting to " + ip + ":" + port);
             Socket socket = new Socket(ip, numPort);
             socketThread = new SocketThread(this, login, socket);
         } catch (IOException e) {
+            LOGGER.error("Failed to connect: " + e.getMessage());
             loginController.connectionFailed(e.getCause());
         }
     }
 
     private void auth(SocketThread thread) {
+        LOGGER.info("Authorization request for " + login);
         thread.sendMessage(Library.getAuthRequest(login, password));
         login = null;
         password = null;
     }
 
     void disconnect() {
+        LOGGER.info("Disconnecting from server...");
         isConnected = false;
         socketThread.close();
         if (serverStartTimeTimer != null) serverStartTimeTimer.cancel();
@@ -73,23 +79,27 @@ public class Client implements SocketThreadListener {
     }
 
     void startUpdater(boolean continueUpdate) {
+        LOGGER.info("Start updater...");
         socketThread.sendMessage(Library.makeJsonString(Library.UPDATER, Library.START, String.valueOf(continueUpdate)));
     }
 
     void stopUpdater() {
+        LOGGER.info("Stop updater...");
         socketThread.sendMessage(Library.makeJsonString(Library.UPDATER, Library.STOP));
     }
 
-
     void startResearcher() {
+        LOGGER.info("Start researcher...");
         socketThread.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.START));
     }
 
     void stopResearcher() {
+        LOGGER.info("Stop researcher...");
         socketThread.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.STOP));
     }
 
     void kickUser(String nickname) {
+        LOGGER.info("Kick user request with nickname: " + nickname);
         socketThread.sendMessage(Library.makeJsonString(Library.USERS, Library.DISCONNECT, nickname));
     }
 
@@ -102,6 +112,7 @@ public class Client implements SocketThreadListener {
     }
 
     void applyProductFilter(boolean stock, String city, String store, int strengthStart, int strengthEnd, int volumeStart, int volumeEnd, int priceStart, int priceEnd) {
+        LOGGER.info("Making product filter request...");
         if (!stock && city == null && store == null
                 && strengthStart == -1 && strengthEnd == -1
                 && volumeStart == -1 && volumeEnd == -1
@@ -142,11 +153,12 @@ public class Client implements SocketThreadListener {
     //Socket events
     @Override
     public void onSocketThreadStart(SocketThread thread, Socket socket) {
-
+        LOGGER.info("Client socket thread start");
     }
 
     @Override
     public void onSocketReady(SocketThread thread, Socket socket) {
+        LOGGER.info("Client socket thread ready");
         auth(thread);
     }
 
@@ -158,16 +170,20 @@ public class Client implements SocketThreadListener {
         switch (header[0]) {
             case Library.AUTH:
                 if (header.length < 2) {
-                    /*TODO show message error (unknown message from server)*/
+                    LOGGER.warn("Unknown auth message from server");
                     return;
                 }
                 if (header[1] == Library.ACCEPTED) {
                     isConnected = true;
-                    clientController.setNickname(receivedData.getData());
+                    String nickname = receivedData.getData();
+                    clientController.setNickname(nickname);
                     thread.sendMessage(Library.makeJsonString(Library.SERVER_INFO));
+                    LOGGER.info("Auth accepted with nickname " + nickname);
                 } else if (header[1] == Library.DENIED) {
+                    LOGGER.error("Auth denied");
                     loginController.authDenied();
                 } else if (header[1] == Library.MULTIPLY_SESSION) {
+                    LOGGER.error("Auth failed cause multiply session was found");
                     loginController.multiplySession(receivedData.getData());
                     loginController.setDisableAll(false);
                 }
@@ -177,6 +193,7 @@ public class Client implements SocketThreadListener {
                 break;
 
             case Library.WAREHOUSE_LIST_END:
+                LOGGER.info("Received warehouses list");
                 ArrayList<Warehouse> list = new ArrayList<>(warehouses);
                 int index = 0;
                 while (list.size() > 0) {
@@ -205,51 +222,64 @@ public class Client implements SocketThreadListener {
 
             case Library.SERVER_INFO:
                 if (header[1] == Library.DENIED) {
+                    LOGGER.error("Get server info request was denied");
                     loginController.failedToGetData();
                     thread.close();
                 } else if (header[1] == Library.ACCEPTED) {
+                    LOGGER.info("Get server info accepted");
                     app.showClient();
                     app.hideLoginStage();
                     int access = Integer.parseInt(receivedData.getData());
                     if (access == Library.ADMIN) {
+                        LOGGER.info("User level - admin, unlock admin tabs");
                         if (clientController != null)
                             clientController.setTabsEnableForAdmin();
                     } else {
-                        if (clientController != null)
+                        if (clientController != null){
+                            LOGGER.info("User level - moderator, unlock moderator tabs");
                             clientController.setTabsEnableForModerator();
+                        }
                     }
-                    try {
-                        Thread.sleep(1000);
-                        System.out.println();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+//                    try {
+//                        Thread.sleep(1000);
+//                        System.out.println();
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
                 }
                 break;
             case Library.START_TIME:
                 serverStartTime = Long.valueOf(receivedData.getData());
+                LOGGER.info("Received server start time: " + serverStartTime + ", setting up Timer for update Server UPTIME");
                 clientController.setServerUpTime(parseServerTime(serverStartTime));
                 serverStartTimeTimer = new Timer();
                 serverStartTimeTimer.schedule(new TimeUpdater(), 0, 60000);
                 break;
             case Library.PRODUCTS_COUNT:
+                LOGGER.info("Received products count" );
                 clientController.setProductsCount(receivedData.getData());
                 break;
             case Library.WAREHOUSES_COUNT:
+                LOGGER.info("Received warehouses count" );
                 clientController.setWarehousesCount(receivedData.getData());
                 break;
             case Library.USERS:
                 switch (header[1]) {
                     case Library.COUNT:
+                        LOGGER.info("Received connected users count");
                         clientController.setActiveUsersCount(receivedData.getData());
                         break;
                     case Library.LIST:
+                        LOGGER.info("Received connected users list" );
                         clientController.updateUsersList(receivedData.getData().split(Library.DELIMITER));
                         break;
                     case Library.DISCONNECT:
+                        String userNicknameDisconnet = receivedData.getData();
                         if (header.length > 2 && header[2] == Library.DENIED) {
-                            clientController.failedToKickUser(receivedData.getData());
+                            LOGGER.error("Failed to kick user: " + userNicknameDisconnet );
+                            clientController.failedToKickUser(userNicknameDisconnet);
                         } else {
+                            LOGGER.info("Disconnected from the server by: " + userNicknameDisconnet);
                             clientController.kickedFromTheServer(receivedData.getData());
                             app.hideClientStage();
                         }
@@ -259,25 +289,31 @@ public class Client implements SocketThreadListener {
             case Library.UPDATER:
                 switch (header[1]) {
                     case Library.DENIED:
-                        /*TODO - generate some alert dialog and close window*/
+                        LOGGER.error("ACCESS to UPDATER was DENIED by server");
                         break;
                     case Library.LAST_RUN:
+                        LOGGER.info("Received updater last run");
                         clientController.setUpdaterLastRun(parseStringDate(receivedData.getData()));
                         break;
                     case Library.LAST_POSITION:
+                        LOGGER.info("Received updater last position");
                         clientController.setLastPositionCheckboxVisible(Integer.parseInt(receivedData.getData()) > 0);
                         break;
                     case Library.START:
+                        LOGGER.info("Received updater start info");
                         clientController.updaterStart();
                         break;
                     case Library.PROCESS_END:
+                        LOGGER.info("Received updater stop info");
                         clientController.updaterStop();
                         break;
                     case Library.PRODUCTS_TOTAL:
+                        LOGGER.info("Received updater products total");
                         updaterProductsTotal = Integer.parseInt(receivedData.getData());
                         updaterProgressPoint = (double) 1 / updaterProductsTotal;
                         break;
                     case Library.CURRENT:
+                        LOGGER.info("Received current position of updater");
                         String[] arr = receivedData.getData().split(Library.DELIMITER);
                         int position = Integer.parseInt(arr[0]);
                         if (updaterProductsTotal == 0) {
@@ -288,15 +324,18 @@ public class Client implements SocketThreadListener {
                         clientController.setUpdaterCurrentProduct(arr[2]);
                         break;
                     case Library.FOUND:
+                        LOGGER.info("Received updater differences found");
                         String[] diffs = receivedData.getData().split(Library.DELIMITER);
                         clientController.setUpdatesFound(diffs[0]);
                         clientController.appendDifferencesFound(diffs[1]);
                         break;
                     case Library.FAILED:
+                        LOGGER.info("Received updater failed to update product");
                         String[] failsMsg = receivedData.getData().split(Library.DELIMITER);
                         clientController.setUpdatesFailed(failsMsg[1]);
                         break;
                     case Library.EXCEPTION:
+                        LOGGER.info("Received updater exception");
                         String[] exMsg = receivedData.getData().split(Library.DELIMITER);
                         if (exMsg.length >= 3) {
                             clientController.appendErrorToUpdaterLogger(exMsg[0], exMsg[1], exMsg[2]);
@@ -372,8 +411,9 @@ public class Client implements SocketThreadListener {
 
     @Override
     public void onSocketThreadStop(SocketThread thread) {
-        System.out.println("socket thread stop");
+        LOGGER.info("Client socket thread stoped");
         if (isConnected) {
+            LOGGER.error("Lost connection with server");
             clientController.connectionLost();
             app.hideClientStage();
             app.showLoginStage();
@@ -383,7 +423,7 @@ public class Client implements SocketThreadListener {
 
     @Override
     public void onSocketThreadException(SocketThread thread, Exception e) {
-        System.out.println(e.getMessage());
+        LOGGER.error("Socket thread exception: " + e.getMessage());
     }
 
     private String parseServerTime(Long time) {

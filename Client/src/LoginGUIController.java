@@ -1,6 +1,8 @@
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.URL;
@@ -13,7 +15,8 @@ public class LoginGUIController {
     private final String INVALID_PORT = "Неверно указан порт!";
     private final String AUTH_ERROR = "Ошибка авторизации!";
     private final String CONFIG = "config.properties";
-//    private final String CONFIG = "\\res\\config.properties";
+    //    private final String CONFIG = "\\res\\config.properties";
+    private static final Logger LOGGER = LogManager.getLogger("ClientLogger");
     private Client client;
 
     @FXML
@@ -37,7 +40,9 @@ public class LoginGUIController {
 
     @FXML
     void initialize() {
+        LOGGER.info("LoginStage initializing...");
         try {
+            LOGGER.info("Loading preferences from config file...");
             //load settings from properties file
 //            File props = new File(CONFIG);
 //            if (!props.exists()){
@@ -56,12 +61,13 @@ public class LoginGUIController {
                 fieldPassword.setText(password);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("Failed to load preferences: " + e.getMessage());
         }
     }
 
     @FXML
     void handleConnectButton() {
+        LOGGER.info("Connect button handler");
         String ip = fieldIP.getText().trim();
         String port = fieldPort.getText().trim();
         String login = fieldLogin.getText().trim();
@@ -70,14 +76,17 @@ public class LoginGUIController {
         lblError.setVisible(false);
 
         if (ip.length() > 0 && port.length() > 0 && login.length() > 0 && password.length() > 0) {
+            LOGGER.info("Fields has a valid length");
             setDisableAll(true);
             client.connect(ip, port, login, password);
         } else {
+            LOGGER.info("Invalid length of fields");
             showErrorLabel(ERROR_FIELDS);
         }
     }
 
     void authDenied() {
+        LOGGER.info("Auth denied UI reaction");
         Platform.runLater(() -> {
             setDisableAll(false);
             showErrorLabel(AUTH_ERROR);
@@ -85,6 +94,7 @@ public class LoginGUIController {
     }
 
     void multiplySession(String nickname) {
+        LOGGER.info("Multiply session UI reaction");
         Platform.runLater(() -> {
             setDisableAll(false);
             showAlertDialog(Alert.AlertType.ERROR, "Ошибка подключения!",
@@ -104,6 +114,7 @@ public class LoginGUIController {
     }
 
     void failedToGetData() {
+        LOGGER.info("Failed to get data");
         Platform.runLater(() -> {
             setDisableAll(false);
             showAlertDialog(Alert.AlertType.ERROR, "Ошибка доступа!",
@@ -117,6 +128,7 @@ public class LoginGUIController {
     }
 
     void connectionFailed(Throwable cause) {
+        LOGGER.info("Connection failed");
         Platform.runLater(() -> {
             setDisableAll(false);
             showErrorLabel(CONNECTION_FAILED + " " + cause);
@@ -124,6 +136,7 @@ public class LoginGUIController {
     }
 
     void invalidPort(String port) {
+        LOGGER.info("Invalid port");
         Platform.runLater(() -> {
             setDisableAll(false);
             showErrorLabel(INVALID_PORT);
@@ -142,6 +155,4 @@ public class LoginGUIController {
         alert.setContentText(context);
         return alert;
     }
-
-
 }
