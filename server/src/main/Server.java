@@ -1,6 +1,5 @@
 package main;
 
-import com.sun.org.apache.bcel.internal.generic.LoadClass;
 import main.product.Product;
 import main.product.Warehouse;
 import org.apache.logging.log4j.LogManager;
@@ -10,7 +9,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Vector;
 
@@ -26,7 +24,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private Thread researcherThread;
     private Updater updater;
     private List<Warehouse> warehouses;
-    //private Grabber grabber;
     private Researcher researcher;
     private Vector<SocketThread> clients = new Vector<>();
     private static final Logger SERVER_LOGGER = LogManager.getLogger("ServerLogger");
@@ -158,7 +155,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                     } else {
                         USERS_LOGGER.error("GET SERVER_INFO FAILED cause client access level is lower than required: " + accessLevel);
                         client.sendMessage(Library.makeJsonString(Library.SERVER_INFO, Library.DENIED));
-                        //clients.remove(client);
                     }
                 }
                 break;
@@ -169,8 +165,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 if (accessLevel > 2) {
                     USERS_LOGGER.error("ACCESS TO UPDATER DENIED cause client access level is lower than required: " + accessLevel);
                     client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.DENIED));
-//                    clients.remove(client);
-//                    client.close();
                     return;
                 }
                 switch (header[1]) {
@@ -234,6 +228,11 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 sendProductList(products, client);
                 break;
         }
+    }
+
+    @Override
+    public void onSocketThreadException(SocketThread thread, Exception e) {
+        SERVER_LOGGER.error("ServerSocket exception: " + e.getMessage() + " " + e.getCause());
     }
 
     private List<Product> getProductsByFilter(ProductRequest request) {
@@ -341,7 +340,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 query.append(priceEnd);
             }
         }
-
         return query.toString();
     }
 
@@ -371,12 +369,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
             thread.sendMessage(Library.warehouseToJson(w));
         }
         thread.sendMessage(Library.makeJsonString(Library.WAREHOUSE_LIST_END));
-    }
-
-    @Override
-    public void onSocketThreadException(SocketThread thread, Exception e) {
-        //thread.close();
-        System.out.println("ServerSocket exception: " + e.getMessage() + " " + e.getCause());
     }
 
     private void authorizeClient(ClientThread clientThread, String userData) {
@@ -424,6 +416,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         updater.stop();
         updaterThread = null;
         updater = null;
+        SERVER_LOGGER.info("Updater stopped");
     }
 
     private void startResearcher() {
@@ -431,6 +424,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         researcher = new Researcher("https://ilfumoshop.ru/zhidkost-dlya-zapravki-vejporov", this);
         researcherThread = new Thread(researcher);
         researcherThread.start();
+        SERVER_LOGGER.info("Researcher started");
     }
 
     private void stopResearcher() {
@@ -439,6 +433,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         researcher.stop();
         researcherThread = null;
         researcher = null;
+        SERVER_LOGGER.info("Researcher stopped");
     }
 
     private ClientThread findUserByNickname(String nickname) {
@@ -532,7 +527,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     public void onUpdateError() {
 
     }
-
 
     @Override
     public void onParseSuccessfulEnd(int count) {

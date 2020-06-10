@@ -67,17 +67,21 @@ public class ClientGUI extends Application {
         });
     }
 
-    void closeLoginStage() {
+    void hideLoginStage() {
         Platform.runLater(() -> {
-            mainStage.close();
+            mainStage.hide();
         });
     }
 
-    void closeClientStage() {
+    void showLoginStage() {
         Platform.runLater(() -> {
-            clientStage.close();
+            mainStage.show();
         });
     }
 
-
+    void hideClientStage() {
+        Platform.runLater(() -> {
+            clientStage.hide();
+        });
+    }
 }

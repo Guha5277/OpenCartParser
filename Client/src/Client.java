@@ -23,6 +23,7 @@ public class Client implements SocketThreadListener {
     private List<Warehouse> warehouses = new ArrayList<>();
     private Map<String, List<String>> someNewMap = new HashMap<>();
     private ArrayList<Product> products = new ArrayList<>();
+    private boolean isConnected;
 
     Client(ClientGUI app) {
         this.app = app;
@@ -154,12 +155,14 @@ public class Client implements SocketThreadListener {
                     return;
                 }
                 if (header[1] == Library.ACCEPTED) {
+                    isConnected = true;
                     clientController.setNickname(receivedData.getData());
                     thread.sendMessage(Library.makeJsonString(Library.SERVER_INFO));
                 } else if (header[1] == Library.DENIED) {
                     loginController.authDenied();
                 } else if (header[1] == Library.MULTIPLY_SESSION) {
                     loginController.multiplySession(receivedData.getData());
+                    loginController.setDisableAll(false);
                 }
                 break;
             case Library.WAREHOUSE_LIST:
@@ -199,7 +202,7 @@ public class Client implements SocketThreadListener {
                     thread.close();
                 } else if (header[1] == Library.ACCEPTED) {
                     app.showClient();
-                    app.closeLoginStage();
+                    app.hideLoginStage();
                     int access = Integer.parseInt(receivedData.getData());
                     if (access == Library.ADMIN) {
                         if (clientController != null)
@@ -238,7 +241,7 @@ public class Client implements SocketThreadListener {
                             clientController.failedToKickUser(receivedData.getData());
                         } else {
                             clientController.kickedFromTheServer(receivedData.getData());
-                            app.closeClientStage();
+                            app.hideClientStage();
                         }
                         break;
                 }
@@ -359,13 +362,18 @@ public class Client implements SocketThreadListener {
 
     @Override
     public void onSocketThreadStop(SocketThread thread) {
-//        clientController.connectionLost();
-//        app.closeClientStage();
+        System.out.println("socket thread stop");
+        if (isConnected){
+            clientController.connectionLost();
+            app.hideClientStage();
+            app.showLoginStage();
+        }
+        loginController.setDisableAll(false);
     }
 
     @Override
     public void onSocketThreadException(SocketThread thread, Exception e) {
-
+        System.out.println(e.getMessage());
     }
 
     private String serverUpTime(Long time) {

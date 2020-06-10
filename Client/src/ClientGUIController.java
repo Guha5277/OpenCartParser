@@ -598,6 +598,12 @@ public class ClientGUIController {
         });
     }
 
+    void connectionLost() {
+        Platform.runLater(() -> {
+        makeDialogWindow(Alert.AlertType.ERROR, "Соединение прервано!", "Соединение с сервером потеряно!", "").showAndWait();
+        });
+    }
+
     //Event Handlers
     @FXML
     void handleUpdaterStartButton() {
@@ -692,6 +698,4 @@ public class ClientGUIController {
     void handleShowProductFilter(ActionEvent event) {
         client.showProductFilterStage(chkStock.isSelected(), combCity.getItems(), combCity.getSelectionModel().getSelectedIndex(), combStore.getItems(), combStore.getSelectionModel().getSelectedIndex());
     }
-
-
 }
