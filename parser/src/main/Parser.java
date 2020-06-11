@@ -15,13 +15,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 class Parser {
-    static final Logger LOG = LogManager.getLogger();
+    static final Logger LOG = LogManager.getLogger("ParserLogger");
 
-    private final String URL = "https://ilfumoshop.ru/zhidkost-dlya-zapravki-vejporov.html";
     private final String CATEGORY_DELIMITER = "col-lg-4 col-md-4 col-sm-6 col-xs-12";
     private static final String INNER_LIQUID_DELIMITER = "product-title";
 
     Document downloadPage(String url) throws IOException {
+        LOG.info("Downloading page: " + url);
         return Jsoup.connect(url).get();
     }
 
@@ -41,18 +41,20 @@ class Parser {
 
     Elements getInnerGroups(String url) {
         try {
+            LOG.info("Getting inner groups...");
             return Jsoup.connect(url).get().body().getElementsByClass(CATEGORY_DELIMITER);
         } catch (IOException e) {
-            LOG.error(e);
+            LOG.error("Failed to get inner group " + e.getMessage());
             return null;
         }
     }
 
     Elements getInnerLiquids(String url) {
         try {
+            LOG.info("Getting inner liquids...");
             return Jsoup.connect(url).get().body().getElementsByClass(INNER_LIQUID_DELIMITER);
         } catch (IOException e) {
-            LOG.error(e);
+            LOG.error("Failed to get inner liquids " + e.getMessage());
             return null;
         }
     }
@@ -65,44 +67,45 @@ class Parser {
         });
     }
 
-    Product parseProduct(String url) throws IOException{
-        Product result = null;
+    Product parseProduct(String url) throws IOException {
+        LOG.info("Parsing product: " + url);
+        Product result;
         String name;
         String groupName;
         String categoryName;
         int price;
         int categoryID;
 
+        Document document = Jsoup.connect(url).get();
+        Elements elements = document.body().getElementsByClass("breadcrumb").select("li");
+        if (elements.size() == 0) {
+            LOG.error("Failed to parse product page: " + url);
+            //System.out.println("Wrong product page!: " + url);
+            return null;
+        }
+        name = elements.get(elements.size() - 1).text();
 
-            Document document = Jsoup.connect(url).get();
-            Elements elements = document.body().getElementsByClass("breadcrumb").select("li");
-            if (elements.size() == 0) {
-                System.out.println("Wrong product page!: " + url);
-                return null;
-            }
-            name = elements.get(elements.size() - 1).text();
+        categoryName = elements.get(2).text();
+        groupName = elements.get(3).text();
 
-            categoryName = elements.get(2).text();
-            groupName = elements.get(3).text();
-
+        categoryID = SQLClient.getCategoryID(categoryName);
+        if (categoryID == 0) {
+            groupName = elements.get(2).text();
+            categoryName = elements.get(3).text();
             categoryID = SQLClient.getCategoryID(categoryName);
-            if (categoryID == 0) {
-                groupName = elements.get(2).text();
-                categoryName = elements.get(3).text();
-                categoryID = SQLClient.getCategoryID(categoryName);
-            }
+        }
 
-            price = parseStringPriceToInt(document.getElementsByClass("price").text());
+        price = parseStringPriceToInt(document.getElementsByClass("price").text());
 
-            result = new Product(name, url, price, new Group(groupName, null), categoryID);
+        result = new Product(name, url, price, new Group(groupName, null), categoryID);
 
-            parseVolume(result);
-            parseStrength(result);
+        parseVolume(result);
+        parseStrength(result);
 
-            if (result.getVolume() > 0 && result.getStrength() < 0){
-                result.setStrength(3.0);
-            }
-        //return new Product(name, url, price, new Group(groupName, null), categoryID, volume, strength);
+        if (result.getVolume() > 0 && result.getStrength() < 0) {
+            result.setStrength(3.0);
+        }
+        LOG.info("Product parsed: " + url + ", " + name);
         return result;
     }
 
@@ -111,7 +114,7 @@ class Parser {
         return Integer.parseInt(price.substring(0, cutIndex));
     }
 
-    List<Element> getCategoryElements(Category category) throws IOException{
+    List<Element> getCategoryElements(Category category) throws IOException {
         List<Element> groupList = new ArrayList<>();
         Elements groupElements = downloadPage(category.getUrl()).body().getElementsByClass(CATEGORY_DELIMITER);
         groupElements.forEach(singleGroupElement -> {
@@ -174,7 +177,7 @@ class Parser {
             for (int i = 0; i < nameParts.length; i++) {
                 if (nameParts[i].contains("ml")) {
                     if (nameParts[i].length() == 2) {
-                        index =  i - 1;
+                        index = i - 1;
                     } else {
                         index = i;
                     }
@@ -226,7 +229,7 @@ class Parser {
 
         strengthIndex = findStrengthIndex(nameParts);
 
-        if (strengthIndex == - 1){
+        if (strengthIndex == -1) {
             product.setStrength(-1.0d);
         } else {
             product.setStrength(stringToStrength(nameParts[strengthIndex]));
@@ -236,7 +239,8 @@ class Parser {
                 if (i == strengthIndex) {
                     if (i == nameParts.length - 1) continue;
                     String part = nameParts[i + 1];
-                    if (part.contains("мг/мл") || part.contains("мл/мг") ||  part.contains("мг") ||  part.contains("%")) i++;
+                    if (part.contains("мг/мл") || part.contains("мл/мг") || part.contains("мг") || part.contains("%"))
+                        i++;
                     //if (part.contains("мг/мл") || part.contains("мл/мг") ||  part.contains("мг") ||  part.contains("%")) i++;
                     continue;
                 }
@@ -247,53 +251,53 @@ class Parser {
         }
     }
 
-    private int findStrengthIndex (String[] nameParts){
+    private int findStrengthIndex(String[] nameParts) {
         int index = -1;
 
-        for (int i = 0; i < nameParts.length; i++){
+        for (int i = 0; i < nameParts.length; i++) {
             String part = nameParts[i];
             if (part.contains("мг/мл") || part.contains("мл/мг") || part.contains("мг/м")) {
-                if (nameParts[i].length() > 5){
+                if (nameParts[i].length() > 5) {
                     index = i;
                     break;
                 }
-                index = i-1;
+                index = i - 1;
                 break;
             }
         }
 
         if (index == -1) {
-            for (int i = 0; i < nameParts.length; i++){
+            for (int i = 0; i < nameParts.length; i++) {
                 String part = nameParts[i];
                 if (part.contains("мг/")) {
-                    if (nameParts[i].length() > 3){
+                    if (nameParts[i].length() > 3) {
                         index = i;
                         break;
                     }
-                    index = i-1;
+                    index = i - 1;
                     break;
                 }
 
                 if (part.contains("мг")) {
-                    if (nameParts[i].length() > 2){
+                    if (nameParts[i].length() > 2) {
                         index = i;
                         break;
                     }
-                    index = i-1;
+                    index = i - 1;
                     break;
                 }
             }
         }
 
         if (index == -1) {
-            for (int i = 0; i < nameParts.length; i++){
+            for (int i = 0; i < nameParts.length; i++) {
                 String part = nameParts[i];
                 if (part.contains("%")) {
-                    if (nameParts[i].length() > 1){
+                    if (nameParts[i].length() > 1) {
                         index = i;
                         break;
                     }
-                    index = i-1;
+                    index = i - 1;
                     break;
                 }
             }
@@ -302,25 +306,25 @@ class Parser {
         return index;
     }
 
-    private double stringToStrength(String strength){
+    private double stringToStrength(String strength) {
         int length = strength.length();
-        if (strength.contains("мг/мл") || strength.contains("мл/мг")){
+        if (strength.contains("мг/мл") || strength.contains("мл/мг")) {
             strength = strength.substring(0, length - 5);
         }
 
-        if (strength.contains("мг/")){
+        if (strength.contains("мг/")) {
             strength = strength.substring(0, length - 3);
         }
 
-        if (strength.contains("мг")){
+        if (strength.contains("мг")) {
             strength = strength.substring(0, length - 2);
         }
 
-        if (strength.contains("/")){
+        if (strength.contains("/")) {
             strength = strength.split("/")[0];
         }
 
-        if (strength.contains("%")){
+        if (strength.contains("%")) {
             strength = strength.split("%")[0];
         }
 
@@ -337,32 +341,32 @@ class Parser {
         }
     }
 
-    String trimToValidName(String name, int volume, double strength) {
-        int indexStart = name.indexOf(String.valueOf(volume)) - 1;
-
-        if (indexStart < 0) {
-            indexStart = name.indexOf('*') - 2;
-        }
-
-        int indexEnd = name.indexOf(" мл") + 3;
-        String firstPart = name.substring(0, indexStart);
-        String secondPart = name.substring(indexEnd);
-
-
-        if (strength != 1.5d) {
-            if (secondPart.equals(" " + (int) strength + " мг/мл")) {
-                return firstPart;
-            }
-            indexEnd = secondPart.indexOf((String.valueOf((int) strength))) - 1;
-        } else {
-            if (secondPart.equals("1.5 мг/мл") || secondPart.equals("01.5 мг/мл")) {
-                return firstPart;
-            }
-            indexEnd = secondPart.indexOf("1.5") - 1;
-        }
-        if (indexEnd > 0) secondPart = secondPart.substring(0, indexEnd);
-        return firstPart + secondPart;
-    }
+//    String trimToValidName(String name, int volume, double strength) {
+//        int indexStart = name.indexOf(String.valueOf(volume)) - 1;
+//
+//        if (indexStart < 0) {
+//            indexStart = name.indexOf('*') - 2;
+//        }
+//
+//        int indexEnd = name.indexOf(" мл") + 3;
+//        String firstPart = name.substring(0, indexStart);
+//        String secondPart = name.substring(indexEnd);
+//
+//
+//        if (strength != 1.5d) {
+//            if (secondPart.equals(" " + (int) strength + " мг/мл")) {
+//                return firstPart;
+//            }
+//            indexEnd = secondPart.indexOf((String.valueOf((int) strength))) - 1;
+//        } else {
+//            if (secondPart.equals("1.5 мг/мл") || secondPart.equals("01.5 мг/мл")) {
+//                return firstPart;
+//            }
+//            indexEnd = secondPart.indexOf("1.5") - 1;
+//        }
+//        if (indexEnd > 0) secondPart = secondPart.substring(0, indexEnd);
+//        return firstPart + secondPart;
+//    }
 
     void insertProductToDB(Product product) {
         SQLClient.insertProduct(product.getName(), product.getURL(), product.getPrice(), product.getCategoryID(), product.getGroup().getName(), product.getVolume(), product.getStrength());

@@ -88,7 +88,7 @@ public class Researcher extends Parser implements Runnable {
         Elements innerProducts = getInnerLiquids(url);
         if (innerProducts != null && innerProducts.size() > 0) {
             for (Element productElement : innerProducts) {
-                LOG.info("current: " + current++);
+                //LOG.info("current: " + current++);
                 checkProduct(productElement.attr("href"));
             }
         }

@@ -29,8 +29,8 @@
             <DefaultRolloverStrategy max="30" />
         </RollingFile>
 
-        <RollingFile name="ParserAppender" fileName="logs/parser/events.log"
-                     filePattern="logs/users/$${date:yyyy-MM}/%d{yyyy-MM-dd}.log">
+        <RollingFile name="ParserAppender" fileName="logs/server/parser/events.log"
+                     filePattern="logs/server/parser/$${date:yyyy-MM}/%d{yyyy-MM-dd}.log">
             <PatternLayout>
                 <Pattern>%d{HH:mm:ss} [%-5level] [%C{2}] - %msg %n</Pattern>
             </PatternLayout>

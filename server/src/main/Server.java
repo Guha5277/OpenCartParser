@@ -164,11 +164,11 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 }
                 switch (header[1]) {
                     case Library.START:
-                        USERS_LOGGER.info("UPDATER STARTED by " + nickname );
+                        USERS_LOGGER.info("start UPDATER request by " + nickname );
                         startUpdater(Boolean.valueOf(receivedData.getData()));
                         break;
                     case Library.STOP:
-                        USERS_LOGGER.info("UPDATER STOPPED by " + nickname );
+                        USERS_LOGGER.info("stop UPDATER request by " + nickname );
                         stopUpdater();
                         break;
                 }
@@ -185,11 +185,11 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 }
                 switch (header[1]) {
                     case Library.START:
-                        USERS_LOGGER.info("RESEARCHER STARTED by " + client.getNickname() );
+                        USERS_LOGGER.info("start RESEARCHER request by " + client.getNickname() );
                         startResearcher();
                         break;
                     case Library.STOP:
-                        USERS_LOGGER.info("RESEARCHER STOPPED by " + client.getNickname() );
+                        USERS_LOGGER.info("stop RESEARCHER request by " + client.getNickname() );
                         stopResearcher();
                         break;
                 }

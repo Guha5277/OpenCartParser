@@ -74,8 +74,6 @@ public class Client implements SocketThreadListener {
         isConnected = false;
         socketThread.close();
         if (serverStartTimeTimer != null) serverStartTimeTimer.cancel();
-//        Platform.exit();
-//        System.exit(0);
     }
 
     void startUpdater(boolean continueUpdate) {
@@ -313,7 +311,7 @@ public class Client implements SocketThreadListener {
                         updaterProgressPoint = (double) 1 / updaterProductsTotal;
                         break;
                     case Library.CURRENT:
-                        LOGGER.info("Received current position of updater");
+                        //LOGGER.info("Received current position of updater");
                         String[] arr = receivedData.getData().split(Library.DELIMITER);
                         int position = Integer.parseInt(arr[0]);
                         if (updaterProductsTotal == 0) {
@@ -335,7 +333,7 @@ public class Client implements SocketThreadListener {
                         clientController.setUpdatesFailed(failsMsg[1]);
                         break;
                     case Library.EXCEPTION:
-                        LOGGER.info("Received updater exception");
+                        LOGGER.info("Updater exception");
                         String[] exMsg = receivedData.getData().split(Library.DELIMITER);
                         if (exMsg.length >= 3) {
                             clientController.appendErrorToUpdaterLogger(exMsg[0], exMsg[1], exMsg[2]);
@@ -348,32 +346,39 @@ public class Client implements SocketThreadListener {
             case Library.RESEARCHER:
                 switch (header[1]) {
                     case Library.DENIED:
-                        /*TODO - generate some alert dialog and close window*/
+                        LOGGER.error("ACCESS to RESEARCHER was DENIED by server");
                         break;
                     case Library.LAST_RUN:
+                        LOGGER.info("Received researcher last run");
                         clientController.setResearcherLastUpdate(parseStringDate(receivedData.getData()));
                         break;
                     case Library.START:
+                        LOGGER.info("Received researcher start info");
                         clientController.researcherStart();
                         break;
                     case Library.PROCESS_END:
+                        LOGGER.info("Received researcher stop info");
                         clientController.researcherEnd();
                         break;
                     case Library.PRODUCTS_TOTAL:
+                        //LOGGER.info("Received researcher products count");
                         researcherProductsTotal = Integer.parseInt(receivedData.getData());
                         researcherProgressPoint = (double) 1 / researcherProductsTotal;
                         break;
                     case Library.CURRENT:
+                        //LOGGER.info("Received researcher current position");
                         String[] arr = receivedData.getData().split(Library.DELIMITER);
                         int position = Integer.parseInt(arr[0]);
                         clientController.setResearcherProgress(researcherProgressPoint * position, position + "/" + researcherProductsTotal);
                         clientController.setResearcherCurrentGroup(arr[1]);
                         break;
                     case Library.CURRENT_CATEGORY:
+                        //LOGGER.info("Received researcher current category");
                         String[] currCat = receivedData.getData().split(Library.DELIMITER);
                         clientController.setResearcherCurrentCategory(currCat[0] + "/" + currCat[1], currCat[2]);
                         break;
                     case Library.FOUND:
+                        LOGGER.info("Received researcher new position found");
                         String[] diffs = receivedData.getData().split(Library.DELIMITER);
                         clientController.appendResearcherFoundProd(diffs[0]);
                         clientController.setResearcherTotalFounds(diffs[1]);
@@ -394,6 +399,7 @@ public class Client implements SocketThreadListener {
                 break;
             case Library.PRODUCT_REQUEST:
                 if (header[1] == Library.EMPTY) {
+                    LOGGER.warn("No products found by user request");
                     clientController.productsNotFound();
                 }
                 break;
@@ -404,6 +410,7 @@ public class Client implements SocketThreadListener {
                 products.clear();
                 break;
             case Library.PRODUCT_LIST_END:
+                LOGGER.warn("Received products list by user request");
                 clientController.updateProductTableContent(products);
                 break;
         }
@@ -411,7 +418,7 @@ public class Client implements SocketThreadListener {
 
     @Override
     public void onSocketThreadStop(SocketThread thread) {
-        LOGGER.info("Client socket thread stoped");
+        LOGGER.info("Client socket thread stopped");
         if (isConnected) {
             LOGGER.error("Lost connection with server");
             clientController.connectionLost();
