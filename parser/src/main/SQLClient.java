@@ -7,10 +7,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.sql.*;
+//import java.sql.Date;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.util.*;
+import java.util.Date;
 
 class SQLClient {
     private static Connection connection;
@@ -366,27 +370,59 @@ class SQLClient {
         }
     }
 
-    synchronized static String getUpdaterLastRun() {
-        String query = "SELECT last_run FROM info WHERE process='updater'";
+    static LocalDate getProcessLastRun(String process) {
+        String query = String.format("SELECT last_run FROM info WHERE process='%s'", process);
         try {
             ResultSet set = statement.executeQuery(query);
             if (set.isClosed()) return null;
-            return set.getString(1);
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+
+            Date date = null;
+            try {
+                date = formatter.parse(set.getString(1));
+            } catch (ParseException e) {
+                e.printStackTrace();
+                return null;
+            }
+            return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    static String getResearcherLastRun() {
-        String query = "SELECT last_run FROM info WHERE process='researcher'";
+    static LocalTime getProcessLaunchTime(String process){
+        String query = String.format("SELECT start_time FROM settings WHERE process='%s'", process);
+        //String query = "SELECT start_time FROM settings WHERE process='updater'";
         try {
             ResultSet set = statement.executeQuery(query);
             if (set.isClosed()) return null;
-            return set.getString(1);
+            SimpleDateFormat formatter = new SimpleDateFormat("HH:mm");
+            Date date;
+            try {
+                date = formatter.parse(set.getString(1));
+            } catch (ParseException e) {
+                e.printStackTrace();
+                return null;
+            }
+
+            return date.toInstant().atZone(ZoneId.systemDefault()).toLocalTime();
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    static boolean getProcessAutoStartState(String process){
+        String query = String.format("SELECT enable FROM settings WHERE process='%s'", process);
+        //String query = "SELECT start_time FROM settings WHERE process='updater'";
+        try {
+            ResultSet set = statement.executeQuery(query);
+            if (set.isClosed()) return false;
+            return Boolean.valueOf(set.getString(1));
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 

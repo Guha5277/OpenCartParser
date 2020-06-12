@@ -9,7 +9,10 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
 
 public class Server implements ServerSocketThreadListener, SocketThreadListener, ParserEvents {
@@ -17,9 +20,19 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private int productsCount;
     private int warehousesCount;
     private int updaterTotalProd;
-    private String updaterLastRunDate;
-    private String researcherLastRunDate;
+    private final String UPDATER = "updater";
+    private final String RESEARCHER = "researcher";
+    private LocalDate updaterLastRunDate;
+    private LocalDate researcherLastRunDate;
     private int lastUpdatedProductPosition;
+    private boolean updaterAutostartEnabled;
+    private boolean researcherAutostartEnabled;
+    private LocalTime updaterAutostartTime;
+    private LocalTime researcherAutostartTime;
+    private int updaterDaysInterval = 1;
+    private int researcherDaysInterval = 1;
+    private Timer updaterTimer = new Timer();
+    private Timer researcherTimer = new Timer();
     private Thread updaterThread;
     private Thread researcherThread;
     private Updater updater;
@@ -37,34 +50,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private Server() {
         new ServerSocketThread(this, "server", 5277, 200);
         serverStartAt = System.currentTimeMillis();
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 18);
-        calendar.set(Calendar.MINUTE, 35);
-        calendar.set(Calendar.SECOND, 0);
-
-        LocalDateTime currentTime = LocalDateTime.now();
-        LocalDateTime lastCheckedTime = LocalDateTime.of(2020, 2, 9, 6, 15);
-
-        LocalDateTime sheduleTime = lastCheckedTime.plusDays(2);
-
-        System.out.println("Current: "  + currentTime);
-        System.out.println("Last Checked: " + lastCheckedTime);
-        System.out.println("Shedule time: " + sheduleTime);
-
-        System.out.println(sheduleTime.isBefore(currentTime));
-
-        if (sheduleTime.isBefore(currentTime)) {
-            sheduleTime = sheduleTime.plusDays(currentTime.compareTo(sheduleTime));
-            System.out.println(sheduleTime);
-        }
-
-//        System.out.println(currentTime.compareTo(lastCheckedTime));
-//        System.out.println(lastCheckedTime.compareTo(currentTime));
-
-        Timer timer = new Timer();
-        timer.schedule(new MyTestTimerTask(), calendar.getTime());
-
-
     }
 
     //Server Events
@@ -79,9 +64,23 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         SQLClient.connect();
         productsCount = SQLClient.getProductsCount();
         warehousesCount = SQLClient.getWarehousesCount();
-        updaterLastRunDate = SQLClient.getUpdaterLastRun();
-        researcherLastRunDate = SQLClient.getResearcherLastRun();
+        updaterLastRunDate = SQLClient.getProcessLastRun(UPDATER);
+        updaterAutostartTime = SQLClient.getProcessLaunchTime(UPDATER);
+        updaterAutostartEnabled = SQLClient.getProcessAutoStartState(UPDATER);
+
+        researcherLastRunDate = SQLClient.getProcessLastRun(RESEARCHER);
+        researcherAutostartTime = SQLClient.getProcessLaunchTime(RESEARCHER);
+        researcherAutostartEnabled = SQLClient.getProcessAutoStartState(RESEARCHER);
         lastUpdatedProductPosition = SQLClient.getLastUpdatedProductPosition();
+
+        if (updaterAutostartEnabled){
+            runUpdaterTimerTask();
+        }
+
+        if (researcherAutostartEnabled){
+            runResearcherTimerTask();
+        }
+
         String address = "";
         String name = "";
         try {
@@ -170,10 +169,10 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                         sendWarehousesList(thread);
 
                         if (updaterLastRunDate != null) {
-                            client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.LAST_RUN, updaterLastRunDate));
+                            client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.LAST_RUN, updaterLastRunDate.toString()));
                         }
                         if (researcherLastRunDate != null) {
-                            client.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate));
+                            client.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate.toString()));
                         }
                     } else {
                         USERS_LOGGER.error("GET SERVER_INFO FAILED cause client access level is lower than required: " + accessLevel);
@@ -574,11 +573,14 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         SQLClient.commit();
 
         lastUpdatedProductPosition = SQLClient.getLastUpdatedProductPosition();
-        updaterLastRunDate = SQLClient.getUpdaterLastRun();
-
+        updaterLastRunDate = SQLClient.getProcessLastRun(UPDATER);
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.PROCESS_END, String.valueOf(checked), String.valueOf(updated)));
-        sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_RUN, updaterLastRunDate));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_RUN, updaterLastRunDate.toString()));
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_POSITION, String.valueOf(lastUpdatedProductPosition)));
+        updaterAutostartEnabled = SQLClient.getProcessAutoStartState(UPDATER);
+
+        if (updaterAutostartEnabled) runUpdaterTimerTask();
+
     }
 
     @Override
@@ -587,12 +589,15 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         SQLClient.updateResearcherLastRun(count);
 
         SQLClient.commit();
-        researcherLastRunDate = SQLClient.getResearcherLastRun();
+        researcherLastRunDate = SQLClient.getProcessLastRun(RESEARCHER);
         productsCount = SQLClient.getProductsCount();
 
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.PROCESS_END, String.valueOf(count)));
-        sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate));
-        sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate.toString()));
+        sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate.toString()));
+        researcherAutostartEnabled = SQLClient.getProcessAutoStartState(RESEARCHER);
+
+        if (researcherAutostartEnabled) runResearcherTimerTask();
     }
 
     @Override
@@ -616,10 +621,48 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         SERVER_LOGGER.error("Researcher error");
     }
 
-    private class MyTestTimerTask extends TimerTask {
+    private void runUpdaterTimerTask(){
+        updaterTimer.schedule(new UpdaterTimerTask(), Date.from(calculateProcessRunDate(updaterLastRunDate, updaterAutostartTime, updaterDaysInterval).atZone(ZoneId.systemDefault()).toInstant()));
+    }
+
+    private void runResearcherTimerTask(){
+         researcherTimer.schedule(new ResearcherTimerTask(), Date.from(calculateProcessRunDate(researcherLastRunDate, researcherAutostartTime, researcherDaysInterval).atZone(ZoneId.systemDefault()).toInstant()));
+    }
+
+    private LocalDateTime calculateProcessRunDate(LocalDate lastCheckedTime, LocalTime runTime, int daysInterval) {
+        int runHour = runTime.getHour();
+        int runMinute = runTime.getMinute();
+        LocalDateTime currentTime = LocalDateTime.now();
+        LocalDateTime sheduleTime = LocalDateTime.of(lastCheckedTime.getYear(), lastCheckedTime.getMonthValue(), lastCheckedTime.getDayOfMonth() + daysInterval, runHour, runMinute);
+
+        if (sheduleTime.isBefore(currentTime)) {
+            int currYear = currentTime.getYear();
+            int currMonth = currentTime.getMonthValue();
+            int currDay = currentTime.getDayOfMonth();
+            int currHour = currentTime.getHour();
+            int currMinute = currentTime.getMinute();
+
+            if (currHour == runHour) {
+                if (currMinute >= runMinute) currDay++;
+            } else if (currHour > runHour) currDay++;
+            return LocalDateTime.of(currYear, currMonth, currDay, runHour, runMinute);
+        }
+        return sheduleTime;
+    }
+
+    private class ResearcherTimerTask extends TimerTask {
         @Override
         public void run() {
-            System.out.println("TIMER TASK SHEDULED");
+            startResearcher();
+            //if (researcherAutostartEnabled) runResearcherTimerTask();
+        }
+    }
+
+    private class UpdaterTimerTask extends TimerTask {
+        @Override
+        public void run() {
+            startUpdater(false);
+            //if (updaterAutostartEnabled) runUpdaterTimerTask();
         }
     }
 }

@@ -21,7 +21,7 @@ class Parser {
     private static final String INNER_LIQUID_DELIMITER = "product-title";
 
     Document downloadPage(String url) throws IOException {
-        LOG.info("Downloading page: " + url);
+        //LOG.info("Downloading page: " + url);
         return Jsoup.connect(url).get();
     }
 
@@ -41,7 +41,7 @@ class Parser {
 
     Elements getInnerGroups(String url) {
         try {
-            LOG.info("Getting inner groups...");
+            //LOG.info("Getting inner groups...");
             return Jsoup.connect(url).get().body().getElementsByClass(CATEGORY_DELIMITER);
         } catch (IOException e) {
             LOG.error("Failed to get inner group " + e.getMessage());
@@ -51,7 +51,7 @@ class Parser {
 
     Elements getInnerLiquids(String url) {
         try {
-            LOG.info("Getting inner liquids...");
+            //LOG.info("Getting inner liquids...");
             return Jsoup.connect(url).get().body().getElementsByClass(INNER_LIQUID_DELIMITER);
         } catch (IOException e) {
             LOG.error("Failed to get inner liquids " + e.getMessage());
@@ -105,7 +105,7 @@ class Parser {
         if (result.getVolume() > 0 && result.getStrength() < 0) {
             result.setStrength(3.0);
         }
-        LOG.info("Product parsed: " + url + ", " + name);
+        //LOG.info("Product parsed: " + url + ", " + name);
         return result;
     }
 
