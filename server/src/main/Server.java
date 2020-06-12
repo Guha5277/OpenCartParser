@@ -9,8 +9,8 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.List;
-import java.util.Vector;
+import java.time.LocalDateTime;
+import java.util.*;
 
 public class Server implements ServerSocketThreadListener, SocketThreadListener, ParserEvents {
     private long serverStartAt;
@@ -28,7 +28,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private Vector<SocketThread> clients = new Vector<>();
     private static final Logger SERVER_LOGGER = LogManager.getLogger("ServerLogger");
     private static final Logger USERS_LOGGER = LogManager.getLogger("UsersLogger");
-    private static final Logger PARSER_LOGGER = LogManager.getLogger("ParserLogger");
+    //private static final Logger PARSER_LOGGER = LogManager.getLogger("ParserLogger");
 
     public static void main(String[] args) {
         new Server();
@@ -37,6 +37,34 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private Server() {
         new ServerSocketThread(this, "server", 5277, 200);
         serverStartAt = System.currentTimeMillis();
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 18);
+        calendar.set(Calendar.MINUTE, 35);
+        calendar.set(Calendar.SECOND, 0);
+
+        LocalDateTime currentTime = LocalDateTime.now();
+        LocalDateTime lastCheckedTime = LocalDateTime.of(2020, 2, 9, 6, 15);
+
+        LocalDateTime sheduleTime = lastCheckedTime.plusDays(2);
+
+        System.out.println("Current: "  + currentTime);
+        System.out.println("Last Checked: " + lastCheckedTime);
+        System.out.println("Shedule time: " + sheduleTime);
+
+        System.out.println(sheduleTime.isBefore(currentTime));
+
+        if (sheduleTime.isBefore(currentTime)) {
+            sheduleTime = sheduleTime.plusDays(currentTime.compareTo(sheduleTime));
+            System.out.println(sheduleTime);
+        }
+
+//        System.out.println(currentTime.compareTo(lastCheckedTime));
+//        System.out.println(lastCheckedTime.compareTo(currentTime));
+
+        Timer timer = new Timer();
+        timer.schedule(new MyTestTimerTask(), calendar.getTime());
+
+
     }
 
     //Server Events
@@ -586,5 +614,12 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     @Override
     public void onResearchError() {
         SERVER_LOGGER.error("Researcher error");
+    }
+
+    private class MyTestTimerTask extends TimerTask {
+        @Override
+        public void run() {
+            System.out.println("TIMER TASK SHEDULED");
+        }
     }
 }

@@ -31,6 +31,7 @@ public class Client implements SocketThreadListener {
     private static final Logger LOGGER = LogManager.getLogger("ClientLogger");
 
     Client(ClientGUI app) {
+        LOGGER.info("Client constructor");
         this.app = app;
     }
 
@@ -537,6 +538,7 @@ public class Client implements SocketThreadListener {
     private class TimeUpdater extends TimerTask {
         @Override
         public void run() {
+            LOGGER.info("TIMER TASK");
             clientController.setServerUpTime(parseServerTime(serverStartTime));
         }
     }
