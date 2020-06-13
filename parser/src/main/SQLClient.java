@@ -7,7 +7,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.sql.*;
-//import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -410,6 +409,18 @@ class SQLClient {
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    static int getProcessDayInterval(String process){
+        String query = String.format("SELECT day_interval FROM settings WHERE process='%s'", process);
+        try {
+            ResultSet set = statement.executeQuery(query);
+            if (set.isClosed()) return 0;
+            return set.getInt(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
         }
     }
 

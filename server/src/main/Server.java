@@ -29,8 +29,8 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private boolean researcherAutostartEnabled;
     private LocalTime updaterAutostartTime;
     private LocalTime researcherAutostartTime;
-    private int updaterDaysInterval = 1;
-    private int researcherDaysInterval = 1;
+    private int updaterDaysInterval;
+    private int researcherDaysInterval;
     private Timer updaterTimer = new Timer();
     private Timer researcherTimer = new Timer();
     private Thread updaterThread;
@@ -41,7 +41,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private Vector<SocketThread> clients = new Vector<>();
     private static final Logger SERVER_LOGGER = LogManager.getLogger("ServerLogger");
     private static final Logger USERS_LOGGER = LogManager.getLogger("UsersLogger");
-    //private static final Logger PARSER_LOGGER = LogManager.getLogger("ParserLogger");
 
     public static void main(String[] args) {
         new Server();
@@ -67,10 +66,12 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         updaterLastRunDate = SQLClient.getProcessLastRun(UPDATER);
         updaterAutostartTime = SQLClient.getProcessLaunchTime(UPDATER);
         updaterAutostartEnabled = SQLClient.getProcessAutoStartState(UPDATER);
+        updaterDaysInterval = SQLClient.getProcessDayInterval(UPDATER);
 
         researcherLastRunDate = SQLClient.getProcessLastRun(RESEARCHER);
         researcherAutostartTime = SQLClient.getProcessLaunchTime(RESEARCHER);
         researcherAutostartEnabled = SQLClient.getProcessAutoStartState(RESEARCHER);
+        researcherDaysInterval = SQLClient.getProcessDayInterval(RESEARCHER);
         lastUpdatedProductPosition = SQLClient.getLastUpdatedProductPosition();
 
         if (updaterAutostartEnabled){
@@ -622,14 +623,21 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     }
 
     private void runUpdaterTimerTask(){
-        updaterTimer.schedule(new UpdaterTimerTask(), Date.from(calculateProcessRunDate(updaterLastRunDate, updaterAutostartTime, updaterDaysInterval).atZone(ZoneId.systemDefault()).toInstant()));
+        SERVER_LOGGER.info("Updater TimerTask enabled");
+        LocalDateTime startTime = calculateProcessRunDate(updaterLastRunDate, updaterAutostartTime, updaterDaysInterval);
+        SERVER_LOGGER.info("Start time calculated for updater: " + startTime);
+        updaterTimer.schedule(new UpdaterTimerTask(), Date.from(startTime.atZone(ZoneId.systemDefault()).toInstant()));
     }
 
     private void runResearcherTimerTask(){
-         researcherTimer.schedule(new ResearcherTimerTask(), Date.from(calculateProcessRunDate(researcherLastRunDate, researcherAutostartTime, researcherDaysInterval).atZone(ZoneId.systemDefault()).toInstant()));
+        SERVER_LOGGER.info("Researcher TimerTask enabled");
+        LocalDateTime startTime = calculateProcessRunDate(researcherLastRunDate, researcherAutostartTime, researcherDaysInterval);
+        SERVER_LOGGER.info("Start time calculated for researcher: " + startTime);
+         researcherTimer.schedule(new ResearcherTimerTask(), Date.from(startTime.atZone(ZoneId.systemDefault()).toInstant()));
     }
 
     private LocalDateTime calculateProcessRunDate(LocalDate lastCheckedTime, LocalTime runTime, int daysInterval) {
+        SERVER_LOGGER.info("Start time calculating... ");
         int runHour = runTime.getHour();
         int runMinute = runTime.getMinute();
         LocalDateTime currentTime = LocalDateTime.now();
@@ -653,16 +661,16 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private class ResearcherTimerTask extends TimerTask {
         @Override
         public void run() {
+            SERVER_LOGGER.info("Researcher TimerTask executing...");
             startResearcher();
-            //if (researcherAutostartEnabled) runResearcherTimerTask();
         }
     }
 
     private class UpdaterTimerTask extends TimerTask {
         @Override
         public void run() {
+            SERVER_LOGGER.info("Updater TimerTask executing...");
             startUpdater(false);
-            //if (updaterAutostartEnabled) runUpdaterTimerTask();
         }
     }
 }
