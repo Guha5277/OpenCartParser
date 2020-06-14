@@ -426,7 +426,6 @@ class SQLClient {
 
     static boolean getProcessAutoStartState(String process){
         String query = String.format("SELECT enable FROM settings WHERE process='%s'", process);
-        //String query = "SELECT start_time FROM settings WHERE process='updater'";
         try {
             ResultSet set = statement.executeQuery(query);
             if (set.isClosed()) return false;
@@ -434,6 +433,37 @@ class SQLClient {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    synchronized static void updateProcessAutoStartState(String process, boolean state){
+        String query = String.format("UPDATE settings SET enable='%s' WHERE process='%s'", state, process);
+        try {
+            statement.execute(query);
+            commit();
+        } catch (SQLException e) {
+            LOG.error(e.getMessage());
+        }
+    }
+
+    synchronized static void updateProcessDayInterval(String process, int interval){
+        String query = String.format("UPDATE settings SET day_interval=%d WHERE process='%s'", interval, process);
+        try {
+            statement.execute(query);
+            commit();
+        } catch (SQLException e) {
+            LOG.error(e.getMessage());
+        }
+    }
+
+    synchronized static void updateProcessStartTime(String process, LocalTime time){
+        String query = String.format("UPDATE settings SET start_time='%d:%d:00' WHERE process='%s'", time.getHour(), time.getMinute(), process);
+        try {
+            statement.execute(query);
+            commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            LOG.error(e.getMessage());
         }
     }
 
@@ -445,6 +475,7 @@ class SQLClient {
             int count = statement.executeUpdate(query);
             if (count == 0) {
                 statement.execute(insertQuery);
+                commit();
             }
         } catch (SQLException e) {
             LOG.error("Failed to UPDATE INFO! product_id: " + e.getMessage());

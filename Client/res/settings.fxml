@@ -8,7 +8,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="370.0" prefWidth="350.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="SettingsGUI">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="370.0" prefWidth="350.0" xmlns="http://javafx.com/javafx/8.0.181" xmlns:fx="http://javafx.com/fxml/1" fx:controller="SettingsGUI">
    <children>
       <AnchorPane prefHeight="256.0" prefWidth="378.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
@@ -40,7 +40,7 @@
             <Label layoutX="60.0" layoutY="281.0" text="Время запуска" AnchorPane.leftAnchor="63.0" AnchorPane.topAnchor="281.0" />
             <TextField fx:id="txtResearcherHour" layoutX="167.0" layoutY="277.0" prefHeight="25.0" prefWidth="35.0" promptText="ЧЧ" AnchorPane.leftAnchor="165.0" AnchorPane.topAnchor="277.0" />
             <TextField fx:id="txtResearcherMinute" layoutX="210.0" layoutY="277.0" prefHeight="25.0" prefWidth="35.0" promptText="ММ" AnchorPane.leftAnchor="205.0" AnchorPane.topAnchor="277.0" />
-            <Button fx:id="btnOk" disable="true" layoutX="179.0" layoutY="331.0" mnemonicParsing="false" prefWidth="58.0" text="OK" AnchorPane.bottomAnchor="14.0" />
+            <Button fx:id="btnOk" disable="true" layoutX="179.0" layoutY="331.0" mnemonicParsing="false" onAction="#handleOkButton" prefWidth="58.0" text="OK" AnchorPane.bottomAnchor="14.0" />
             <Button fx:id="btnCancel" layoutX="113.0" layoutY="331.0" mnemonicParsing="false" onAction="#handleCancelButtonEvent" text="Отмена" AnchorPane.bottomAnchor="14.0" />
          </children>
       </AnchorPane>

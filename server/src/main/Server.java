@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Server implements ServerSocketThreadListener, SocketThreadListener, ParserEvents {
@@ -205,6 +206,18 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                         USERS_LOGGER.info("stop UPDATER request by " + nickname );
                         stopUpdater();
                         break;
+                    case Library.AUTOSTART:
+                        updaterAutostartState = Boolean.valueOf(receivedData.getData());
+                        SQLClient.updateProcessAutoStartState(UPDATER, updaterAutostartState);
+                        break;
+                    case Library.AUTOSTART_INTERVAL:
+                        updaterDaysInterval = Integer.parseInt(receivedData.getData());
+                        SQLClient.updateProcessDayInterval(UPDATER, updaterDaysInterval);
+                        break;
+                    case Library.AUTOSTART_TIME:
+                        updaterAutostartTime = LocalTime.parse(receivedData.getData());
+                        SQLClient.updateProcessStartTime(UPDATER, updaterAutostartTime);
+                        break;
                 }
                 break;
 
@@ -224,6 +237,18 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                     case Library.STOP:
                         USERS_LOGGER.info("Stop RESEARCHER by " + client.getNickname() );
                         stopResearcher();
+                        break;
+                    case Library.AUTOSTART:
+                        researcherAutostartState = Boolean.valueOf(receivedData.getData());
+                        SQLClient.updateProcessAutoStartState(RESEARCHER, researcherAutostartState);
+                        break;
+                    case Library.AUTOSTART_INTERVAL:
+                        researcherDaysInterval = Integer.parseInt(receivedData.getData());
+                        SQLClient.updateProcessDayInterval(RESEARCHER, researcherDaysInterval);
+                        break;
+                    case Library.AUTOSTART_TIME:
+                        researcherAutostartTime = LocalTime.parse(receivedData.getData());
+                        SQLClient.updateProcessStartTime(RESEARCHER, researcherAutostartTime);
                         break;
                 }
                 break;

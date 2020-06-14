@@ -143,6 +143,23 @@ public class SettingsGUI {
         window.hide();
     }
 
+    @FXML
+    private void handleOkButton(){
+        boolean updaterEnable = chkUpdaterEnable.isSelected();
+        boolean researcherEnable = chkResearcherEnable.isSelected();
+        int updaterInterval = Integer.parseInt(txtUpdaterDay.getText());
+        int researcherInterval = Integer.parseInt(txtResearcherDay.getText());
+        LocalTime updaterTime = LocalTime.of(Integer.parseInt(txtUpdaterHour.getText()), Integer.parseInt(txtResearcherMinute.getText()));
+        LocalTime researcherTime = LocalTime.of(Integer.parseInt(txtResearcherHour.getText()), Integer.parseInt(txtResearcherMinute.getText()));
+        controller.applySettings(updaterEnable, researcherEnable, updaterInterval, researcherInterval, updaterTime, researcherTime);
+        window.hide();
+
+        updaterAutostartState = updaterEnable;
+        researcherAutostartState = researcherEnable;
+        updaterAutostartTime = updaterTime;
+        researcherAutostartTime = researcherTime;
+    }
+
     private class FieldListener implements ChangeListener<String> {
         TextField field;
         int maxValue;

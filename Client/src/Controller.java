@@ -115,7 +115,7 @@ public class Controller implements SocketThreadListener {
         app.showProductFilter(inStockSelected, cityList, selectedCity, storeList, selectedStore);
     }
 
-    void showSettingsStage(){
+    void showSettingsStage() {
         app.showSettingsStage();
     }
 
@@ -156,6 +156,17 @@ public class Controller implements SocketThreadListener {
             socketThread.sendMessage(Library.productRequestToJson(request));
             clientGUI.updateProductComboBoxes(stock, city, store);
         }
+    }
+
+    void applySettings(boolean updaterEnable, boolean researcherEnable, int updaterInterval, int researcherInterval, LocalTime updaterTime, LocalTime researcherTime) {
+        LOGGER.info("Send new settings to the server");
+        socketThread.sendMessage(Library.makeJsonString(Library.UPDATER, Library.AUTOSTART, String.valueOf(updaterEnable)));
+        socketThread.sendMessage(Library.makeJsonString(Library.UPDATER, Library.AUTOSTART_INTERVAL, String.valueOf(updaterInterval)));
+        socketThread.sendMessage(Library.makeJsonString(Library.UPDATER, Library.AUTOSTART_TIME, String.valueOf(updaterTime)));
+        socketThread.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.AUTOSTART, String.valueOf(researcherEnable)));
+        socketThread.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.AUTOSTART_INTERVAL, String.valueOf(researcherInterval)));
+        socketThread.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.AUTOSTART_TIME, String.valueOf(researcherTime)));
+
     }
 
     //Socket events
@@ -243,7 +254,7 @@ public class Controller implements SocketThreadListener {
                         if (clientGUI != null)
                             clientGUI.setTabsEnableForAdmin();
                     } else {
-                        if (clientGUI != null){
+                        if (clientGUI != null) {
                             LOGGER.info("User level - moderator, unlock moderator tabs");
                             clientGUI.setTabsEnableForModerator();
                         }
@@ -264,11 +275,11 @@ public class Controller implements SocketThreadListener {
                 serverStartTimeTimer.schedule(new TimeUpdater(), 0, 60000);
                 break;
             case Library.PRODUCTS_COUNT:
-                LOGGER.info("Received products count" );
+                LOGGER.info("Received products count");
                 clientGUI.setProductsCount(receivedData.getData());
                 break;
             case Library.WAREHOUSES_COUNT:
-                LOGGER.info("Received warehouses count" );
+                LOGGER.info("Received warehouses count");
                 clientGUI.setWarehousesCount(receivedData.getData());
                 break;
             case Library.USERS:
@@ -278,13 +289,13 @@ public class Controller implements SocketThreadListener {
                         clientGUI.setActiveUsersCount(receivedData.getData());
                         break;
                     case Library.LIST:
-                        LOGGER.info("Received connected users list" );
+                        LOGGER.info("Received connected users list");
                         clientGUI.updateUsersList(receivedData.getData().split(Library.DELIMITER));
                         break;
                     case Library.DISCONNECT:
                         String userNicknameDisconnet = receivedData.getData();
                         if (header.length > 2 && header[2] == Library.DENIED) {
-                            LOGGER.error("Failed to kick user: " + userNicknameDisconnet );
+                            LOGGER.error("Failed to kick user: " + userNicknameDisconnet);
                             clientGUI.failedToKickUser(userNicknameDisconnet);
                         } else {
                             LOGGER.info("Disconnected from the server by: " + userNicknameDisconnet);
