@@ -24,10 +24,12 @@ public class Researcher extends Parser implements Runnable {
         this.URL = url;
         this.listener = listener;
         listener.onResearcherReady();
+        LOG.info("Researcher Instance Created");
     }
 
     @Override
     public void run() {
+        LOG.info("Researcher working...");
         Document page;
         try {
             page = downloadPage(URL);
@@ -39,6 +41,7 @@ public class Researcher extends Parser implements Runnable {
         ArrayList<Category> categories = getCategories(page);
         findNewProducts(categories);
         listener.onResearchSuccessfulEnd(totalInsertCount);
+        LOG.info("Researcher finished");
     }
 
     private void findNewProducts(ArrayList<Category> categories) {

@@ -7,8 +7,8 @@
             </PatternLayout>
         </Console>
 
-        <RollingFile name="ClientAppender" fileName="logs/client/events.log"
-            filePattern="logs/client/$${date:yyyy-MM}/%d{yyyy-MM-dd}.log">
+        <RollingFile name="ClientAppender" fileName="logs/controller/events.log"
+            filePattern="logs/controller/$${date:yyyy-MM}/%d{yyyy-MM-dd}.log">
             <PatternLayout>
                 <Pattern>%d{HH:mm:ss} [%-5level] [%C{2}] - %msg %n</Pattern>
             </PatternLayout>

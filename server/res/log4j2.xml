@@ -7,7 +7,7 @@
             </PatternLayout>
         </Console>
 
-        <RollingFile name="ServerAppender" fileName="logs/server/events.log"
+        <RollingFile name="ServerAppender" fileName="logs/server/server.log"
             filePattern="logs/server/$${date:yyyy-MM}/%d{yyyy-MM-dd}.log">
             <PatternLayout>
                 <Pattern>%d{HH:mm:ss} [%-5level] [%C{2}] - %msg %n</Pattern>
@@ -18,7 +18,7 @@
             <DefaultRolloverStrategy max="30" />
         </RollingFile>
 
-        <RollingFile name="UsersAppender" fileName="logs/users/events.log"
+        <RollingFile name="UsersAppender" fileName="logs/users/users.log"
                      filePattern="logs/users/$${date:yyyy-MM}/%d{yyyy-MM-dd}.log">
             <PatternLayout>
                 <Pattern>%d{HH:mm:ss} [%-5level] [%C{2}] - %msg %n</Pattern>
@@ -29,7 +29,7 @@
             <DefaultRolloverStrategy max="30" />
         </RollingFile>
 
-        <RollingFile name="ParserAppender" fileName="logs/server/parser/events.log"
+        <RollingFile name="ParserAppender" fileName="logs/server/parser/parser.log"
                      filePattern="logs/server/parser/$${date:yyyy-MM}/%d{yyyy-MM-dd}.log">
             <PatternLayout>
                 <Pattern>%d{HH:mm:ss} [%-5level] [%C{2}] - %msg %n</Pattern>

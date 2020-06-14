@@ -25,8 +25,8 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private LocalDate updaterLastRunDate;
     private LocalDate researcherLastRunDate;
     private int lastUpdatedProductPosition;
-    private boolean updaterAutostartEnabled;
-    private boolean researcherAutostartEnabled;
+    private boolean updaterAutostartState;
+    private boolean researcherAutostartState;
     private LocalTime updaterAutostartTime;
     private LocalTime researcherAutostartTime;
     private int updaterDaysInterval;
@@ -65,20 +65,20 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         warehousesCount = SQLClient.getWarehousesCount();
         updaterLastRunDate = SQLClient.getProcessLastRun(UPDATER);
         updaterAutostartTime = SQLClient.getProcessLaunchTime(UPDATER);
-        updaterAutostartEnabled = SQLClient.getProcessAutoStartState(UPDATER);
+        updaterAutostartState = SQLClient.getProcessAutoStartState(UPDATER);
         updaterDaysInterval = SQLClient.getProcessDayInterval(UPDATER);
 
         researcherLastRunDate = SQLClient.getProcessLastRun(RESEARCHER);
         researcherAutostartTime = SQLClient.getProcessLaunchTime(RESEARCHER);
-        researcherAutostartEnabled = SQLClient.getProcessAutoStartState(RESEARCHER);
+        researcherAutostartState = SQLClient.getProcessAutoStartState(RESEARCHER);
         researcherDaysInterval = SQLClient.getProcessDayInterval(RESEARCHER);
         lastUpdatedProductPosition = SQLClient.getLastUpdatedProductPosition();
 
-        if (updaterAutostartEnabled){
+        if (updaterAutostartState){
             runUpdaterTimerTask();
         }
 
-        if (researcherAutostartEnabled){
+        if (researcherAutostartState){
             runResearcherTimerTask();
         }
 
@@ -162,6 +162,12 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                         client.sendMessage(Library.makeJsonString(Library.START_TIME, String.valueOf(serverStartAt)));
                         client.sendMessage(Library.makeJsonString(Library.PRODUCTS_COUNT, String.valueOf(productsCount)));
                         client.sendMessage(Library.makeJsonString(Library.WAREHOUSES_COUNT, String.valueOf(warehousesCount)));
+                        client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.AUTOSTART, String.valueOf(updaterAutostartState)));
+                        client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.AUTOSTART_INTERVAL, String.valueOf(updaterDaysInterval)));
+                        client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.AUTOSTART_TIME, String.valueOf(updaterAutostartTime)));
+                        client.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.AUTOSTART, String.valueOf(researcherAutostartState)));
+                        client.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.AUTOSTART_INTERVAL, String.valueOf(researcherDaysInterval)));
+                        client.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.AUTOSTART_TIME, String.valueOf(researcherAutostartTime)));
                         sendMsgToModersAndAdmins(Library.makeJsonString(Library.USERS, Library.COUNT, String.valueOf(clients.size())));
                         sendMsgToModersAndAdmins(Library.makeJsonString(Library.USERS, Library.LIST, getListOfClients()));
                         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_POSITION, String.valueOf(lastUpdatedProductPosition)));
@@ -203,7 +209,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 break;
 
             case Library.RESEARCHER:
-                USERS_LOGGER.info("RESEARCHER...");
                 if (client.getAccessLevel() > 2) {
                     USERS_LOGGER.error("ACCESS TO RESEARCHER DENIED cause client access level is lower than required: " + client.getAccessLevel());
                     client.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.DENIED));
@@ -213,11 +218,11 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 }
                 switch (header[1]) {
                     case Library.START:
-                        USERS_LOGGER.info("start RESEARCHER request by " + client.getNickname() );
+                        USERS_LOGGER.info("Start RESEARCHER by " + client.getNickname() );
                         startResearcher();
                         break;
                     case Library.STOP:
-                        USERS_LOGGER.info("stop RESEARCHER request by " + client.getNickname() );
+                        USERS_LOGGER.info("Stop RESEARCHER by " + client.getNickname() );
                         stopResearcher();
                         break;
                 }
@@ -578,9 +583,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.PROCESS_END, String.valueOf(checked), String.valueOf(updated)));
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_RUN, updaterLastRunDate.toString()));
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_POSITION, String.valueOf(lastUpdatedProductPosition)));
-        updaterAutostartEnabled = SQLClient.getProcessAutoStartState(UPDATER);
+        updaterAutostartState = SQLClient.getProcessAutoStartState(UPDATER);
 
-        if (updaterAutostartEnabled) runUpdaterTimerTask();
+        if (updaterAutostartState) runUpdaterTimerTask();
 
     }
 
@@ -596,9 +601,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.PROCESS_END, String.valueOf(count)));
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate.toString()));
         sendMsgToModersAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate.toString()));
-        researcherAutostartEnabled = SQLClient.getProcessAutoStartState(RESEARCHER);
+        researcherAutostartState = SQLClient.getProcessAutoStartState(RESEARCHER);
 
-        if (researcherAutostartEnabled) runResearcherTimerTask();
+        if (researcherAutostartState) runResearcherTimerTask();
     }
 
     @Override

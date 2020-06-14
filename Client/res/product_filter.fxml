@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="380.0" prefWidth="370.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ProductFilterGuiController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="380.0" prefWidth="370.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ProductFilterGUI">
    <children>
       <ComboBox fx:id="combCity" disable="true" layoutX="127.0" layoutY="14.0" onAction="#handleCityCombEvent" prefHeight="25.0" prefWidth="219.0" promptText="Все города" />
       <CheckBox fx:id="chkStock" layoutX="20.0" layoutY="18.0" mnemonicParsing="false" onAction="#handleCheckBoxStock" text="В наличии" />

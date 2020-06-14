@@ -8,8 +8,8 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 
-public class ProductFilterGuiController {
-    Client client;
+public class ProductFilterGUI {
+    Controller controller;
     @FXML
     private ComboBox<String> combCity;
     @FXML
@@ -100,8 +100,8 @@ public class ProductFilterGuiController {
         ));
     }
 
-    void setClient(Client client) {
-        this.client = client;
+    void setController(Controller controller) {
+        this.controller = controller;
     }
 
     void setStockParam(boolean inStockSelected, ObservableList<String> cityList, int selectedCity, ObservableList<String> storeList, int selectedStore) {
@@ -186,7 +186,7 @@ public class ProductFilterGuiController {
         } else {
             combStore.setDisable(false);
             combStore.getItems().clear();
-            combStore.getItems().addAll(client.getStoreList(selectedItem));
+            combStore.getItems().addAll(controller.getStoreList(selectedItem));
 
             if (stateInitialize && !city.equals(selectedItem) && !wrongProductFilterRange) {
                 btnOk.setDisable(false);
@@ -286,7 +286,7 @@ public class ProductFilterGuiController {
         int priceEnd = txtPriceEnd.equals("") ? -1 : Integer.parseInt(txtPriceEnd);
 
         /*TODO nicotine checkboxes*/
-        client.applyProductFilter(stockChecked, cityName, storeName, strengthStart, strengthEnd, volumeStart, volumeEnd, priceStart, priceEnd);
+        controller.applyProductFilter(stockChecked, cityName, storeName, strengthStart, strengthEnd, volumeStart, volumeEnd, priceStart, priceEnd);
         fieldStrengthEnd.getScene().getWindow().hide();
     }
 

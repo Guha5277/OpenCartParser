@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="370.0" prefWidth="350.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="SettingsGUI">
+   <children>
+      <AnchorPane prefHeight="256.0" prefWidth="378.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <Label layoutX="50.0" layoutY="43.0" text="Updater" AnchorPane.leftAnchor="140.0" AnchorPane.topAnchor="10.0">
+               <font>
+                  <Font name="System Bold" size="13.0" />
+               </font>
+            </Label>
+            <Separator layoutX="38.0" layoutY="52.0" prefWidth="200.0" AnchorPane.leftAnchor="195.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="19.0" />
+            <Separator layoutX="48.0" layoutY="62.0" prefWidth="40.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="225.0" AnchorPane.topAnchor="19.0" />
+            <Label layoutX="42.0" layoutY="180.0" text="Researcher" AnchorPane.leftAnchor="140.0" AnchorPane.topAnchor="170.0">
+               <font>
+                  <Font name="System Bold" size="13.0" />
+               </font>
+            </Label>
+            <Separator layoutX="48.0" layoutY="62.0" prefWidth="200.0" AnchorPane.leftAnchor="210.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="179.0" />
+            <Separator layoutX="58.0" layoutY="72.0" prefWidth="35.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="225.0" AnchorPane.topAnchor="179.0" />
+            <CheckBox fx:id="chkUpdaterEnable" layoutX="27.0" layoutY="50.0" mnemonicParsing="false" onAction="#handleCheckBoxUpdaterEvent" text="Запуск по расписанию" AnchorPane.leftAnchor="37.0" AnchorPane.topAnchor="45.0" />
+            <CheckBox fx:id="chkResearcherEnable" layoutX="37.0" layoutY="205.0" mnemonicParsing="false" onAction="#handleCheckBoxResearcherEvent" text="Запуск по расписанию" AnchorPane.leftAnchor="37.0" AnchorPane.topAnchor="205.0" />
+            <Label layoutX="58.0" layoutY="83.0" text="Интервал запуска" AnchorPane.leftAnchor="63.0" AnchorPane.topAnchor="83.0" />
+            <TextField fx:id="txtUpdaterDay" layoutX="165.0" layoutY="79.0" prefHeight="25.0" prefWidth="35.0" promptText="ДД" AnchorPane.leftAnchor="165.0" AnchorPane.topAnchor="79.0" />
+            <Label layoutX="208.0" layoutY="83.0" text="день/дней" AnchorPane.leftAnchor="208.0" AnchorPane.topAnchor="83.0" />
+            <Label layoutX="63.0" layoutY="243.0" text="Интервал запуска" AnchorPane.leftAnchor="63.0" AnchorPane.topAnchor="243.0" />
+            <TextField fx:id="txtResearcherDay" layoutX="170.0" layoutY="239.0" prefHeight="25.0" prefWidth="35.0" promptText="ДД" AnchorPane.leftAnchor="165.0" AnchorPane.topAnchor="239.0" />
+            <Label layoutX="213.0" layoutY="243.0" text="день/дней" AnchorPane.leftAnchor="208.0" />
+            <Label layoutX="59.0" layoutY="125.0" text="Время запуска" AnchorPane.leftAnchor="63.0" AnchorPane.topAnchor="125.0" />
+            <TextField fx:id="txtUpdaterHour" layoutX="166.0" layoutY="121.0" prefHeight="25.0" prefWidth="35.0" promptText="ЧЧ" AnchorPane.leftAnchor="165.0" AnchorPane.topAnchor="121.0" />
+            <TextField fx:id="txtUpdaterMinute" layoutX="209.0" layoutY="121.0" prefHeight="25.0" prefWidth="35.0" promptText="ММ" AnchorPane.leftAnchor="205.0" AnchorPane.topAnchor="121.0" />
+            <Label layoutX="60.0" layoutY="281.0" text="Время запуска" AnchorPane.leftAnchor="63.0" AnchorPane.topAnchor="281.0" />
+            <TextField fx:id="txtResearcherHour" layoutX="167.0" layoutY="277.0" prefHeight="25.0" prefWidth="35.0" promptText="ЧЧ" AnchorPane.leftAnchor="165.0" AnchorPane.topAnchor="277.0" />
+            <TextField fx:id="txtResearcherMinute" layoutX="210.0" layoutY="277.0" prefHeight="25.0" prefWidth="35.0" promptText="ММ" AnchorPane.leftAnchor="205.0" AnchorPane.topAnchor="277.0" />
+            <Button fx:id="btnOk" disable="true" layoutX="179.0" layoutY="331.0" mnemonicParsing="false" prefWidth="58.0" text="OK" AnchorPane.bottomAnchor="14.0" />
+            <Button fx:id="btnCancel" layoutX="113.0" layoutY="331.0" mnemonicParsing="false" onAction="#handleCancelButtonEvent" text="Отмена" AnchorPane.bottomAnchor="14.0" />
+         </children>
+      </AnchorPane>
+   </children>
+</AnchorPane>

@@ -48,6 +48,10 @@ public class Library {
     public static final byte PRODUCT_LIST_START = 32;
     public static final byte PRODUCT_LIST_END = 33;
     public static final byte EMPTY = 34;
+    public static final byte AUTOSTART = 35;
+    public static final byte AUTOSTART_INTERVAL = 36;
+    public static final byte AUTOSTART_TIME = 37;
+
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 

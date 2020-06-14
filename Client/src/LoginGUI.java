@@ -9,7 +9,7 @@ import java.net.URL;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
-public class LoginGUIController {
+public class LoginGUI {
     private final String ERROR_FIELDS = "Поля не могут быть пустыми!";
     private final String CONNECTION_FAILED = "Не удаётся установить соединение!";
     private final String INVALID_PORT = "Неверно указан порт!";
@@ -17,7 +17,7 @@ public class LoginGUIController {
     private final String CONFIG = "config.properties";
     //    private final String CONFIG = "\\res\\config.properties";
     private static final Logger LOGGER = LogManager.getLogger("ClientLogger");
-    private Client client;
+    private Controller controller;
 
     @FXML
     private ResourceBundle resources;
@@ -78,7 +78,7 @@ public class LoginGUIController {
         if (ip.length() > 0 && port.length() > 0 && login.length() > 0 && password.length() > 0) {
             LOGGER.info("Fields has a valid length");
             setDisableAll(true);
-            client.connect(ip, port, login, password);
+            controller.connect(ip, port, login, password);
         } else {
             LOGGER.info("Invalid length of fields");
             showErrorLabel(ERROR_FIELDS);
@@ -123,8 +123,8 @@ public class LoginGUIController {
         });
     }
 
-    void setClient(Client client) {
-        this.client = client;
+    void setController(Controller controller) {
+        this.controller = controller;
     }
 
     void connectionFailed(Throwable cause) {

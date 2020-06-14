@@ -21,10 +21,12 @@ class Updater extends Parser implements Runnable {
         this.startPosition = startPosition;
         current = startPosition + 1;
         listener.onUpdaterReady();
+        LOG.info("Updater Instance Created");
     }
 
     @Override
     public void run() {
+        LOG.info("Updater working...");
         List<Product> products = SQLClient.getAllProducts();
         if (products == null) {
             listener.onUpdateError();
@@ -32,6 +34,7 @@ class Updater extends Parser implements Runnable {
         }
         int totalUpdated = updateProductsInfo(products);
         listener.onUpdateSuccessfulEnd(current, totalUpdated, errors);
+        LOG.info("Researcher finished");
     }
 
     private int updateProductsInfo(List<Product> products) {
