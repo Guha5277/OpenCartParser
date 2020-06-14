@@ -334,7 +334,7 @@ public class Controller implements SocketThreadListener {
                         break;
                     case Library.PROCESS_END:
                         LOGGER.info("Received updater stop info");
-                        clientGUI.updaterStop();
+                        clientGUI.updaterStopped();
                         break;
                     case Library.PRODUCTS_TOTAL:
                         LOGGER.info("Received updater products total");
@@ -399,7 +399,7 @@ public class Controller implements SocketThreadListener {
                         break;
                     case Library.PROCESS_END:
                         LOGGER.info("Received researcher stop info");
-                        clientGUI.researcherEnd();
+                        clientGUI.researcherStopped();
                         break;
                     case Library.PRODUCTS_TOTAL:
                         //LOGGER.info("Received researcher products count");

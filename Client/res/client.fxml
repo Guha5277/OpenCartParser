@@ -317,27 +317,27 @@
                               </Label>
                               <TextArea fx:id="researcherLogArea" disable="true" editable="false" prefHeight="124.0" prefWidth="585.0" wrapText="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="180.0" />
                               <ProgressBar fx:id="prgrResearcher" prefHeight="23.0" prefWidth="575.0" progress="0.0" visible="false" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="151.0" />
-                              <Label fx:id="lblResearchCategory" layoutX="26.0" layoutY="44.0" text="Категория:" visible="false" AnchorPane.leftAnchor="26.0" AnchorPane.topAnchor="40.0">
+                              <Label fx:id="lblResearcherCategory" layoutX="26.0" layoutY="44.0" text="Категория:" visible="false" AnchorPane.leftAnchor="26.0" AnchorPane.topAnchor="40.0">
                                  <font>
                                     <Font size="13.0" />
                                  </font>
                               </Label>
-                              <Label fx:id="lblResearchCategoryPos" layoutX="140.0" layoutY="44.0" visible="false" AnchorPane.leftAnchor="140.0" AnchorPane.topAnchor="40.0">
+                              <Label fx:id="lblResearcherCategoryPos" layoutX="140.0" layoutY="44.0" visible="false" AnchorPane.leftAnchor="140.0" AnchorPane.topAnchor="40.0">
                                  <font>
                                     <Font size="13.0" />
                                  </font>
                               </Label>
-                              <Label fx:id="lblResearchCategoryName" layoutX="217.0" layoutY="40.0" visible="false" AnchorPane.leftAnchor="217.0" AnchorPane.topAnchor="40.0">
+                              <Label fx:id="lblResearcherCategoryName" layoutX="217.0" layoutY="40.0" visible="false" AnchorPane.leftAnchor="217.0" AnchorPane.topAnchor="40.0">
                                  <font>
                                     <Font size="13.0" />
                                  </font>
                               </Label>
-                              <Label fx:id="lblResearchCurrentGroupName" layoutX="44.0" layoutY="124.0" textFill="#949494" visible="false" AnchorPane.leftAnchor="40.0">
+                              <Label fx:id="lblResearcherCurrentGroupName" layoutX="44.0" layoutY="124.0" textFill="#949494" visible="false" AnchorPane.leftAnchor="40.0">
                                  <font>
                                     <Font size="13.0" />
                                  </font>
                               </Label>
-                              <Label fx:id="lblResearchGroupPos" layoutX="257.0" layoutY="153.0" visible="false">
+                              <Label fx:id="lblResearcherGroupPos" layoutX="257.0" layoutY="153.0" visible="false">
                                  <font>
                                     <Font size="13.0" />
                                  </font>

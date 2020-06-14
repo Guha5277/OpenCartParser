@@ -104,15 +104,15 @@ public class ClientGUI {
     @FXML
     private Label lblResearchFailed;
     @FXML
-    private Label lblResearchCategory;
+    private Label lblResearcherCategory;
     @FXML
-    private Label lblResearchCategoryPos;
+    private Label lblResearcherCategoryPos;
     @FXML
-    private Label lblResearchCategoryName;
+    private Label lblResearcherCategoryName;
     @FXML
-    private Label lblResearchCurrentGroupName;
+    private Label lblResearcherCurrentGroupName;
     @FXML
-    private Label lblResearchGroupPos;
+    private Label lblResearcherGroupPos;
     @FXML
     private ProgressBar prgrResearcher;
     @FXML
@@ -399,7 +399,7 @@ public class ClientGUI {
         btnUpdManualUpdate.setDisable(true);
     }
 
-    void updaterStop() {
+    void updaterStopped() {
         isUpdaterRun = false;
         Platform.runLater(() -> {
             //updater status
@@ -433,7 +433,7 @@ public class ClientGUI {
         Platform.runLater(this::showResearcherElements);
     }
 
-    void researcherEnd() {
+    void researcherStopped() {
         isResearcherRun = false;
         Platform.runLater(() -> {
             //updater status
@@ -443,12 +443,13 @@ public class ClientGUI {
             btnResearcherStart.setDisable(false);
             btnResearcherStop.setDisable(true);
             //process elements
-            lblResearchCategory.setVisible(true);
-            lblResearchCategoryPos.setVisible(false);
-            lblResearchCategoryName.setVisible(false);
-            lblResearchCurrentGroupName.setVisible(false);
+            lblResearcherCategory.setVisible(true);
+            lblResearcherCategoryPos.setVisible(false);
+            lblResearcherCategoryName.setVisible(false);
+            lblResearcherCurrentGroupName.setVisible(false);
+            lblResearcherGroupPos.setVisible(false);
             prgrResearcher.setVisible(false);
-            lblResearchGroupPos.setVisible(false);
+            lblResearcherGroupPos.setVisible(false);
         });
     }
 
@@ -460,12 +461,12 @@ public class ClientGUI {
         btnResearcherStart.setDisable(true);
         btnResearcherStop.setDisable(false);
         //process elements
-        lblResearchCategory.setVisible(true);
-        lblResearchCategoryPos.setVisible(true);
-        lblResearchCategoryName.setVisible(true);
-        lblResearchCurrentGroupName.setVisible(true);
+        lblResearcherCategory.setVisible(true);
+        lblResearcherCategoryPos.setVisible(true);
+        lblResearcherCategoryName.setVisible(true);
+        lblResearcherCurrentGroupName.setVisible(true);
         prgrResearcher.setVisible(true);
-        lblResearchGroupPos.setVisible(true);
+        lblResearcherGroupPos.setVisible(true);
     }
 
     void setResearcherProgress(double progress, String position) {
@@ -475,20 +476,20 @@ public class ClientGUI {
                 showResearcherElements();
             }
             prgrResearcher.setProgress(progress);
-            lblResearchGroupPos.setText(position);
+            lblResearcherGroupPos.setText(position);
         });
     }
 
     void setResearcherCurrentGroup(String groupName) {
         Platform.runLater(() -> {
-            lblResearchCurrentGroupName.setText(groupName);
+            lblResearcherCurrentGroupName.setText(groupName);
         });
     }
 
     void setResearcherCurrentCategory(String position, String categoryName) {
         Platform.runLater(() -> {
-            lblResearchCategoryPos.setText(position);
-            lblResearchCategoryName.setText(categoryName);
+            lblResearcherCategoryPos.setText(position);
+            lblResearcherCategoryName.setText(categoryName);
         });
     }
 
@@ -501,6 +502,11 @@ public class ClientGUI {
             if (researcherLogArea.isDisable()) researcherLogArea.setDisable(false);
             researcherLogArea.appendText(diff + "\n");
         });
+    }
+
+    private void resetUI(){
+        researcherStopped();
+        updaterStopped();
     }
 
     void setResearchFailed(String count) {
@@ -600,6 +606,7 @@ public class ClientGUI {
 
     void connectionLost() {
         Platform.runLater(() -> {
+            resetUI();
             makeDialogWindow(Alert.AlertType.ERROR, "Соединение прервано!", "Соединение с сервером потеряно!", "").showAndWait();
         });
     }
