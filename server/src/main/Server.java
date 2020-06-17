@@ -43,6 +43,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private Vector<SocketThread> clients = new Vector<>();
     private static final Logger SERVER_LOGGER = LogManager.getLogger("ServerLogger");
     private static final Logger USERS_LOGGER = LogManager.getLogger("UsersLogger");
+    private final String IMAGES_PATH = "Server/res/images/";
     private final int IMAGE_CHUNK_LIMIT = 30000;
 
     public static void main(String[] args) {
@@ -261,9 +262,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private void startUpdater(boolean continueUpdate) {
         if (updaterThread != null && updaterThread.isAlive()) return;
         if (continueUpdate && lastUpdatedProductPosition < productsCount) {
-            updater = new Updater(this, lastUpdatedProductPosition);
+            updater = new Updater(this, lastUpdatedProductPosition, IMAGES_PATH);
         } else {
-            updater = new Updater(this, 0);
+            updater = new Updater(this, 0, IMAGES_PATH);
         }
         updaterThread = new Thread(updater);
         updaterThread.start();
@@ -272,7 +273,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     private void stopUpdater() {
         if (updaterThread == null || !updaterThread.isAlive()) return;
-        updaterThread.interrupt();
+        //updaterThread.interrupt();
         updater.stop();
         updaterThread = null;
         updater = null;

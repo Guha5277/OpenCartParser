@@ -8,13 +8,12 @@ public class Product {
     private final String URL;
     private int id;
     private int categoryID;
-    private String categoryName;
     private Group group;
     private final int price;
     private int volume;
     private double strength;
     private List<Warehouse> remains;
-
+    private String imageID;
 
     public Product(String name, String URL, int price) {
         this.name = name;
@@ -22,13 +21,20 @@ public class Product {
         this.price = price;
     }
 
-    public Product(int id, String name, String URL, int price, Group group, int categoryID, int volume, double strength) {
+    public Product(String name, String URL, int price, Group group, int categoryID) {
+        this(name, URL, price);
+        this.group = group;
+        this.categoryID = categoryID;
+    }
+
+    public Product(int id, String name, String URL, int price, Group group, int categoryID, int volume, double strength, String imageID) {
         this(name, URL, price);
         this.id = id;
         this.group = group;
         this.categoryID = categoryID;
         this.volume = volume;
         this.strength = strength;
+        this.imageID = imageID;
     }
 
     public Product(int id, String name, String URL, int price, int categoryID, int volume, double strength) {
@@ -39,25 +45,8 @@ public class Product {
         this.strength = strength;
     }
 
-    public Product(String name, String URL, int price, Group group, int categoryID) {
-        this(name, URL, price);
-        this.group = group;
-        this.categoryID = categoryID;
-    }
-
-    public Product(int id, String name, String URL, int price, Group group, int categoryID) {
-        this(name, URL, price);
-        this.id = id;
-        this.group = group;
-        this.categoryID = categoryID;
-    }
-
     public String getName() {
         return name;
-    }
-
-    public String getCategoryName() {
-        return categoryName;
     }
 
     public String getURL() {
@@ -82,6 +71,10 @@ public class Product {
 
     public int getId() {
         return id;
+    }
+
+    public String getImageID() {
+        return imageID;
     }
 
     public int getCategoryID() {

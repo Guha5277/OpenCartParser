@@ -31,7 +31,7 @@ class SQLClient {
         LOG = LogManager.getLogger();
     }
 
-    synchronized static void connect() {
+    static void connect() {
         try {
             Class.forName("org.sqlite.JDBC");
             connection = DriverManager.getConnection("jdbc:sqlite:liquidBase.db");
@@ -43,7 +43,7 @@ class SQLClient {
         }
     }
 
-    synchronized static void disconnect() {
+    static void disconnect() {
         try {
             connection.close();
         } catch (SQLException e) {
@@ -61,7 +61,7 @@ class SQLClient {
         }
     }
 
-    synchronized static void insertCategory(String categoryName) {
+    static void insertCategory(String categoryName) {
         String query = String.format("INSERT INTO " + CATEGORIES_TABLE + " (name) VALUES ('%s')", categoryName);
         try {
             statement.execute(query);
@@ -158,8 +158,9 @@ class SQLClient {
                     String groupName = set.getString(6);
                     double strength = set.getDouble(7);
                     int volume = set.getInt(8);
+                    String imageID = set.getString(9);
 
-                    list.add(new Product(id, name, url, price, new Group(groupName, ""), category, volume, strength));
+                    list.add(new Product(id, name, url, price, new Group(groupName, ""), category, volume, strength, imageID));
                 }
                 return list;
             }
@@ -328,6 +329,15 @@ class SQLClient {
         }
     }
 
+    static void updateImageID(int productID, String imageID) {
+        String query = String.format("UPDATE " + PRODUCT_TABLE + " SET image_id = '%s' WHERE id = %d", imageID, productID);
+        try {
+          statement.execute(query);
+        } catch (SQLException e) {
+            LOG.error("Failed to UPDATE imageID from " + PRODUCT_TABLE + ": Query: " + query + ", error: " + e.getMessage());
+        }
+    }
+
     synchronized static String getNickname(String login, String password) {
         String query = String.format("SELECT nickname FROM " + USERS_TABLE + " WHERE username='%s' AND password='%s'", login, password);
         try {
@@ -488,7 +498,7 @@ class SQLClient {
         }
     }
 
-    synchronized static int getLastUpdatedProductPosition() {
+    static int getLastUpdatedProductPosition() {
         String query = "select paused_at from " + INFO_TABLE + " where process='updater'";
         try {
             ResultSet set = statement.executeQuery(query);
@@ -500,7 +510,7 @@ class SQLClient {
         return 0;
     }
 
-    synchronized static void updateResearcherLastRun(int totalFound) {
+    static void updateResearcherLastRun(int totalFound) {
         LocalDate date = LocalDate.now();
         String query = String.format("UPDATE " + INFO_TABLE + " SET last_run='%d-%d-%d', total_updated=%d WHERE process='researcher'", date.getYear(), date.getMonthValue(), date.getDayOfMonth(), totalFound);
         String insertQuery = String.format("INSERT INTO " + INFO_TABLE + " (process, last_runs, total_updated) VALUES ('researcher', '%d-%d-%d', %d)", date.getYear(), date.getMonthValue(), date.getDayOfMonth(), totalFound);

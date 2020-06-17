@@ -2,9 +2,13 @@ package main;
 
 import main.product.Product;
 import main.product.Warehouse;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.IOException;
+import java.io.*;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,10 +19,12 @@ class Updater extends Parser implements Runnable {
     private int updates;
     private int errors;
     private int startPosition;
+    private final String IMAGES_PATH;
 
-    Updater(ParserEvents listener, int startPosition) {
+    Updater(ParserEvents listener, int startPosition, String imagesPath) {
         this.listener = listener;
         this.startPosition = startPosition;
+        this.IMAGES_PATH = imagesPath;
         current = startPosition + 1;
         listener.onUpdaterReady();
         LOG.info("Updater Instance Created");
@@ -44,47 +50,28 @@ class Updater extends Parser implements Runnable {
 
         List<Warehouse> warehousesList = SQLClient.getAllWarehouses();
 
-        for (int i = startPosition; i < products.size(); i++){
+        for (int i = startPosition; i < products.size(); i++) {
+            Product currProduct = products.get(i);
             if (isInterrupt) return totalUpdated;
-            listener.onUpdaterCurrentProduct(current, products.get(i).getName());
-            String URL = products.get(i).getURL();
+            listener.onUpdaterCurrentProduct(current, currProduct.getName());
+            String URL = currProduct.getURL();
             Product actualProduct = null;
             try {
                 actualProduct = parseProduct(URL);
             } catch (IOException e) {
-                listener.onUpdaterException(products.get(i).getId(), URL, e);
+                listener.onUpdaterException(currProduct.getId(), URL, e);
             }
-            if(actualProduct == null) {
+            if (actualProduct == null) {
                 errors++;
                 current++;
                 listener.onUpdateProductFailed(URL, errors);
                 continue;
             }
-            if (compareProducts(actualProduct, products.get(i))) totalUpdated++;
-            updateProductRemains(warehousesList, products.get(i));
+            if (compareProducts(actualProduct, currProduct)) totalUpdated++;
+            updateProductRemains(warehousesList, currProduct);
+            checkProductImage(currProduct);
             current++;
         }
-
-//        for (Product product : products) {
-//            if (isInterrupt) return totalUpdated;
-//            listener.onUpdaterCurrentProduct(current, product.getName());
-//            String URL = product.getURL();
-//            Product actualProduct = null;
-//            try {
-//                actualProduct = parseProduct(URL);
-//            } catch (IOException e) {
-//                listener.onUpdaterException(product.getId(), URL, e);
-//            }
-//            if(actualProduct == null) {
-//                errors++;
-//                current++;
-//                listener.onUpdateProductFailed(URL, errors);
-//                continue;
-//            }
-//            if (compareProducts(actualProduct, product)) totalUpdated++;
-//            updateProductRemains(warehousesList, product);
-//            current++;
-//        }
 
         return totalUpdated;
     }
@@ -191,56 +178,79 @@ class Updater extends Parser implements Runnable {
         return result;
     }
 
-    private ArrayList<Product> getProductsListFromDB() {
-//        ArrayList<Product> list = new ArrayList<>();
-//        ResultSet set = SQLClient.getAllProducts();
-
-        List<Product> list = SQLClient.getAllProducts();
-        //list = SQLClient.getAllProducts();
-//        if (set != null) {
-//            try {
-//                while (set.next()) {
-//                    int id = set.getInt(1);
-//                    String name = set.getString(2);
-//                    String url = set.getString(3);
-//                    int price = set.getInt(4);
-//                    int category = set.getInt(5);
-//                    String groupName = set.getString(6);
-//                    double strength = set.getDouble(7);
-//                    int volume = set.getInt(8);
-//
-//                    list.add(new Product(id, name, url, price, new Group(groupName, ""), category, volume, strength));
-//                }
-//            } catch (SQLException e) {
-//                LOG.error("Error to parse a ResultSet from DB query");
-//                listener.onParserException(e);
-//            }
-//        } else {
-//            listener.onUpdateError();
-//            return null;
-//        }
-        return null;
+    private void checkProductImage(Product product) {
+        LOG.info("Check image for product " + product.getName());
+        String imageID = product.getImageID();
+        if (imageID == null) {
+            LOG.info("No imageID in the DB!");
+            imageID = downloadImage(product);
+            updateImageID(product, imageID);
+        } else if (imageID.equals("NO_IMAGE")) {
+            imageID = downloadImage(product);
+            if (!imageID.equals("NO_IMAGE")){
+                updateImageID(product, imageID);
+            }
+        } else {
+            File file = new File(IMAGES_PATH + imageID);
+            if (file.exists()) {
+                LOG.info("It is not necessary to update an image");
+                return;
+            }
+            LOG.info("No imageID in the HW!");
+            imageID = downloadImage(product);
+            updateImageID(product, imageID);
+        }
     }
 
-//    private ArrayList<Warehouse> getWarehousesFromDB() {
-//        ArrayList<Warehouse> warehousesList = new ArrayList<>();
-//
-//        ResultSet set = SQLClient.getAllWarehouses();
-//        try {
-//            if (set != null) {
-//                while (set.next()) {
-//                    warehousesList.add(new Warehouse(set.getInt("id"), set.getString("alt_name")));
-//                }
-//            } else {
-//                listener.onUpdateError();
-//                return null;
-//            }
-//        } catch (SQLException e) {
-//            LOG.error("Failed to get Warehouses List");
-//            listener.onUpdaterSQLException(e);
-//        }
-//        return warehousesList;
-//    }
+    private String downloadImage(Product product) {
+        LOG.info("Downloading image...");
+        String URL = product.getURL();
+        String name = null;
+        Document doc;
+        try {
+            doc = Jsoup.connect(URL).get();
+            //Получение картинки
+            Element img;
+            try {
+                img = doc.body().getElementsByClass("thumbnail").get(0);
+            } catch (IndexOutOfBoundsException e) {
+                LOG.error("The product has no image!" + URL);
+                return "NO_IMAGE";
+            }
+
+            String url = img.absUrl("href");
+            System.out.println("URL: " + url);
+
+            //Получение индекса имени картинки
+            int indexname = url.lastIndexOf("/");
+
+            //Получение имени картинки
+            name = url.substring(indexname + 1);
+            System.out.println("Image name: " + name);
+
+            //Open a URL Stream
+            java.net.URL urlStream = new URL(url);
+            InputStream in = urlStream.openStream();
+
+            OutputStream out = new BufferedOutputStream(new FileOutputStream(IMAGES_PATH + name));
+
+            int size = in.available();
+            for (int b; (b = in.read()) != -1; ) {
+                out.write(b);
+            }
+            out.close();
+            in.close();
+            LOG.info("Image successful download and write to disk: " + IMAGES_PATH + name + " file size: " + size);
+        } catch (IOException e) {
+            LOG.error("Error when trying to ge an product image " + e.getMessage());
+        }
+        return name;
+    }
+
+    private void updateImageID(Product product, String imageID) {
+        LOG.info("Updating image to DB...");
+        SQLClient.updateImageID(product.getId(), imageID);
+    }
 
     private void updateProductRemains(List<Warehouse> warehousesList, Product product) {
         ArrayList<Warehouse> warehouses = new ArrayList<>(warehousesList);
@@ -276,7 +286,7 @@ class Updater extends Parser implements Runnable {
         }
     }
 
-    public void stop(){
+    public void stop() {
         isInterrupt = true;
     }
 }
