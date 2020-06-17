@@ -327,9 +327,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         return sb.toString();
     }
 
-    private void sendImageToClient(ClientThread client){
+    private void sendImageToClient(ClientThread client, int productID, String imagePath){
         //Test send images
-        File file = new File("Server/res/images/250b24ee-d7ff-11e8-983b-00155d5ea601-600x600.jpeg");
+        File file = new File(imagePath);
         try {
             Base64.Encoder encoder = Base64.getEncoder();
             byte[] fileContent = Files.readAllBytes(file.toPath());
@@ -356,27 +356,26 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                     String jsonMsg;
                     if (i == 0){
                         //Image first chunk
-                        data = "250b24ee-d7ff-11e8-983b-00155d5ea601-600x600.jpeg" + Library.DELIMITER + "123" + Library.DELIMITER + subArraysCount + Library.DELIMITER + new String(subArrays[i]);
+                        data = productID + Library.DELIMITER + subArraysCount + Library.DELIMITER + new String(subArrays[i]);
                         jsonMsg = Library.makeJsonString(Library.IMAGE, Library.FIRST_CHUNK, data);
                     } else if (i == subArraysCount - 1) {
                         //Image last chunk
-                        data = "123" + Library.DELIMITER + new String(subArrays[i]);
+                        data = productID + Library.DELIMITER + new String(subArrays[i]);
                         jsonMsg = Library.makeJsonString(Library.IMAGE, Library.LAST_CHUNK, data);
                     } else {
-                        data = "123" + Library.DELIMITER  + i + Library.DELIMITER + new String(subArrays[i]);
-                        jsonMsg = Library.makeJsonString(Library.IMAGE, data);
+                        //Image transit chunk
+                        data = productID + Library.DELIMITER  + i + Library.DELIMITER + new String(subArrays[i]);
+                        jsonMsg = Library.makeJsonString(Library.IMAGE, Library.TRANSIT_CHUNK, data);
                     }
                     indexStart = indexEnd;
                     SERVER_LOGGER.info("Send chink #" + (i+1));
                     client.sendMessage(jsonMsg);
                 }
             }
-            SERVER_LOGGER.info("Sending image finished");
+            SERVER_LOGGER.info("Successful sent image " + imagePath + " to client " + (client.getNickname() == null ? "Anonymous"  :  client.getNickname()));
         } catch (IOException e){
-            e.printStackTrace();
+            SERVER_LOGGER.error("Failed to send image " + imagePath + " to client " + (client.getNickname() == null ? "Anonymous"  :  client.getNickname()));
         }
-
-
     }
 
     //Server Events
@@ -514,7 +513,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                         break;
                 }
                 break;
-
             case Library.RESEARCHER:
                 if (client.getAccessLevel() > 2) {
                     USERS_LOGGER.error("ACCESS TO RESEARCHER DENIED cause client access level is lower than required: " + client.getAccessLevel());
@@ -574,6 +572,21 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 List<Product> products = getProductsByFilter(request);
                 sendProductList(products, client);
                 break;
+            case Library.IMAGE:
+                USERS_LOGGER.info("IMAGE REQUEST...");
+                int productID = Integer.parseInt(receivedData.getData());
+                String imageID = SQLClient.getImageID(productID);
+                if (imageID == null) {
+                    SERVER_LOGGER.error("FAILED to get an image from DB for product with id: " + productID);
+                    client.sendMessage(Library.makeJsonString(Library.IMAGE, Library.EXCEPTION, String.valueOf(productID)));
+                } else if (imageID.equals("NO_IMAGE")){
+                    SERVER_LOGGER.error("No image for product with id: " + productID);
+                    client.sendMessage(Library.makeJsonString(Library.IMAGE, Library.NO_IMAGE, String.valueOf(productID)));
+                } else {
+                    SERVER_LOGGER.error("Image on the disk for product: " + productID);
+                    String imagePath = IMAGES_PATH + imageID;
+                    sendImageToClient(client, productID, imagePath);
+                }
         }
     }
 

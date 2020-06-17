@@ -6,9 +6,7 @@ import main.product.Warehouse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -19,6 +17,9 @@ public class Controller implements SocketThreadListener {
     private LoginGUI loginGUI;
     private ClientGUI clientGUI;
     private SettingsGUI settingsGUI;
+    /*TODO DELETE AFTER TEST*/
+    private ImageTestGUI testImagesGUI;
+    //
     private SocketThread socketThread;
     private String login;
     private String password;
@@ -34,6 +35,7 @@ public class Controller implements SocketThreadListener {
     private Timer serverStartTimeTimer;
     private static final Logger LOGGER = LogManager.getLogger("ClientLogger");
     private HashMap<Integer, byte[][]> images = new HashMap<>();
+    private final String IMAGE_PATH = "Client/res/product_images/";
 
     Controller(AppGUI app) {
         LOGGER.info("Controller constructor");
@@ -48,8 +50,13 @@ public class Controller implements SocketThreadListener {
         this.clientGUI = clientGUI;
     }
 
-    public void setSettingsGUI(SettingsGUI settingsGUI) {
+     void setSettingsGUI(SettingsGUI settingsGUI) {
         this.settingsGUI = settingsGUI;
+    }
+
+    /*TODO DELETE AFTER TEST*/
+    void setTestImagesGUI(ImageTestGUI imageTestGUI){
+        this.testImagesGUI = imageTestGUI;
     }
 
     void connect(String ip, String port, String login, String password) {
@@ -111,6 +118,68 @@ public class Controller implements SocketThreadListener {
         socketThread.sendMessage(Library.makeJsonString(Library.USERS, Library.DISCONNECT, nickname));
     }
 
+    private void storeImageFirstChunk(String[] messageParts){
+        int productID = Integer.parseInt(messageParts[0]);
+        int chunkCount = Integer.parseInt(messageParts[1]);
+        String chunk = messageParts[2];
+
+        byte[][] imageArray = new byte[chunkCount][];
+        imageArray[0] = chunk.getBytes();
+        images.put(productID, imageArray);
+    }
+
+    private void storeImageTransitChunk(String[] messageParts){
+        int productID = Integer.parseInt(messageParts[0]);
+        int chunkIndex = Integer.parseInt(messageParts[1]);
+        String chunk = messageParts[2];
+        byte[][] imageArray = images.get(productID);
+        imageArray[chunkIndex] = chunk.getBytes();
+    }
+
+    private void storeImageLastChunk(String[] messageParts){
+        int productID = Integer.parseInt(messageParts[0]);
+        String chunk = messageParts[1];
+        try {
+            //store last part to map
+            byte[][] imageArray = images.get(productID);
+            imageArray[imageArray.length - 1] = chunk.getBytes();
+
+            //write all bytes array to stream and get final encoded string
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            for (byte[] b : imageArray) {
+                bos.write(b);
+            }
+            byte[] result = bos.toByteArray();
+            String encodedString = new String(result);
+
+            //decode result and create Image instance
+            Base64.Decoder decoder = Base64.getDecoder();
+            result = decoder.decode(encodedString);
+            Image image = new Image(new ByteArrayInputStream(result));
+
+            //write to disk
+            FileOutputStream os = new FileOutputStream(IMAGE_PATH + productID + ".jpeg");
+            os.write(result);
+
+            //remove image from map
+            images.remove(productID);
+
+            bos.close();
+            os.close();
+            app.showImagesStage();
+            testImagesGUI.setImage(productID, image);
+//            clientGUI.productImage(productID, image);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void noImageForProduct(String productID){
+        LOGGER.info("No available image for this product: " + productID);
+        app.showImagesStage();
+        testImagesGUI.noImageForProduct(productID);
+    }
+
     List getStoreList(String selectedCity) {
         return someNewMap.get(selectedCity);
     }
@@ -170,7 +239,23 @@ public class Controller implements SocketThreadListener {
         socketThread.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.AUTOSTART, String.valueOf(researcherEnable)));
         socketThread.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.AUTOSTART_INTERVAL, String.valueOf(researcherInterval)));
         socketThread.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.AUTOSTART_TIME, String.valueOf(researcherTime)));
+    }
 
+    //Getting an imageView from server or HW
+    void getImage(int id) {
+        LOGGER.info("Getting an image for product with id: " + id);
+        String imagePath = IMAGE_PATH + id + ".jpeg";
+        File file = new File(imagePath);
+        if (file.exists()){
+            LOGGER.info("Image already on the disk, sending it to client...");
+            app.showImagesStage();
+            Image image = new Image(file.toURI().toString());
+            testImagesGUI.setImage(id, image);
+//            clientGUI.productImage(id, image);
+        } else {
+            LOGGER.info("No image on the disk, sending request to the server");
+            socketThread.sendMessage(Library.makeJsonString(Library.IMAGE, String.valueOf(id)));
+        }
     }
 
     //Socket events
@@ -192,42 +277,27 @@ public class Controller implements SocketThreadListener {
         byte[] header = receivedData.getHeader();
         switch (header[0]) {
             case Library.IMAGE:
-                String[] messageParts = receivedData.getData().split(Library.DELIMITER);
                 if (header.length > 1) {
-                    if (header[1] == Library.FIRST_CHUNK) {
-                        byte[][] imageArray = new byte[Integer.parseInt(messageParts[2])][];
-                        imageArray[0] = messageParts[3].getBytes();
-                        images.put(Integer.valueOf(messageParts[1]), imageArray);
-                    } else if (header[1] == Library.LAST_CHUNK) {
-                        try {
-                            Base64.Decoder decoder = Base64.getDecoder();
-                            byte[][] imageArray = images.get(Integer.valueOf(messageParts[0]));
-                            imageArray[imageArray.length - 1] = messageParts[1].getBytes();
-                            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                            for (byte[] b : imageArray) {
-                                bos.write(b);
-                            }
-                            byte[] result = bos.toByteArray();
-                            String encodedString = new String(result);
-                            result = decoder.decode(encodedString);
-                            Image image = new Image(new ByteArrayInputStream(result));
-                            clientGUI.prouctImage(image);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-
-                    } else {
-                        /*TODO generate some exception/error*/
+                    switch (header[1]){
+                        case Library.EXCEPTION:
+                            LOGGER.error("Failed to get image from the server. Product id: " + receivedData.getData());
+                            break;
+                        case Library.NO_IMAGE:
+                            noImageForProduct(receivedData.getData());
+                            break;
+                        case Library.FIRST_CHUNK:
+                            storeImageFirstChunk(receivedData.getData().split(Library.DELIMITER));
+                            break;
+                        case Library.TRANSIT_CHUNK:
+                            /*TODO Check Map for contains an imageView*/ //if (!images.containsKey(Integer.valueOf(messageParts[0])));
+                            storeImageTransitChunk(receivedData.getData().split(Library.DELIMITER));
+                            break;
+                        case Library.LAST_CHUNK:
+                            storeImageLastChunk(receivedData.getData().split(Library.DELIMITER));
+                            break;
                     }
-                } else {
-                    /*TODO Check Map for contains an image*/ //if (!images.containsKey(Integer.valueOf(messageParts[0])));
-                    byte[][] imageArray = images.get(Integer.valueOf(messageParts[0]));
-                    imageArray[Integer.parseInt(messageParts[1])] = messageParts[2].getBytes();
                 }
-
-
-//                Base64.Decoder decoder = Base64.getDecoder();
-//                Image image = new Image(new ByteArrayInputStream();
+                break;
 
             case Library.AUTH:
                 if (header.length < 2) {

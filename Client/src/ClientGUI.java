@@ -203,15 +203,16 @@ public class ClientGUI {
         productTableView.setItems(productsList);
         remainsTableView.setVisible(false);
 
+        //Row factory and detecting click on row in table
         productTableView.setRowFactory(tv -> {
             TableRow<Product> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
                 if (!row.isEmpty() && event.getButton() == MouseButton.PRIMARY) {
-                    Product productZ = row.getItem();
-                    if (productZ.getRemainsCount() > 0) {
+                    Product product = row.getItem();
+                    if (product.getRemainsCount() > 0) {
                         remainsTableView.setVisible(true);
                         String store = combStore.getSelectionModel().getSelectedItem();
-                        List<Warehouse> list = productZ.getRemainsList();
+                        List<Warehouse> list = product.getRemainsList();
                         if (!store.equals("Все магазины")) {
                             list.get(0).setAltName(store);
                         }
@@ -226,8 +227,11 @@ public class ClientGUI {
                     } else {
                         remainsTableView.setVisible(false);
                     }
+                    //get an image request
+                    controller.getImage(product.getId());
                 }
             });
+
             return row;
         });
     }
@@ -703,7 +707,7 @@ public class ClientGUI {
     }
 
     @FXML
-    private void handleCityCombEvent(ActionEvent event) {
+    private void handleCityCombEvent() {
         String selectedItem = combCity.getSelectionModel().getSelectedItem();
         if (selectedItem == null || selectedItem.equals("Все города")) {
             combStore.setDisable(true);
@@ -729,7 +733,7 @@ public class ClientGUI {
         controller.showSettingsStage();
     }
 
-    void prouctImage(Image image) {
+    void productImage(int productID, Image image) {
         sampleImage.setImage(image);
     }
 }

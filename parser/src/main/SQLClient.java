@@ -1,5 +1,6 @@
 package main;
 
+import com.sun.xml.internal.ws.api.ha.StickyFeature;
 import main.product.Group;
 import main.product.Product;
 import main.product.Warehouse;
@@ -332,7 +333,7 @@ class SQLClient {
     static void updateImageID(int productID, String imageID) {
         String query = String.format("UPDATE " + PRODUCT_TABLE + " SET image_id = '%s' WHERE id = %d", imageID, productID);
         try {
-          statement.execute(query);
+            statement.execute(query);
         } catch (SQLException e) {
             LOG.error("Failed to UPDATE imageID from " + PRODUCT_TABLE + ": Query: " + query + ", error: " + e.getMessage());
         }
@@ -523,4 +524,17 @@ class SQLClient {
             LOG.error("Failed to UPDATE INFO! product_id: " + e.getMessage());
         }
     }
+
+    static String getImageID(int productID) {
+        String query = String.format("SELECT image_id from " + PRODUCT_TABLE + " WHERE id=%d", productID);
+        try {
+            ResultSet set = statement.executeQuery(query);
+            if (set.isClosed()) return null;
+            return set.getString(1);
+        } catch (SQLException e) {
+            LOG.error("Failed to get image from DB. Query: " + query + ". Error: " + e.getMessage());
+        }
+        return null;
+    }
 }
+

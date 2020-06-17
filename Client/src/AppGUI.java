@@ -16,8 +16,10 @@ public class AppGUI extends Application {
     private Stage clientStage;
     private Stage productFilterStage;
     private Stage settingsStage;
+    private Stage imagesTestScene;
     private ProductFilterGUI productFilterController;
     private SettingsGUI settingsController;
+    private ImageTestGUI imagesTestController;
     private static final Logger LOGGER = LogManager.getLogger("ClientLogger");
 
     public static void main(String[] args) {
@@ -62,6 +64,18 @@ public class AppGUI extends Application {
         productFilterStage.setScene(filterScene);
         productFilterStage.setResizable(false);
         LOGGER.info("Filter Stage built successful");
+
+        /*TODO STAGE FOR TEST IMAGES. DELETE AFTER USING*/
+        FXMLLoader imagesLoader = new FXMLLoader((getClass().getResource("image_test.fxml")));
+        Parent imagesRoot = imagesLoader.load();
+        Scene imagesScene = new Scene(imagesRoot);
+        imagesTestController = imagesLoader.getController();
+//        imagesTestController.setController(controller);
+        imagesTestScene = new Stage();
+        imagesTestScene.setScene(imagesScene);
+        imagesTestScene.setResizable(false);
+        LOGGER.info("Images Test Stage built successful");
+        controller.setTestImagesGUI(imagesTestController);
 
         FXMLLoader settingsLoader = new FXMLLoader((getClass().getResource("settings.fxml")));
         Parent settingsRoot = settingsLoader.load();
@@ -113,6 +127,14 @@ public class AppGUI extends Application {
         LOGGER.info("Show settings stage...");
         Platform.runLater(() -> {
             settingsStage.show();
+        });
+    }
+
+    /*TODO DELETE AFTER TEST*/
+    void showImagesStage() {
+        LOGGER.info("Show imageView stage...");
+        Platform.runLater(() -> {
+            imagesTestScene.show();
         });
     }
 
