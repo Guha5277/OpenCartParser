@@ -5,6 +5,8 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import main.product.Product;
@@ -160,6 +162,9 @@ public class ClientGUI {
     private TableColumn<Warehouse, Integer> colRemainsCount;
     ObservableList<Product> productsList;
     ObservableList<Warehouse> remainsList;
+
+    @FXML
+    ImageView sampleImage;
 
     @FXML
     void initialize() {
@@ -575,6 +580,19 @@ public class ClientGUI {
         });
     }
 
+    void addToProductList(Product product) {
+        Platform.runLater(() -> {
+            if (productsList == null) {
+                productsList = FXCollections.observableArrayList(product);
+            } else {
+                productsList.add(product);
+            }
+
+            productTableView.setItems(productsList);
+            //productTableView.refresh();
+        });
+    }
+
     void productsNotFound() {
         Platform.runLater(() -> {
             makeDialogWindow(Alert.AlertType.INFORMATION, "Нет данных",
@@ -709,5 +727,9 @@ public class ClientGUI {
     @FXML
     private void handleBtnSettingsEvent() {
         controller.showSettingsStage();
+    }
+
+    void prouctImage(Image image) {
+        sampleImage.setImage(image);
     }
 }

@@ -406,7 +406,18 @@
                   </AnchorPane>
                </content></Tab>
             <Tab fx:id="tabUsers" closable="false" disable="true" text="Users" />
-            <Tab fx:id="tabGrabber" closable="false" disable="true" text="Grabber" />
+            <Tab fx:id="tabGrabber" closable="false" disable="true" text="Grabber">
+               <content>
+                  <AnchorPane prefHeight="200.0" prefWidth="200.0">
+                     <children>
+                        <AnchorPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <children>
+                              <ImageView fx:id="sampleImage" fitHeight="300.0" fitWidth="300.0" layoutX="112.0" layoutY="14.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="4.0" AnchorPane.leftAnchor="150.0" AnchorPane.rightAnchor="150.0" AnchorPane.topAnchor="3.0" />
+                           </children>
+                        </AnchorPane>
+                     </children>
+                  </AnchorPane>
+               </content></Tab>
         </tabs>
       </TabPane>
    </children>

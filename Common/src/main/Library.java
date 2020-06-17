@@ -51,7 +51,9 @@ public class Library {
     public static final byte AUTOSTART = 35;
     public static final byte AUTOSTART_INTERVAL = 36;
     public static final byte AUTOSTART_TIME = 37;
-
+    public static final byte IMAGE = 38;
+    public static final byte FIRST_CHUNK = 39;
+    public static final byte LAST_CHUNK = 40;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 

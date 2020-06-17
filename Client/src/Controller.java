@@ -1,10 +1,13 @@
 import javafx.collections.ObservableList;
+import javafx.scene.image.Image;
 import main.*;
 import main.product.Product;
 import main.product.Warehouse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.time.*;
@@ -30,6 +33,7 @@ public class Controller implements SocketThreadListener {
     private long serverStartTime;
     private Timer serverStartTimeTimer;
     private static final Logger LOGGER = LogManager.getLogger("ClientLogger");
+    private HashMap<Integer, byte[][]> images = new HashMap<>();
 
     Controller(AppGUI app) {
         LOGGER.info("Controller constructor");
@@ -187,6 +191,44 @@ public class Controller implements SocketThreadListener {
 
         byte[] header = receivedData.getHeader();
         switch (header[0]) {
+            case Library.IMAGE:
+                String[] messageParts = receivedData.getData().split(Library.DELIMITER);
+                if (header.length > 1) {
+                    if (header[1] == Library.FIRST_CHUNK) {
+                        byte[][] imageArray = new byte[Integer.parseInt(messageParts[2])][];
+                        imageArray[0] = messageParts[3].getBytes();
+                        images.put(Integer.valueOf(messageParts[1]), imageArray);
+                    } else if (header[1] == Library.LAST_CHUNK) {
+                        try {
+                            Base64.Decoder decoder = Base64.getDecoder();
+                            byte[][] imageArray = images.get(Integer.valueOf(messageParts[0]));
+                            imageArray[imageArray.length - 1] = messageParts[1].getBytes();
+                            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                            for (byte[] b : imageArray) {
+                                bos.write(b);
+                            }
+                            byte[] result = bos.toByteArray();
+                            String encodedString = new String(result);
+                            result = decoder.decode(encodedString);
+                            Image image = new Image(new ByteArrayInputStream(result));
+                            clientGUI.prouctImage(image);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                    } else {
+                        /*TODO generate some exception/error*/
+                    }
+                } else {
+                    /*TODO Check Map for contains an image*/ //if (!images.containsKey(Integer.valueOf(messageParts[0])));
+                    byte[][] imageArray = images.get(Integer.valueOf(messageParts[0]));
+                    imageArray[Integer.parseInt(messageParts[1])] = messageParts[2].getBytes();
+                }
+
+
+//                Base64.Decoder decoder = Base64.getDecoder();
+//                Image image = new Image(new ByteArrayInputStream();
+
             case Library.AUTH:
                 if (header.length < 2) {
                     LOGGER.warn("Unknown auth message from server");
@@ -446,6 +488,7 @@ public class Controller implements SocketThreadListener {
                 break;
             case Library.PRODUCT_LIST:
                 products.add(Library.productFromJson(receivedData.getData()));
+//                clientGUI.addToProductList(Library.productFromJson(receivedData.getData()));
                 break;
             case Library.PRODUCT_LIST_START:
                 products.clear();
