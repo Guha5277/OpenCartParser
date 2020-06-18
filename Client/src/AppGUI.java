@@ -132,7 +132,7 @@ public class AppGUI extends Application {
 
     /*TODO DELETE AFTER TEST*/
     void showImagesStage() {
-        LOGGER.info("Show imageView stage...");
+        LOGGER.info("Show image stage...");
         Platform.runLater(() -> {
             imagesTestScene.show();
         });

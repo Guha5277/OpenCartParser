@@ -50,12 +50,12 @@ public class Controller implements SocketThreadListener {
         this.clientGUI = clientGUI;
     }
 
-     void setSettingsGUI(SettingsGUI settingsGUI) {
+    void setSettingsGUI(SettingsGUI settingsGUI) {
         this.settingsGUI = settingsGUI;
     }
 
     /*TODO DELETE AFTER TEST*/
-    void setTestImagesGUI(ImageTestGUI imageTestGUI){
+    void setTestImagesGUI(ImageTestGUI imageTestGUI) {
         this.testImagesGUI = imageTestGUI;
     }
 
@@ -118,7 +118,7 @@ public class Controller implements SocketThreadListener {
         socketThread.sendMessage(Library.makeJsonString(Library.USERS, Library.DISCONNECT, nickname));
     }
 
-    private void storeImageFirstChunk(String[] messageParts){
+    private void storeImageFirstChunk(String[] messageParts) {
         int productID = Integer.parseInt(messageParts[0]);
         int chunkCount = Integer.parseInt(messageParts[1]);
         String chunk = messageParts[2];
@@ -128,7 +128,7 @@ public class Controller implements SocketThreadListener {
         images.put(productID, imageArray);
     }
 
-    private void storeImageTransitChunk(String[] messageParts){
+    private void storeImageTransitChunk(String[] messageParts) {
         int productID = Integer.parseInt(messageParts[0]);
         int chunkIndex = Integer.parseInt(messageParts[1]);
         String chunk = messageParts[2];
@@ -136,7 +136,7 @@ public class Controller implements SocketThreadListener {
         imageArray[chunkIndex] = chunk.getBytes();
     }
 
-    private void storeImageLastChunk(String[] messageParts){
+    private void storeImageLastChunk(String[] messageParts) {
         int productID = Integer.parseInt(messageParts[0]);
         String chunk = messageParts[1];
         try {
@@ -144,37 +144,80 @@ public class Controller implements SocketThreadListener {
             byte[][] imageArray = images.get(productID);
             imageArray[imageArray.length - 1] = chunk.getBytes();
 
-            //write all bytes array to stream and get final encoded string
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            for (byte[] b : imageArray) {
-                bos.write(b);
+            //decode byte arrays from the HashMap to the final result
+            byte[] decodedImageBytes = decodeImage(joinByteArrays(imageArray));
+            if (decodedImageBytes == null){
+                LOGGER.error("Failed to decode an image");
+                return;
             }
-            byte[] result = bos.toByteArray();
-            String encodedString = new String(result);
-
-            //decode result and create Image instance
-            Base64.Decoder decoder = Base64.getDecoder();
-            result = decoder.decode(encodedString);
-            Image image = new Image(new ByteArrayInputStream(result));
 
             //write to disk
             FileOutputStream os = new FileOutputStream(IMAGE_PATH + productID + ".jpeg");
-            os.write(result);
+            os.write(decodedImageBytes);
+
+            //Create an image instance
+            Image image = new Image(new ByteArrayInputStream(decodedImageBytes));
 
             //remove image from map
             images.remove(productID);
 
-            bos.close();
             os.close();
             app.showImagesStage();
             testImagesGUI.setImage(productID, image);
 //            clientGUI.productImage(productID, image);
         } catch (IOException e) {
+            LOGGER.error("Failed to store an image: " + e.getMessage());
+        }
+    }
+
+    private void storeFullImage(String[] messageParts) {
+        int productID = Integer.parseInt(messageParts[0]);
+        String chunk = messageParts[1];
+        byte[] result = decodeImage(chunk.getBytes());
+        try {
+            //write to disk
+            FileOutputStream os = new FileOutputStream(IMAGE_PATH + productID + ".jpeg");
+            os.write(result);
+
+            //Create an image instance
+            Image image = new Image(new ByteArrayInputStream(result));
+
+            //remove image from map
+            images.remove(productID);
+
+            os.close();
+            app.showImagesStage();
+            testImagesGUI.setImage(productID, image);
+        } catch (IOException e){
             e.printStackTrace();
         }
     }
 
-    private void noImageForProduct(String productID){
+    private byte[] joinByteArrays(byte[][] arrays) {
+        byte[] result = null;
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        for (byte[] b : arrays) {
+            try {
+                bos.write(b);
+                result = bos.toByteArray();
+                bos.close();
+            } catch (IOException e) {
+                LOGGER.error("Failed to join arrays");
+            }
+
+        }
+        return result;
+    }
+
+    private byte[] decodeImage(byte[] encodedImage) {
+                String encodedString = new String(encodedImage);
+
+                //decode result
+                Base64.Decoder decoder = Base64.getDecoder();
+                return decoder.decode(encodedString);
+    }
+
+    private void noImageForProduct(String productID) {
         LOGGER.info("No available image for this product: " + productID);
         app.showImagesStage();
         testImagesGUI.noImageForProduct(productID);
@@ -246,7 +289,7 @@ public class Controller implements SocketThreadListener {
         LOGGER.info("Getting an image for product with id: " + id);
         String imagePath = IMAGE_PATH + id + ".jpeg";
         File file = new File(imagePath);
-        if (file.exists()){
+        if (file.exists()) {
             LOGGER.info("Image already on the disk, sending it to client...");
             app.showImagesStage();
             Image image = new Image(file.toURI().toString());
@@ -278,7 +321,7 @@ public class Controller implements SocketThreadListener {
         switch (header[0]) {
             case Library.IMAGE:
                 if (header.length > 1) {
-                    switch (header[1]){
+                    switch (header[1]) {
                         case Library.EXCEPTION:
                             LOGGER.error("Failed to get image from the server. Product id: " + receivedData.getData());
                             break;
@@ -294,6 +337,9 @@ public class Controller implements SocketThreadListener {
                             break;
                         case Library.LAST_CHUNK:
                             storeImageLastChunk(receivedData.getData().split(Library.DELIMITER));
+                            break;
+                        case Library.FULL:
+                            storeFullImage(receivedData.getData().split(Library.DELIMITER));
                             break;
                     }
                 }

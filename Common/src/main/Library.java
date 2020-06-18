@@ -56,6 +56,7 @@ public class Library {
     public static final byte TRANSIT_CHUNK = 40;
     public static final byte LAST_CHUNK = 41;
     public static final byte NO_IMAGE = 42;
+    public static final byte FULL = 43;
 
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();

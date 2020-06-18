@@ -333,8 +333,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         try {
             Base64.Encoder encoder = Base64.getEncoder();
             byte[] fileContent = Files.readAllBytes(file.toPath());
-            byte[] result = encoder.encodeToString(fileContent).getBytes();
-            int imageLength = result.length;
+            String encodeString = encoder.encodeToString(fileContent);
+            byte[] encodedFileContent = encodeString.getBytes();
+            int imageLength = encodedFileContent.length;
 
             SERVER_LOGGER.info("Image length: " + imageLength);
 
@@ -351,7 +352,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 for (int i = 0; i < subArraysCount; i++) {
                     SERVER_LOGGER.info("Create chink #" + (i+1));
                     int indexEnd = IMAGE_CHUNK_LIMIT * (i + 1);
-                    subArrays[i] = Arrays.copyOfRange(result, indexStart, indexEnd < imageLength ? indexEnd : imageLength);
+                    subArrays[i] = Arrays.copyOfRange(encodedFileContent, indexStart, indexEnd < imageLength ? indexEnd : imageLength);
                     String data;
                     String jsonMsg;
                     if (i == 0){
@@ -368,9 +369,11 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                         jsonMsg = Library.makeJsonString(Library.IMAGE, Library.TRANSIT_CHUNK, data);
                     }
                     indexStart = indexEnd;
-                    SERVER_LOGGER.info("Send chink #" + (i+1));
+                    //SERVER_LOGGER.info("Send chink #" + (i+1));
                     client.sendMessage(jsonMsg);
                 }
+            } else {
+                client.sendMessage(Library.makeJsonString(Library.IMAGE, Library.FULL, productID + Library.DELIMITER + encodeString));
             }
             SERVER_LOGGER.info("Successful sent image " + imagePath + " to client " + (client.getNickname() == null ? "Anonymous"  :  client.getNickname()));
         } catch (IOException e){
@@ -583,7 +586,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                     SERVER_LOGGER.error("No image for product with id: " + productID);
                     client.sendMessage(Library.makeJsonString(Library.IMAGE, Library.NO_IMAGE, String.valueOf(productID)));
                 } else {
-                    SERVER_LOGGER.error("Image on the disk for product: " + productID);
+                    SERVER_LOGGER.error("Image for the product with id " + productID + " is on disk");
                     String imagePath = IMAGES_PATH + imageID;
                     sendImageToClient(client, productID, imagePath);
                 }

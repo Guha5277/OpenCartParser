@@ -15,11 +15,11 @@ import main.product.Warehouse;
 import java.util.List;
 import java.util.Optional;
 
-
 public class ClientGUI {
     private Controller controller;
     private boolean isUpdaterRun;
     private boolean isResearcherRun;
+    private int selectedProduct;
     private String prevProdSelectedItem;
 
     //Header
@@ -228,7 +228,11 @@ public class ClientGUI {
                         remainsTableView.setVisible(false);
                     }
                     //get an image request
-                    controller.getImage(product.getId());
+                    int id = product.getId();
+                    if (id != selectedProduct) {
+                        selectedProduct = id;
+                        controller.getImage(product.getId());
+                    }
                 }
             });
 
