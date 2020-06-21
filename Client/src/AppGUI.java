@@ -59,6 +59,7 @@ public class AppGUI extends Application implements ControllerEvents {
             LOGGER.info("Hide controller stage");
             listener.onAppCloseRequest();
         });
+
         clientController = clientLoader.getController();
         clientController.setListener(listener);
         clientController.setApp(this);
@@ -318,7 +319,7 @@ public class AppGUI extends Application implements ControllerEvents {
     @Override
     public void onResearcherStart() {
         Platform.runLater(() -> {
-            clientController.updaterStart();
+            clientController.researcherStart();
         });
     }
 
@@ -363,6 +364,7 @@ public class AppGUI extends Application implements ControllerEvents {
     public void onProductRequestSent(boolean stock, String city, String store) {
         Platform.runLater(() -> {
             clientController.updateProductComboBoxes(stock, city, store);
+            clientController.clearProductList();
         });
     }
 
@@ -390,7 +392,15 @@ public class AppGUI extends Application implements ControllerEvents {
     @Override
     public void onProductImageFound(int productID, Image image) {
         Platform.runLater(() -> {
-            imageStage.show();
+            boolean isShowing = imageStage.getScene().getWindow().isShowing();
+            if (!isShowing){
+                double x = clientStage.getX() + imageStage.getWidth();
+                double y = clientStage.getY();
+
+                imageStage.show();
+                imageStage.setX(x);
+                imageStage.setY(y);
+            }
             imageSceneController.setImage(productID, image);
         });
     }
@@ -413,7 +423,7 @@ public class AppGUI extends Application implements ControllerEvents {
     @Override
     public void onConnectLost() {
         Platform.runLater(() -> {
-            //clienController.connectionLost();
+            clientController.connectionLost();
             clientStage.hide();
             loginStage.show();
         });

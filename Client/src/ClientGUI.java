@@ -554,6 +554,12 @@ public class ClientGUI {
             //productTableView.refresh();
     }
 
+    void clearProductList() {
+        if (productsList == null)  return;
+        productsList.clear();
+        productTableView.getItems().clear();
+    }
+
     void productsNotFound() {
         makeDialogWindow(Alert.AlertType.INFORMATION, "Нет данных",
                 "По вашему запросу не было найдено соответствий продуктам",
@@ -684,7 +690,7 @@ public class ClientGUI {
         app.showSettingsStage();
     }
 
-    public void setApp(AppGUI appGUI) {
+    void setApp(AppGUI appGUI) {
         this.app = appGUI;
     }
 }
