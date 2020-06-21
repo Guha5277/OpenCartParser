@@ -4,20 +4,21 @@ import javafx.scene.control.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.net.URL;
-import java.util.Properties;
 import java.util.ResourceBundle;
 
 public class LoginGUI {
-    private final String ERROR_FIELDS = "Поля не могут быть пустыми!";
-    private final String CONNECTION_FAILED = "Не удаётся установить соединение!";
-    private final String INVALID_PORT = "Неверно указан порт!";
-    private final String AUTH_ERROR = "Ошибка авторизации!";
-    private final String CONFIG = "config.properties";
-    //    private final String CONFIG = "\\res\\config.properties";
+    private static final String INVALID_LOGIN = "Поле логин не может-быть пустым!";
+    private static final String INVALID_PASSWORD = "Поле пароля не может-быть пустым!";
+    private GUIEvents listener;
+    //private static final String ERROR_FIELDS = "Поля не могут быть пустыми!";
+    private static final String INVALID_IP = "Неверно указан IP-аддрес!";
+    private static final String CONNECTION_FAILED = "Не удаётся установить соединение!";
+    private static final String INVALID_PORT = "Неверно указан порт!";
+    private static final String AUTH_ERROR = "Ошибка авторизации!";
+    private static final String CONFIG = "config.properties";
     private static final Logger LOGGER = LogManager.getLogger("ClientLogger");
-    private Controller controller;
+    //private Controller controller;
 
     @FXML
     private ResourceBundle resources;
@@ -38,51 +39,91 @@ public class LoginGUI {
     @FXML
     private Button btnConnect;
 
-    @FXML
-    void initialize() {
-        LOGGER.info("LoginStage initializing...");
-        try {
-            LOGGER.info("Loading preferences from config file...");
-            //load settings from properties file
-//            File props = new File(CONFIG);
-//            if (!props.exists()){
-//                props.createNewFile();
+//    @FXML
+//    void initialize() {
+//        LOGGER.info("LoginStage initializing...");
+//        try {
+//            LOGGER.info("Loading preferences from config file...");
+//            //load settings from properties file
+////            File props = new File(CONFIG);
+////            if (!props.exists()){
+////                props.createNewFile();
+////            }
+//            Properties configProp = new Properties();
+//            configProp.load(getClass().getResourceAsStream(CONFIG));
+////            configProp.load(new FileInputStream(props));
+//            boolean saveSetState = Boolean.valueOf(configProp.getProperty("saveSettings"));
+//
+//            if (saveSetState) {
+//                checkboxSaveSet.setSelected(true);
+//                String login = configProp.getProperty("login");
+//                String password = configProp.getProperty("password");
+//                fieldLogin.setText(login);
+//                fieldPassword.setText(password);
 //            }
-            Properties configProp = new Properties();
-            configProp.load(getClass().getResourceAsStream(CONFIG));
-//            configProp.load(new FileInputStream(props));
-            boolean saveSetState = Boolean.valueOf(configProp.getProperty("saveSettings"));
+//        } catch (IOException e) {
+//            LOGGER.error("Failed to load preferences: " + e.getMessage());
+//        }
+//    }
 
-            if (saveSetState) {
-                checkboxSaveSet.setSelected(true);
-                String login = configProp.getProperty("login");
-                String password = configProp.getProperty("password");
-                fieldLogin.setText(login);
-                fieldPassword.setText(password);
-            }
-        } catch (IOException e) {
-            LOGGER.error("Failed to load preferences: " + e.getMessage());
+    void onConfigLoaded(String ip, String port, boolean saveSetState, String login, String password) {
+        if (saveSetState) {
+            fieldIP.setText(ip);
+            fieldPort.setText(port);
+            checkboxSaveSet.setSelected(true);
+            fieldLogin.setText(login);
+            fieldPassword.setText(password);
         }
+    }
+
+    void setListener(GUIEvents listener) {
+        this.listener = listener;
     }
 
     @FXML
     void handleConnectButton() {
         LOGGER.info("Connect button handler");
+
         String ip = fieldIP.getText().trim();
-        String port = fieldPort.getText().trim();
+        int dotsCount = ip.length() - ip.replace(".", "").length();
+
+        if (ip.length() <= 0 || dotsCount != 3) {
+            LOGGER.error("Invalid port");
+            showErrorLabel(INVALID_IP);
+            return;
+        }
+
+        int port;
+        try {
+            port = Integer.parseInt(fieldPort.getText().trim());
+
+        } catch (NumberFormatException e) {
+            LOGGER.error("Invalid port");
+            showErrorLabel(INVALID_PORT);
+            return;
+        }
+
         String login = fieldLogin.getText().trim();
         String password = fieldPassword.getText().trim();
-        boolean saveSettings = checkboxSaveSet.isSelected();
+        if (login.length() == 0) {
+            LOGGER.error("Invalid port");
+            showErrorLabel(INVALID_LOGIN);
+            return;
+        } else if (password.length() == 0) {
+            LOGGER.error("Invalid port");
+            showErrorLabel(INVALID_PASSWORD);
+            return;
+        }
+
         lblError.setVisible(false);
 
-        if (ip.length() > 0 && port.length() > 0 && login.length() > 0 && password.length() > 0) {
-            LOGGER.info("Fields has a valid length");
-            setDisableAll(true);
-            controller.connect(ip, port, login, password);
-        } else {
-            LOGGER.info("Invalid length of fields");
-            showErrorLabel(ERROR_FIELDS);
-        }
+        //TODO use saveSettingsField
+        boolean saveSettings = checkboxSaveSet.isSelected();
+
+        setDisableAll(true);
+        listener.onConnectButtonEvent(ip, port, login, password);
+        //controller.connect(ip, port, login, password);
+
     }
 
     void authDenied() {
@@ -95,12 +136,10 @@ public class LoginGUI {
 
     void multiplySession(String nickname) {
         LOGGER.info("Multiply session UI reaction");
-        Platform.runLater(() -> {
             setDisableAll(false);
             showAlertDialog(Alert.AlertType.ERROR, "Ошибка подключения!",
                     "Пользователь с ником " + nickname + " уже подключён!",
                     "Закройте все активные соединения и попробуйте заново").showAndWait();
-        });
     }
 
     void setDisableAll(boolean state) {
@@ -123,16 +162,14 @@ public class LoginGUI {
         });
     }
 
-    void setController(Controller controller) {
-        this.controller = controller;
-    }
+//    void setListener(Controller controller) {
+//        this.controller = controller;
+//    }
 
-    void connectionFailed(Throwable cause) {
+    void connectionFailed(String cause) {
         LOGGER.info("Connection failed");
-        Platform.runLater(() -> {
-            setDisableAll(false);
-            showErrorLabel(CONNECTION_FAILED + " " + cause);
-        });
+        setDisableAll(false);
+        showErrorLabel(cause);
     }
 
     void invalidPort(String port) {
@@ -154,5 +191,9 @@ public class LoginGUI {
         alert.setHeaderText(header);
         alert.setContentText(context);
         return alert;
+    }
+
+    void authAccepted() {
+        lblError.setText("Авторизован!");
     }
 }

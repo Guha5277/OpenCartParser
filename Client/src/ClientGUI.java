@@ -5,8 +5,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import main.product.Product;
@@ -16,11 +14,12 @@ import java.util.List;
 import java.util.Optional;
 
 public class ClientGUI {
-    private Controller controller;
+    private GUIEvents listener;
     private boolean isUpdaterRun;
     private boolean isResearcherRun;
     private int selectedProduct;
     private String prevProdSelectedItem;
+    private AppGUI app;
 
     //Header
     @FXML
@@ -164,9 +163,6 @@ public class ClientGUI {
     ObservableList<Warehouse> remainsList;
 
     @FXML
-    ImageView sampleImage;
-
-    @FXML
     void initialize() {
         combCity.getItems().add("Все города");
         combCity.getSelectionModel().select(0);
@@ -231,7 +227,7 @@ public class ClientGUI {
                     int id = product.getId();
                     if (id != selectedProduct) {
                         selectedProduct = id;
-                        controller.getImage(product.getId());
+                        listener.getImageRequest(product.getId());
                     }
                 }
             });
@@ -240,8 +236,8 @@ public class ClientGUI {
         });
     }
 
-    void setController(Controller controller) {
-        this.controller = controller;
+    void setListener(GUIEvents listener) {
+        this.listener = listener;
     }
 
     void setNickname(String nickname) {
@@ -250,75 +246,54 @@ public class ClientGUI {
         });
     }
 
-    void setTabsEnableForModerator() {
-        Platform.runLater(() -> {
-            tabUpdater.setDisable(false);
-            tabResearcher.setDisable(false);
-            tabProducts.setDisable(false);
-        });
-    }
-
-    void setTabsEnableForAdmin() {
-        Platform.runLater(() -> {
-            tabUpdater.setDisable(false);
-            tabResearcher.setDisable(false);
-            tabProducts.setDisable(false);
-            tabUsers.setDisable(false);
-            tabGrabber.setDisable(false);
-        });
+    void setTabsEnable(boolean isAdmin) {
+        tabUpdater.setDisable(false);
+        tabResearcher.setDisable(false);
+        tabProducts.setDisable(false);
+        tabUsers.setDisable(!isAdmin);
+        tabGrabber.setDisable(!isAdmin);
     }
 
     void setServerUpTime(String time) {
-        Platform.runLater(() -> {
-            lblServerUpTime.setText(time);
-        });
+        lblServerUpTime.setText(time);
     }
 
     void setProductsCount(String count) {
-        Platform.runLater(() -> {
-            lblProductsCount.setText(count);
-        });
+        lblProductsCount.setText(count);
     }
 
     void setWarehousesCount(String count) {
-        Platform.runLater(() -> {
-            lblWarehousesCount.setText(count);
-        });
+        lblWarehousesCount.setText(count);
     }
 
     void setActiveUsersCount(String count) {
-        Platform.runLater(() -> {
-            lblActiveUsers.setText(count);
-        });
+        lblActiveUsers.setText(count);
     }
 
     void updateUsersList(String[] users) {
-        Platform.runLater(() -> {
-            updaterUsersListView.setDisable(users.length == 1);
-            updaterUsersListView.getItems().clear();
-            String ownNick = lblNickname.getText();
-            for (String nickname : users) {
-                if (ownNick.equals(nickname)) continue;
-                updaterUsersListView.getItems().add(new Label(nickname));
-            }
-        });
+        updaterUsersListView.setDisable(users.length == 1);
+        updaterUsersListView.getItems().clear();
+        String ownNick = lblNickname.getText();
+        for (String nickname : users) {
+            if (ownNick.equals(nickname)) continue;
+            updaterUsersListView.getItems().add(new Label(nickname));
+        }
     }
 
     //Updater
     void updaterStart() {
-        Platform.runLater(this::showUpdaterElements);
+        showUpdaterElements();
     }
 
     void setUpdaterProgress(double progress, String progressText) {
-        Platform.runLater(() -> {
-            if (!isUpdaterRun) {
-                isUpdaterRun = true;
-                showUpdaterElements();
-            }
-            chkLastSavedPos.setDisable(true);
-            prgrUpdater.setProgress(progress);
-            lblProgress.setText(progressText);
-        });
+        if (!isUpdaterRun) {
+            isUpdaterRun = true;
+            showUpdaterElements();
+        }
+        chkLastSavedPos.setDisable(true);
+        prgrUpdater.setProgress(progress);
+        lblProgress.setText(progressText);
+
     }
 
     void setLastPositionCheckboxVisible(boolean state) {
@@ -329,62 +304,51 @@ public class ClientGUI {
     }
 
     void setUpdaterCurrentProduct(String productName) {
-        Platform.runLater(() -> {
-            if (!isUpdaterRun) {
-                isUpdaterRun = true;
-                showUpdaterElements();
-            }
-            lblUpdCurrentProd.setText(productName);
-        });
+        if (!isUpdaterRun) {
+            isUpdaterRun = true;
+            showUpdaterElements();
+        }
+        lblUpdCurrentProd.setText(productName);
+
     }
 
     void setUpdatesFound(String count) {
-        Platform.runLater(() -> {
-            if (!isUpdaterRun) {
-                isUpdaterRun = true;
-                showUpdaterElements();
-            }
-            if (!lblUpdated.isVisible()) {
-                lblUpdated.setVisible(true);
-                lblUpdatesCount.setVisible(true);
-            }
-            lblUpdatesCount.setText(count);
-        });
+        if (!isUpdaterRun) {
+            isUpdaterRun = true;
+            showUpdaterElements();
+        }
+        if (!lblUpdated.isVisible()) {
+            lblUpdated.setVisible(true);
+            lblUpdatesCount.setVisible(true);
+        }
+        lblUpdatesCount.setText(count);
     }
 
     void setUpdatesFailed(String count) {
-        Platform.runLater(() -> {
-            if (!isUpdaterRun) {
-                isUpdaterRun = true;
-                showUpdaterElements();
-            }
-            if (!lblUpdateFailed.isVisible()) {
-                lblUpdateFailed.setVisible(true);
-                lblUpdateFailsCount.setVisible(true);
-            }
-            lblUpdateFailsCount.setText(count);
-        });
+        if (!isUpdaterRun) {
+            isUpdaterRun = true;
+            showUpdaterElements();
+        }
+        if (!lblUpdateFailed.isVisible()) {
+            lblUpdateFailed.setVisible(true);
+            lblUpdateFailsCount.setVisible(true);
+        }
+        lblUpdateFailsCount.setText(count);
     }
 
     void appendDifferencesFound(String diff) {
-        Platform.runLater(() -> {
-            if (updaterLogArea.isDisable()) updaterLogArea.setDisable(false);
-            updaterLogArea.appendText(diff + "\n");
-        });
+        if (updaterLogArea.isDisable()) updaterLogArea.setDisable(false);
+        updaterLogArea.appendText(diff + "\n");
     }
 
     void appendErrorToUpdaterLogger(String reason, String exceptionMsg) {
-        Platform.runLater(() -> {
-            if (updaterLogArea.isDisable()) updaterLogArea.setDisable(false);
-            updaterLogArea.appendText("Error: " + reason + ": " + exceptionMsg + "\n");
-        });
+        if (updaterLogArea.isDisable()) updaterLogArea.setDisable(false);
+        updaterLogArea.appendText("Error: " + reason + ": " + exceptionMsg + "\n");
     }
 
     void appendErrorToUpdaterLogger(String id, String url, String exceptionMsg) {
-        Platform.runLater(() -> {
-            if (updaterLogArea.isDisable()) updaterLogArea.setDisable(false);
-            updaterLogArea.appendText("Error of product with id: " + id + ", url: " + url + ", " + exceptionMsg + "\n");
-        });
+        if (updaterLogArea.isDisable()) updaterLogArea.setDisable(false);
+        updaterLogArea.appendText("Error of product with id: " + id + ", url: " + url + ", " + exceptionMsg + "\n");
     }
 
     void setUpdaterLastRun(String date) {
@@ -414,23 +378,22 @@ public class ClientGUI {
 
     void updaterStopped() {
         isUpdaterRun = false;
-        Platform.runLater(() -> {
-            //updater status
-            lblUpdaterStatus.setDisable(true);
-            lblUpdaterStatus.setText("выключен");
-            //control buttons
-            btnUpdaterStart.setDisable(false);
-            btnUpdaterStop.setDisable(true);
-            chkLastSavedPos.setDisable(false);
-            //process elements
-            lblUpdCurrentProd.setVisible(false);
-            lblProgress.setVisible(false);
-            prgrUpdater.setVisible(false);
-            //manual update
-            fieldManualUpdate.setDisable(false);
-            chkUpdSwitchSource.setDisable(false);
-            btnUpdManualUpdate.setDisable(false);
-        });
+        //updater status
+        lblUpdaterStatus.setDisable(true);
+        lblUpdaterStatus.setText("выключен");
+        //control buttons
+        btnUpdaterStart.setDisable(false);
+        btnUpdaterStop.setDisable(true);
+        chkLastSavedPos.setDisable(false);
+        //process elements
+        lblUpdCurrentProd.setVisible(false);
+        lblProgress.setVisible(false);
+        prgrUpdater.setVisible(false);
+        //manual update
+        fieldManualUpdate.setDisable(false);
+        chkUpdSwitchSource.setDisable(false);
+        btnUpdManualUpdate.setDisable(false);
+
     }
 
     //researcher
@@ -507,7 +470,7 @@ public class ClientGUI {
     }
 
     void setResearcherTotalFounds(String count) {
-        /*TODO*/
+        //TODO researcher total products
     }
 
     void appendResearcherFoundProd(String diff) {
@@ -517,7 +480,7 @@ public class ClientGUI {
         });
     }
 
-    private void resetUI(){
+    private void resetUI() {
         researcherStopped();
         updaterStopped();
     }
@@ -539,41 +502,34 @@ public class ClientGUI {
 
     //products
     void addCityToComb(String city) {
-        Platform.runLater(() -> {
-            combCity.getItems().add(city);
-        });
+        combCity.getItems().add(city);
     }
 
     void resetProductComboBoxes() {
-        Platform.runLater(() -> {
-            chkStock.setSelected(false);
-            combStore.setDisable(true);
-            combCity.getSelectionModel().select(0);
-            combStore.getSelectionModel().select(0);
-        });
+        chkStock.setSelected(false);
+        combStore.setDisable(true);
+        combCity.getSelectionModel().select(0);
+        combStore.getSelectionModel().select(0);
     }
 
     void updateProductComboBoxes(boolean stock, String city, String store) {
-        Platform.runLater(() -> {
-            chkStock.setSelected(stock);
-            combStore.setDisable(!stock);
-            if (city == null) {
-                combCity.getSelectionModel().select(0);
-                combStore.getSelectionModel().select(0);
-                return;
-            } else if (!combCity.getSelectionModel().getSelectedItem().equals(city)) {
-                combCity.getSelectionModel().select(city);
-                List<String> list = controller.getStoreList(city);
-                if (list != null) {
-                    combStore.getItems().setAll(list);
-                }
+        chkStock.setSelected(stock);
+        combStore.setDisable(!stock);
+        if (city == null) {
+            combCity.getSelectionModel().select(0);
+            combStore.getSelectionModel().select(0);
+            return;
+        } else if (!combCity.getSelectionModel().getSelectedItem().equals(city)) {
+            combCity.getSelectionModel().select(city);
+            List<String> list = listener.storeListRequest(city);
+            if (list != null) {
+                combStore.getItems().setAll(list);
             }
-            combStore.getSelectionModel().select(store);
-        });
+        }
+        combStore.getSelectionModel().select(store);
     }
 
     void updateProductTableContent(List<Product> products) {
-        Platform.runLater(() -> {
             if (productsList == null) {
                 productsList = FXCollections.observableArrayList(products);
             } else {
@@ -585,11 +541,9 @@ public class ClientGUI {
 
             productTableView.setItems(productsList);
 //            productTableView.refresh();
-        });
     }
 
     void addToProductList(Product product) {
-        Platform.runLater(() -> {
             if (productsList == null) {
                 productsList = FXCollections.observableArrayList(product);
             } else {
@@ -598,15 +552,12 @@ public class ClientGUI {
 
             productTableView.setItems(productsList);
             //productTableView.refresh();
-        });
     }
 
     void productsNotFound() {
-        Platform.runLater(() -> {
-            makeDialogWindow(Alert.AlertType.INFORMATION, "Нет данных",
-                    "По вашему запросу не было найдено соответствий продуктам",
-                    "Измените ваш запрос (уменьшите количество условий, измените его содержание").showAndWait();
-        });
+        makeDialogWindow(Alert.AlertType.INFORMATION, "Нет данных",
+                "По вашему запросу не было найдено соответствий продуктам",
+                "Измените ваш запрос (уменьшите количество условий, измените его содержание").showAndWait();
     }
 
     //common
@@ -619,15 +570,11 @@ public class ClientGUI {
     }
 
     void failedToKickUser(String nickname) {
-        Platform.runLater(() -> {
-            makeDialogWindow(Alert.AlertType.ERROR, "Ошибка!", "Невозможно отключить пользователя: " + nickname, "Недостаточный уровень прав!").showAndWait();
-        });
+        makeDialogWindow(Alert.AlertType.ERROR, "Ошибка!", "Невозможно отключить пользователя: " + nickname, "Недостаточный уровень прав!").showAndWait();
     }
 
     void kickedFromTheServer(String nickname) {
-        Platform.runLater(() -> {
-            makeDialogWindow(Alert.AlertType.ERROR, "Соединение прервано!", "Вы были отключены от сервера пользователем: " + nickname, "").showAndWait();
-        });
+        makeDialogWindow(Alert.AlertType.ERROR, "Соединение прервано!", "Вы были отключены от сервера пользователем: " + nickname, "").showAndWait();
     }
 
     void connectionLost() {
@@ -642,25 +589,25 @@ public class ClientGUI {
     private void handleUpdaterStartButton() {
         btnUpdaterStart.setDisable(true);
         chkLastSavedPos.setDisable(true);
-        controller.startUpdater(chkLastSavedPos.isSelected());
+        listener.startUpdaterRequest(chkLastSavedPos.isSelected());
     }
 
     @FXML
     private void handleUpdaterStopButton() {
         btnUpdaterStop.setDisable(true);
-        controller.stopUpdater();
+        listener.stopUpdaterRequest();
     }
 
     @FXML
     private void handleResearcherStartButton() {
         btnResearcherStart.setDisable(true);
-        controller.startResearcher();
+        listener.startResearcherRequest();
     }
 
     @FXML
     private void handleResearcherStopButton() {
         btnResearcherStop.setDisable(true);
-        controller.stopResearcher();
+        listener.stopResearcherRequest();
     }
 
     @FXML
@@ -691,7 +638,7 @@ public class ClientGUI {
         String nickname = updaterUsersListView.getSelectionModel().getSelectedItem().getText();
         Optional<ButtonType> result = makeDialogWindow(Alert.AlertType.CONFIRMATION, "Отключение пользователя", "Вы действительно хотите отключить пользователя " + nickname + "?", "").showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
-            controller.kickUser(nickname);
+            listener.kickUserRequest(nickname);
         }
         btnKickUser.setDisable(true);
         btnBanUser.setDisable(true);
@@ -718,7 +665,7 @@ public class ClientGUI {
         } else {
             combStore.setDisable(false);
             combStore.getItems().clear();
-            combStore.getItems().addAll(controller.getStoreList(selectedItem));
+            combStore.getItems().addAll(listener.storeListRequest(selectedItem));
 
             /*TODO разобраться с этиим костылём ниже (есть ли какие-то альтернативы для корректного ресайза выпадающего списка?)*/
             combStore.show();
@@ -729,15 +676,15 @@ public class ClientGUI {
 
     @FXML
     private void handleShowProductFilter(ActionEvent event) {
-        controller.showProductFilterStage(chkStock.isSelected(), combCity.getItems(), combCity.getSelectionModel().getSelectedIndex(), combStore.getItems(), combStore.getSelectionModel().getSelectedIndex());
+        app.showProductFilter(chkStock.isSelected(), combCity.getItems(), combCity.getSelectionModel().getSelectedIndex(), combStore.getItems(), combStore.getSelectionModel().getSelectedIndex());
     }
 
     @FXML
     private void handleBtnSettingsEvent() {
-        controller.showSettingsStage();
+        app.showSettingsStage();
     }
 
-    void productImage(int productID, Image image) {
-        sampleImage.setImage(image);
+    public void setApp(AppGUI appGUI) {
+        this.app = appGUI;
     }
 }

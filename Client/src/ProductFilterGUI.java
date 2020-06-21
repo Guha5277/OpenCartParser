@@ -9,7 +9,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 
 public class ProductFilterGUI {
-    Controller controller;
+    GUIEvents listener;
     @FXML
     private ComboBox<String> combCity;
     @FXML
@@ -100,8 +100,8 @@ public class ProductFilterGUI {
         ));
     }
 
-    void setController(Controller controller) {
-        this.controller = controller;
+    void setListener(GUIEvents listener) {
+        this.listener = listener;
     }
 
     void setStockParam(boolean inStockSelected, ObservableList<String> cityList, int selectedCity, ObservableList<String> storeList, int selectedStore) {
@@ -186,7 +186,7 @@ public class ProductFilterGUI {
         } else {
             combStore.setDisable(false);
             combStore.getItems().clear();
-            combStore.getItems().addAll(controller.getStoreList(selectedItem));
+            combStore.getItems().addAll(listener.storeListRequest(selectedItem));
 
             if (stateInitialize && !city.equals(selectedItem) && !wrongProductFilterRange) {
                 btnOk.setDisable(false);
@@ -286,7 +286,7 @@ public class ProductFilterGUI {
         int priceEnd = txtPriceEnd.equals("") ? -1 : Integer.parseInt(txtPriceEnd);
 
         /*TODO nicotine checkboxes*/
-        controller.applyProductFilter(stockChecked, cityName, storeName, strengthStart, strengthEnd, volumeStart, volumeEnd, priceStart, priceEnd);
+        listener.productsRequest(stockChecked, cityName, storeName, strengthStart, strengthEnd, volumeStart, volumeEnd, priceStart, priceEnd);
         fieldStrengthEnd.getScene().getWindow().hide();
     }
 

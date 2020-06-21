@@ -40,7 +40,7 @@ class Updater extends Parser implements Runnable {
         }
         int totalUpdated = updateProductsInfo(products);
         listener.onUpdateSuccessfulEnd(current, totalUpdated, errors);
-        LOG.info("Researcher finished");
+        LOG.info("Updater finished");
     }
 
     private int updateProductsInfo(List<Product> products) {

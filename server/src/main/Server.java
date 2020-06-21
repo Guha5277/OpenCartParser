@@ -55,7 +55,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         serverStartAt = System.currentTimeMillis();
     }
 
-    private void initialize(){
+    private void initialize() {
         SERVER_LOGGER.info("Server initializing...");
         SQLClient.connect();
         productsCount = SQLClient.getProductsCount();
@@ -90,6 +90,14 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         SERVER_LOGGER.info("Products: " + productsCount);
         SERVER_LOGGER.info("Warehouses: " + warehousesCount);
         SERVER_LOGGER.info("Server Started " + name + " " + address);
+    }
+
+    private String msgOf(byte[] header, String ... data){
+        return Library.makeJsonString(header, data);
+    }
+
+    private byte[] header(byte ... header){
+        return header;
     }
 
     private List<Product> getProductsByFilter(ProductRequest request) {
@@ -204,18 +212,18 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         int listSize = list.size();
         if (listSize == 0) {
             SERVER_LOGGER.info("No result found for PRODUCT_REQUEST");
-            sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.PRODUCT_REQUEST, Library.EMPTY));
+            sendMsgToModeratorsAndAdmins(msgOf(header(Library.PRODUCT_REQUEST, Library.EMPTY)));
             return;
         }
 
         SERVER_LOGGER.info(listSize + " products found for PRODUCT_REQUEST");
 
-        client.sendMessage(Library.makeJsonString(Library.PRODUCT_LIST_START));
+        client.sendMessage(msgOf(header(Library.PRODUCT_LIST_START)));
 
         for (Product p : list) {
             client.sendMessage(Library.productToJson(p));
         }
-        client.sendMessage(Library.makeJsonString(Library.PRODUCT_LIST_END));
+        client.sendMessage(msgOf(header(Library.PRODUCT_LIST_END)));
 
         SERVER_LOGGER.info(listSize + " products sent to client successful");
     }
@@ -229,7 +237,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         for (Warehouse w : warehouses) {
             thread.sendMessage(Library.warehouseToJson(w));
         }
-        thread.sendMessage(Library.makeJsonString(Library.WAREHOUSE_LIST_END));
+        thread.sendMessage(msgOf(header(Library.WAREHOUSE_LIST_END)));
     }
 
     private void authorizeClient(ClientThread clientThread, String userData) {
@@ -241,18 +249,18 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         String nickname = SQLClient.getNickname(login, password);
         if (nickname == null) {
             USERS_LOGGER.error("AUTH FAILED for " + login + "! Invalid login/password");
-            clientThread.authFailed(Library.makeJsonString(Library.AUTH, Library.DENIED));
+            clientThread.authFailed(msgOf(header(Library.AUTH, Library.DENIED)));
             clientThread.close();
         } else {
             ClientThread client = findUserByNickname(nickname);
             if (client == null) {
                 clientThread.authAccept(nickname);
-                clientThread.sendMessage(Library.makeJsonString(Library.AUTH, Library.ACCEPTED, nickname));
+                clientThread.sendMessage(msgOf(header(Library.AUTH, Library.ACCEPTED), nickname));
                 int userAccessLevel = SQLClient.getUserRole(nickname);
                 clientThread.setAccessLevel(userAccessLevel);
                 USERS_LOGGER.info("AUTH SUCCESS for " + login + " with nickname: + " + nickname);
             } else {
-                client.sendMessage(Library.makeJsonString(Library.AUTH, Library.MULTIPLY_SESSION, client.getNickname()));
+                client.sendMessage(msgOf(header(Library.AUTH, Library.MULTIPLY_SESSION), client.getNickname()));
                 clientThread.close();
                 USERS_LOGGER.error("AUTH FAILED for " + login + "! Client connected already");
             }
@@ -327,7 +335,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         return sb.toString();
     }
 
-    private void sendImageToClient(ClientThread client, int productID, String imagePath){
+    private void sendImageToClient(ClientThread client, int productID, String imagePath) {
         //Test send images
         File file = new File(imagePath);
         try {
@@ -339,7 +347,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
             SERVER_LOGGER.info("Image length: " + imageLength);
 
-            if (imageLength > IMAGE_CHUNK_LIMIT){
+            if (imageLength > IMAGE_CHUNK_LIMIT) {
                 SERVER_LOGGER.info("Image length is out of limit (" + IMAGE_CHUNK_LIMIT + ")");
                 int subArraysCount = imageLength / IMAGE_CHUNK_LIMIT;
                 if (imageLength % IMAGE_CHUNK_LIMIT != 0) {
@@ -350,34 +358,34 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 int indexStart = 0;
                 byte[][] subArrays = new byte[subArraysCount][];
                 for (int i = 0; i < subArraysCount; i++) {
-                    SERVER_LOGGER.info("Create chink #" + (i+1));
+                    SERVER_LOGGER.info("Create chink #" + (i + 1));
                     int indexEnd = IMAGE_CHUNK_LIMIT * (i + 1);
                     subArrays[i] = Arrays.copyOfRange(encodedFileContent, indexStart, indexEnd < imageLength ? indexEnd : imageLength);
                     String data;
                     String jsonMsg;
-                    if (i == 0){
+                    if (i == 0) {
                         //Image first chunk
                         data = productID + Library.DELIMITER + subArraysCount + Library.DELIMITER + new String(subArrays[i]);
-                        jsonMsg = Library.makeJsonString(Library.IMAGE, Library.FIRST_CHUNK, data);
+                        jsonMsg = msgOf(header(Library.IMAGE, Library.FIRST_CHUNK), data);
                     } else if (i == subArraysCount - 1) {
                         //Image last chunk
                         data = productID + Library.DELIMITER + new String(subArrays[i]);
-                        jsonMsg = Library.makeJsonString(Library.IMAGE, Library.LAST_CHUNK, data);
+                        jsonMsg = msgOf(header(Library.IMAGE, Library.LAST_CHUNK), data);
                     } else {
                         //Image transit chunk
-                        data = productID + Library.DELIMITER  + i + Library.DELIMITER + new String(subArrays[i]);
-                        jsonMsg = Library.makeJsonString(Library.IMAGE, Library.TRANSIT_CHUNK, data);
+                        data = productID + Library.DELIMITER + i + Library.DELIMITER + new String(subArrays[i]);
+                        jsonMsg = msgOf(header(Library.IMAGE, Library.TRANSIT_CHUNK), data);
                     }
                     indexStart = indexEnd;
                     //SERVER_LOGGER.info("Send chink #" + (i+1));
                     client.sendMessage(jsonMsg);
                 }
             } else {
-                client.sendMessage(Library.makeJsonString(Library.IMAGE, Library.FULL, productID + Library.DELIMITER + encodeString));
+                client.sendMessage(msgOf(header(Library.IMAGE, Library.FULL), productID + Library.DELIMITER + encodeString));
             }
-            SERVER_LOGGER.info("Successful sent image " + imagePath + " to client " + (client.getNickname() == null ? "Anonymous"  :  client.getNickname()));
-        } catch (IOException e){
-            SERVER_LOGGER.error("Failed to send image " + imagePath + " to client " + (client.getNickname() == null ? "Anonymous"  :  client.getNickname()));
+            SERVER_LOGGER.info("Successful sent image " + imagePath + " to client " + (client.getNickname() == null ? "Anonymous" : client.getNickname()));
+        } catch (IOException e) {
+            SERVER_LOGGER.error("Failed to send image " + imagePath + " to client " + (client.getNickname() == null ? "Anonymous" : client.getNickname()));
         }
     }
 
@@ -425,8 +433,8 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     public void onSocketThreadStop(SocketThread thread) {
         ClientThread clientThread = (ClientThread) thread;
         clients.remove(thread);
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.USERS, Library.COUNT, String.valueOf(clients.size())));
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.USERS, Library.LIST, getListOfClients()));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.COUNT), String.valueOf(clients.size())));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.LIST), getListOfClients()));
         USERS_LOGGER.info("Client disconnected: " + clientThread.getNickname());
     }
 
@@ -440,7 +448,8 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         switch (header[0]) {
             case Library.AUTH:
                 if (header.length < 2 || header[1] != Library.REQUEST) {
-                    client.msgFormatError(Library.makeJsonString(Library.MESSAGE_FORMAT_ERROR));
+//                    client.msgFormatError(msgOf()(Library.MESSAGE_FORMAT_ERROR));
+                    client.sendMessage(msgOf(header(Library.MESSAGE_FORMAT_ERROR)));
                     USERS_LOGGER.error("AUTH FAILED cause MESSAGE FORMAT ERROR header length: " + header.length);
                     return;
                 }
@@ -449,38 +458,44 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
             case Library.SERVER_INFO:
                 if (!client.isAuthorized()) {
                     USERS_LOGGER.error("GET SERVER_INFO FAILED cause client is not authorized!");
-                    client.sendMessage(Library.makeJsonString(Library.SERVER_INFO, Library.DENIED));
+//                    client.sendMessage(msgOf()(Library.SERVER_INFO, Library.DENIED));
+                    client.sendMessage(msgOf(header(Library.SERVER_INFO, Library.DENIED)));
                     clients.remove(client);
                     client.close();
                 } else {
                     int accessLevel = client.getAccessLevel();
                     if (accessLevel == ClientThread.ADMIN || accessLevel == ClientThread.MODERATOR) {
                         USERS_LOGGER.info("GET SERVER_INFO ACCEPTED for " + client.getNickname());
-                        client.sendMessage(Library.makeJsonString(Library.SERVER_INFO, Library.ACCEPTED, String.valueOf(accessLevel)));
-                        client.sendMessage(Library.makeJsonString(Library.START_TIME, String.valueOf(serverStartAt)));
-                        client.sendMessage(Library.makeJsonString(Library.PRODUCTS_COUNT, String.valueOf(productsCount)));
-                        client.sendMessage(Library.makeJsonString(Library.WAREHOUSES_COUNT, String.valueOf(warehousesCount)));
-                        client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.AUTOSTART, String.valueOf(updaterAutostartState)));
-                        client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.AUTOSTART_INTERVAL, String.valueOf(updaterDaysInterval)));
-                        client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.AUTOSTART_TIME, String.valueOf(updaterAutostartTime)));
-                        client.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.AUTOSTART, String.valueOf(researcherAutostartState)));
-                        client.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.AUTOSTART_INTERVAL, String.valueOf(researcherDaysInterval)));
-                        client.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.AUTOSTART_TIME, String.valueOf(researcherAutostartTime)));
-                        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.USERS, Library.COUNT, String.valueOf(clients.size())));
-                        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.USERS, Library.LIST, getListOfClients()));
-                        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_POSITION, String.valueOf(lastUpdatedProductPosition)));
-                        //send warehouses list to client
+                        String serverInfo = accessLevel + Library.DELIMITER +
+                                serverStartAt + Library.DELIMITER +
+                                productsCount + Library.DELIMITER +
+                                warehousesCount + Library.DELIMITER +
+                                clients.size();
+//                        client.sendMessage(msgOf()(Library.SERVER_INFO, Library.ACCEPTED, serverInfo));
+                        client.sendMessage(msgOf(header(Library.SERVER_INFO, Library.ACCEPTED), serverInfo));
+
+                        String updaterInfo = updaterLastRunDate + Library.DELIMITER +
+                                updaterAutostartState + Library.DELIMITER +
+                                updaterDaysInterval + Library.DELIMITER +
+                                updaterAutostartTime + Library.DELIMITER +
+                                lastUpdatedProductPosition;
+//                        client.sendMessage(msgOf()(Library.UPDATER, Library.INFO, updaterInfo));
+                        client.sendMessage(msgOf(header(Library.UPDATER, Library.INFO), updaterInfo));
+
+                        String researcherInfo = researcherLastRunDate + Library.DELIMITER +
+                                researcherAutostartState + Library.DELIMITER +
+                                researcherDaysInterval + Library.DELIMITER +
+                                researcherAutostartTime;
+                        client.sendMessage(msgOf(header(Library.RESEARCHER, Library.INFO), researcherInfo));
                         sendWarehousesList(thread);
 
-                        if (updaterLastRunDate != null) {
-                            client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.LAST_RUN, updaterLastRunDate.toString()));
-                        }
-                        if (researcherLastRunDate != null) {
-                            client.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate.toString()));
-                        }
+                        sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.COUNT), String.valueOf(clients.size())));
+                        sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.LIST), getListOfClients()));
+
+
                     } else {
                         USERS_LOGGER.error("GET SERVER_INFO FAILED cause client access level is lower than required: " + accessLevel);
-                        client.sendMessage(Library.makeJsonString(Library.SERVER_INFO, Library.DENIED));
+                        client.sendMessage(msgOf(header(Library.SERVER_INFO, Library.DENIED)));
                     }
                 }
                 break;
@@ -490,7 +505,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 String nickname = client.getNickname();
                 if (accessLevel > 2) {
                     USERS_LOGGER.error("ACCESS TO UPDATER DENIED cause client access level is lower than required: " + accessLevel);
-                    client.sendMessage(Library.makeJsonString(Library.UPDATER, Library.DENIED));
+                    client.sendMessage(msgOf(header(Library.UPDATER, Library.DENIED)));
                     return;
                 }
                 switch (header[1]) {
@@ -519,7 +534,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
             case Library.RESEARCHER:
                 if (client.getAccessLevel() > 2) {
                     USERS_LOGGER.error("ACCESS TO RESEARCHER DENIED cause client access level is lower than required: " + client.getAccessLevel());
-                    client.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.DENIED));
+                    client.sendMessage(msgOf(header(Library.RESEARCHER, Library.DENIED)));
                     clients.remove(client);
                     client.close();
                     return;
@@ -557,11 +572,11 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                         if (clientShouldBeKicked != null) {
                             if (initiatorLvl < clientShouldBeKicked.getAccessLevel()) {
                                 USERS_LOGGER.info("USER " + clientShouldBeKicked.getNickname() + " was disconnected by " + client.getNickname());
-                                clientShouldBeKicked.sendMessage(Library.makeJsonString(Library.USERS, Library.DISCONNECT, client.getNickname()));
+                                clientShouldBeKicked.sendMessage(msgOf(header(Library.USERS, Library.DISCONNECT), client.getNickname()));
                                 clientShouldBeKicked.close();
                             } else {
                                 USERS_LOGGER.error("FAILED TO DISCONNECT USER " + clientShouldBeKicked.getNickname() + " by  " + client.getNickname() + " cause permission of " + client.getNickname() + " is the same or lower than  permission of " + clientShouldBeKicked.getNickname());
-                                client.sendMessage(Library.makeJsonString(Library.USERS, Library.DISCONNECT, Library.DENIED, clientShouldBeKicked.getNickname()));
+                                client.sendMessage(msgOf(header(Library.USERS, Library.DISCONNECT, Library.DENIED), clientShouldBeKicked.getNickname()));
                             }
                         }
                         break;
@@ -581,10 +596,10 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 String imageID = SQLClient.getImageID(productID);
                 if (imageID == null) {
                     SERVER_LOGGER.error("FAILED to get an image from DB for product with id: " + productID);
-                    client.sendMessage(Library.makeJsonString(Library.IMAGE, Library.EXCEPTION, String.valueOf(productID)));
-                } else if (imageID.equals("NO_IMAGE")){
+                    client.sendMessage(msgOf(header(Library.IMAGE, Library.EXCEPTION), String.valueOf(productID)));
+                } else if (imageID.equals("NO_IMAGE")) {
                     SERVER_LOGGER.error("No image for product with id: " + productID);
-                    client.sendMessage(Library.makeJsonString(Library.IMAGE, Library.NO_IMAGE, String.valueOf(productID)));
+                    client.sendMessage(msgOf(header(Library.IMAGE, Library.NO_IMAGE), String.valueOf(productID)));
                 } else {
                     SERVER_LOGGER.error("Image for the product with id " + productID + " is on disk");
                     String imagePath = IMAGES_PATH + imageID;
@@ -607,13 +622,13 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     @Override
     public void onUpdaterReady() {
         SERVER_LOGGER.info("Updater ready");
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.UPDATER, Library.START));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.UPDATER, Library.START)));
     }
 
     @Override
     public void onResearcherReady() {
         SERVER_LOGGER.info("Researcher ready");
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.START));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.RESEARCHER, Library.START)));
     }
 
     @Override
@@ -624,37 +639,37 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     @Override
     public void onUpdaterException(int id, String url, Exception e) {
         SERVER_LOGGER.error("Updater exception: " + e.getMessage());
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.UPDATER, Library.EXCEPTION, String.valueOf(id), url, e.getMessage()));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.UPDATER, Library.EXCEPTION), String.valueOf(id), url, e.getMessage()));
     }
 
     @Override
     public void onUpdaterSQLException(Exception e) {
         SERVER_LOGGER.error("Updater SQL exception: " + e.getMessage());
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.UPDATER, Library.EXCEPTION, e.getMessage()));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.UPDATER, Library.EXCEPTION), e.getMessage()));
     }
 
     @Override
     public void onUpdateProductFailed(String url, int errorsCount) {
         SERVER_LOGGER.error("Update product failed");
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.UPDATER, Library.FAILED, url, String.valueOf(errorsCount)));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.UPDATER, Library.FAILED), url, String.valueOf(errorsCount)));
     }
 
     @Override
     public void onUpdateDiffsFound(int count, String differences) {
         SERVER_LOGGER.info("Updater difference found: " + differences);
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.UPDATER, Library.FOUND, String.valueOf(count), differences));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.UPDATER, Library.FOUND), String.valueOf(count), differences));
     }
 
     @Override
     public void onUpdaterCurrentProduct(int position, String name) {
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.UPDATER, Library.CURRENT, String.valueOf(position), String.valueOf(updaterTotalProd), name));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.UPDATER, Library.CURRENT), String.valueOf(position), String.valueOf(updaterTotalProd), name));
     }
 
     @Override
     public void onUpdaterTotalProducts(int count) {
         SERVER_LOGGER.info("Update total products: " + count);
         updaterTotalProd = count;
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.UPDATER, Library.PRODUCTS_TOTAL, String.valueOf(count)));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.UPDATER, Library.PRODUCTS_TOTAL), String.valueOf(count)));
     }
 
     @Override
@@ -684,9 +699,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
         lastUpdatedProductPosition = SQLClient.getLastUpdatedProductPosition();
         updaterLastRunDate = SQLClient.getProcessLastRun(UPDATER);
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.UPDATER, Library.PROCESS_END, String.valueOf(checked), String.valueOf(updated)));
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_RUN, updaterLastRunDate.toString()));
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.UPDATER, Library.LAST_POSITION, String.valueOf(lastUpdatedProductPosition)));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.UPDATER, Library.PROCESS_END), String.valueOf(checked), String.valueOf(updated), updaterLastRunDate.toString(), String.valueOf(lastUpdatedProductPosition)));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.UPDATER, Library.LAST_RUN), updaterLastRunDate.toString()));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.UPDATER, Library.LAST_POSITION), String.valueOf(lastUpdatedProductPosition)));
         updaterAutostartState = SQLClient.getProcessAutoStartState(UPDATER);
 
         if (updaterAutostartState) setUpdaterTimerTask();
@@ -702,9 +717,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         researcherLastRunDate = SQLClient.getProcessLastRun(RESEARCHER);
         productsCount = SQLClient.getProductsCount();
 
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.PROCESS_END, String.valueOf(count)));
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate.toString()));
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.LAST_RUN, researcherLastRunDate.toString()));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.RESEARCHER, Library.PROCESS_END), String.valueOf(count)));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.RESEARCHER, Library.LAST_RUN), researcherLastRunDate.toString()));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.RESEARCHER, Library.LAST_RUN), researcherLastRunDate.toString()));
         researcherAutostartState = SQLClient.getProcessAutoStartState(RESEARCHER);
 
         if (researcherAutostartState) setResearcherTimerTask();
@@ -712,18 +727,18 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     @Override
     public void onResearcherCurrentCategory(int categoriesCount, int currentCategory, String name) {
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.CURRENT_CATEGORY, String.valueOf(currentCategory), String.valueOf(categoriesCount), name));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.RESEARCHER, Library.CURRENT_CATEGORY), String.valueOf(currentCategory), String.valueOf(categoriesCount), name));
     }
 
     @Override
     public void onResearcherCurrentGroup(int groupsCount, int currentGroup, String name) {
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.PRODUCTS_TOTAL, String.valueOf(groupsCount)));
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.CURRENT, String.valueOf(currentGroup), name));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.RESEARCHER, Library.PRODUCTS_TOTAL), String.valueOf(groupsCount)));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.RESEARCHER, Library.CURRENT), String.valueOf(currentGroup), name));
     }
 
     @Override
     public void onResearcherFoundNewProduct(String name, int totalInserts) {
-        sendMsgToModeratorsAndAdmins(Library.makeJsonString(Library.RESEARCHER, Library.FOUND, name, String.valueOf(totalInserts)));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.RESEARCHER, Library.FOUND), name, String.valueOf(totalInserts)));
     }
 
     @Override

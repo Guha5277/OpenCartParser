@@ -19,8 +19,8 @@
             </Label>
          </children>
       </AnchorPane>
-      <TextField id="fieldIP" fx:id="fieldIP" layoutX="14.0" layoutY="56.0" promptText="ip" text="127.0.0.1" />
-      <TextField id="fieldPort" fx:id="fieldPort" layoutX="188.0" layoutY="56.0" prefHeight="25.0" prefWidth="85.0" promptText="port" text="5277" />
+      <TextField id="fieldIP" fx:id="fieldIP" layoutX="14.0" layoutY="56.0" promptText="ip" />
+      <TextField id="fieldPort" fx:id="fieldPort" layoutX="188.0" layoutY="56.0" prefHeight="25.0" prefWidth="85.0" promptText="port" />
       <TextField id="fieldLogin" fx:id="fieldLogin" layoutX="76.0" layoutY="100.0" promptText="login" />
       <PasswordField id="fieldPassword" fx:id="fieldPassword" layoutX="76.0" layoutY="138.0" promptText="password" />
       <CheckBox id="checkboxSaveSet" fx:id="checkboxSaveSet" layoutX="37.0" layoutY="211.0" mnemonicParsing="false" text="Сохранить" />

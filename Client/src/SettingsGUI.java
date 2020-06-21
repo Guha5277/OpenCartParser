@@ -2,7 +2,6 @@ import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
@@ -11,7 +10,7 @@ import javafx.stage.Window;
 import java.time.LocalTime;
 
 public class SettingsGUI {
-    private Controller controller;
+    private GUIEvents listener;
     private boolean updaterAutostartState;
     private boolean researcherAutostartState;
     private LocalTime updaterAutostartTime;
@@ -41,8 +40,8 @@ public class SettingsGUI {
     @FXML
     private Button btnOk;
 
-    public void setController(Controller controller) {
-        this.controller = controller;
+    void setListener(GUIEvents listener) {
+        this.listener = listener;
     }
 
     void setUpdaterAutostartState(boolean updaterAutostartState) {
@@ -113,7 +112,10 @@ public class SettingsGUI {
 
     private void checkStatement() {
         if (!stateInitialize) return;
-        btnOk.setDisable(!(Integer.parseInt(txtUpdaterDay.getText()) != updaterDaysInterval ||
+        btnOk.setDisable(!(
+                chkUpdaterEnable.isSelected() != updaterAutostartState ||
+                chkResearcherEnable.isSelected() != researcherAutostartState ||
+                Integer.parseInt(txtUpdaterDay.getText()) != updaterDaysInterval ||
                 Integer.valueOf(txtUpdaterHour.getText()) != updaterAutostartTime.getHour() ||
                 Integer.valueOf(txtUpdaterMinute.getText()) != updaterAutostartTime.getMinute() ||
                 Integer.parseInt(txtResearcherDay.getText()) != researcherDaysInterval ||
@@ -128,6 +130,7 @@ public class SettingsGUI {
         txtUpdaterDay.setDisable(!isSelected);
         txtUpdaterHour.setDisable(!isSelected);
         txtUpdaterMinute.setDisable(!isSelected);
+        checkStatement();
     }
 
     @FXML
@@ -136,6 +139,7 @@ public class SettingsGUI {
         txtResearcherDay.setDisable(!isSelected);
         txtResearcherHour.setDisable(!isSelected);
         txtResearcherMinute.setDisable(!isSelected);
+        checkStatement();
     }
 
     @FXML
@@ -151,7 +155,7 @@ public class SettingsGUI {
         int researcherInterval = Integer.parseInt(txtResearcherDay.getText());
         LocalTime updaterTime = LocalTime.of(Integer.parseInt(txtUpdaterHour.getText()), Integer.parseInt(txtResearcherMinute.getText()));
         LocalTime researcherTime = LocalTime.of(Integer.parseInt(txtResearcherHour.getText()), Integer.parseInt(txtResearcherMinute.getText()));
-        controller.applySettings(updaterEnable, researcherEnable, updaterInterval, researcherInterval, updaterTime, researcherTime);
+        listener.applySettingsRequest(updaterEnable, researcherEnable, updaterInterval, researcherInterval, updaterTime, researcherTime);
         window.hide();
 
         updaterAutostartState = updaterEnable;

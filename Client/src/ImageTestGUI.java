@@ -12,20 +12,19 @@ public class ImageTestGUI {
     Image noImageForProduct;
 
     @FXML
-    void initialize(){
+    void initialize() {
         Platform.runLater(() -> {
-        noImageForProduct = new Image("/product_images/NO_IMAGE.png");
+            noImageForProduct = new Image("/product_images/NO_IMAGE.png");
         });
     }
 
-    void setImage(int id, Image image){
-        Platform.runLater(() -> {
-            labelID.setText(String.valueOf(id));
-            imageView.setImage(image);
-        });
+    void setImage(int id, Image image) {
+        labelID.setText(String.valueOf(id));
+        imageView.setImage(image);
     }
 
     void noImageForProduct(String productID) {
+        labelID.setText(productID);
         imageView.setImage(noImageForProduct);
     }
 }

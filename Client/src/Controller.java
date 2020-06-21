@@ -1,4 +1,3 @@
-import javafx.collections.ObservableList;
 import javafx.scene.image.Image;
 import main.*;
 import main.product.Product;
@@ -12,14 +11,10 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-public class Controller implements SocketThreadListener {
-    private AppGUI app;
-    private LoginGUI loginGUI;
-    private ClientGUI clientGUI;
-    private SettingsGUI settingsGUI;
-    /*TODO DELETE AFTER TEST*/
-    private ImageTestGUI testImagesGUI;
-    //
+public class Controller implements SocketThreadListener, GUIEvents {
+    private ControllerEvents listener;
+
+    private final String CONFIG_FILE = "config.properties";
     private SocketThread socketThread;
     private String login;
     private String password;
@@ -39,43 +34,102 @@ public class Controller implements SocketThreadListener {
 
     Controller(AppGUI app) {
         LOGGER.info("Controller constructor");
-        this.app = app;
+        listener = app;
     }
 
-    void setLoginGUI(LoginGUI loginGUI) {
-        this.loginGUI = loginGUI;
+    //GUI Events
+    @Override
+    public void onGUIReady() {
+        loadSettings();
     }
 
-    void setClientGUI(ClientGUI clientGUI) {
-        this.clientGUI = clientGUI;
+    @Override
+    public void onConnectButtonEvent(String ip, int port, String login, String password) {
+        connect(ip, port, login, password);
     }
 
-    void setSettingsGUI(SettingsGUI settingsGUI) {
-        this.settingsGUI = settingsGUI;
+    @Override
+    public void onAppCloseRequest() {
+        stop();
     }
 
-    /*TODO DELETE AFTER TEST*/
-    void setTestImagesGUI(ImageTestGUI imageTestGUI) {
-        this.testImagesGUI = imageTestGUI;
+    @Override
+    public void startUpdaterRequest(boolean selected) {
+        startUpdater(selected);
     }
 
-    void connect(String ip, String port, String login, String password) {
+    @Override
+    public void stopUpdaterRequest() {
+        stopUpdater();
+    }
+
+    @Override
+    public void startResearcherRequest() {
+        startResearcher();
+    }
+
+    @Override
+    public void stopResearcherRequest() {
+        stopResearcher();
+    }
+
+    @Override
+    public void kickUserRequest(String nickname) {
+        kickUser(nickname);
+    }
+
+    @Override
+    public List storeListRequest(String selectedItem) {
+        return getStoreList(selectedItem);
+    }
+
+    @Override
+    public void applySettingsRequest(boolean updaterEnable, boolean researcherEnable, int updaterInterval, int researcherInterval, LocalTime updaterTime, LocalTime researcherTime) {
+        applySettings(updaterEnable, researcherEnable, updaterInterval, researcherInterval, updaterTime, researcherTime);
+    }
+
+    @Override
+    public void productsRequest(boolean stockChecked, String cityName, String storeName, int strengthStart, int strengthEnd, int volumeStart, int volumeEnd, int priceStart, int priceEnd) {
+        applyProductFilter(stockChecked, cityName, storeName, strengthStart, strengthEnd, volumeStart, volumeEnd, priceStart, priceEnd);
+    }
+
+    @Override
+    public void getImageRequest(int id) {
+        getImage(id);
+    }
+
+    private void loadSettings() {
+        String ip = "";
+        String port = "";
+        boolean saveSetState = false;
+        String login = "";
+        String password = "";
+
+        try {
+            Properties configProp = new Properties();
+            configProp.load(getClass().getResourceAsStream(CONFIG_FILE));
+            ip = configProp.getProperty("ip");
+            port = configProp.getProperty("port");
+            saveSetState = Boolean.valueOf(configProp.getProperty("saveSettings"));
+            login = configProp.getProperty("login");
+            password = configProp.getProperty("password");
+        } catch (IOException e) {
+            LOGGER.error("Failed to load client properties file");
+        }
+        listener.onLoginConfigLoaded(ip, port, saveSetState, login, password);
+    }
+
+    private void connect(String ip, int port, String login, String password) {
         this.login = login;
         this.password = password;
-        int numPort;
-        try {
-            numPort = Integer.valueOf(port);
-        } catch (NumberFormatException e) {
-            loginGUI.invalidPort(port);
-            return;
-        }
+
         try {
             LOGGER.info("Connecting to " + ip + ":" + port);
-            Socket socket = new Socket(ip, numPort);
+            Socket socket = new Socket(ip, port);
             socketThread = new SocketThread(this, login, socket);
         } catch (IOException e) {
             LOGGER.error("Failed to connect: " + e.getMessage());
-            loginGUI.connectionFailed(e.getCause());
+            listener.onConnectFailed(e.getMessage());
         }
     }
 
@@ -86,36 +140,36 @@ public class Controller implements SocketThreadListener {
         password = null;
     }
 
-    void disconnect() {
+    private void stop() {
         LOGGER.info("Disconnecting from server...");
         isConnected = false;
         socketThread.close();
         if (serverStartTimeTimer != null) serverStartTimeTimer.cancel();
     }
 
-    void startUpdater(boolean continueUpdate) {
+    private void startUpdater(boolean continueUpdate) {
         LOGGER.info("Start updater...");
-        socketThread.sendMessage(Library.makeJsonString(Library.UPDATER, Library.START, String.valueOf(continueUpdate)));
+        socketThread.sendMessage(msgOf(header(Library.UPDATER, Library.START), String.valueOf(continueUpdate)));
     }
 
-    void stopUpdater() {
+    private void stopUpdater() {
         LOGGER.info("Stop updater...");
-        socketThread.sendMessage(Library.makeJsonString(Library.UPDATER, Library.STOP));
+        socketThread.sendMessage(msgOf(header(Library.UPDATER, Library.STOP)));
     }
 
-    void startResearcher() {
+    private void startResearcher() {
         LOGGER.info("Start researcher...");
-        socketThread.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.START));
+        socketThread.sendMessage(msgOf(header(Library.RESEARCHER, Library.START)));
     }
 
-    void stopResearcher() {
+    private void stopResearcher() {
         LOGGER.info("Stop researcher...");
-        socketThread.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.STOP));
+        socketThread.sendMessage(msgOf(header(Library.RESEARCHER, Library.STOP)));
     }
 
-    void kickUser(String nickname) {
+    private void kickUser(String nickname) {
         LOGGER.info("Kick user request with nickname: " + nickname);
-        socketThread.sendMessage(Library.makeJsonString(Library.USERS, Library.DISCONNECT, nickname));
+        socketThread.sendMessage(msgOf(header(Library.USERS, Library.DISCONNECT), nickname));
     }
 
     private void storeImageFirstChunk(String[] messageParts) {
@@ -146,7 +200,7 @@ public class Controller implements SocketThreadListener {
 
             //decode byte arrays from the HashMap to the final result
             byte[] decodedImageBytes = decodeImage(joinByteArrays(imageArray));
-            if (decodedImageBytes == null){
+            if (decodedImageBytes == null) {
                 LOGGER.error("Failed to decode an image");
                 return;
             }
@@ -162,9 +216,8 @@ public class Controller implements SocketThreadListener {
             images.remove(productID);
 
             os.close();
-            app.showImagesStage();
-            testImagesGUI.setImage(productID, image);
-//            clientGUI.productImage(productID, image);
+
+            listener.onProductImageFound(productID, image);
         } catch (IOException e) {
             LOGGER.error("Failed to store an image: " + e.getMessage());
         }
@@ -186,9 +239,8 @@ public class Controller implements SocketThreadListener {
             images.remove(productID);
 
             os.close();
-            app.showImagesStage();
-            testImagesGUI.setImage(productID, image);
-        } catch (IOException e){
+            listener.onProductImageFound(productID, image);
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -210,78 +262,71 @@ public class Controller implements SocketThreadListener {
     }
 
     private byte[] decodeImage(byte[] encodedImage) {
-                String encodedString = new String(encodedImage);
+        String encodedString = new String(encodedImage);
 
-                //decode result
-                Base64.Decoder decoder = Base64.getDecoder();
-                return decoder.decode(encodedString);
+        //decode result
+//        Base64.Decoder decoder = Base64.getDecoder();
+//        return decoder.decode(encodedString);
+        return Base64.getDecoder().decode(encodedImage);
     }
 
     private void noImageForProduct(String productID) {
         LOGGER.info("No available image for this product: " + productID);
-        app.showImagesStage();
-        testImagesGUI.noImageForProduct(productID);
+        listener.onProductImageNotFound(productID);
     }
 
-    List getStoreList(String selectedCity) {
+    private List getStoreList(String selectedCity) {
         return someNewMap.get(selectedCity);
     }
 
-    void showProductFilterStage(boolean inStockSelected, ObservableList<String> cityList, int selectedCity, ObservableList<String> storeList, int selectedStore) {
-        app.showProductFilter(inStockSelected, cityList, selectedCity, storeList, selectedStore);
-    }
 
-    void showSettingsStage() {
-        app.showSettingsStage();
-    }
-
-    void applyProductFilter(boolean stock, String city, String store, int strengthStart, int strengthEnd, int volumeStart, int volumeEnd, int priceStart, int priceEnd) {
+    private void applyProductFilter(boolean stock, String city, String store, int strengthStart, int strengthEnd, int volumeStart, int volumeEnd, int priceStart, int priceEnd) {
         LOGGER.info("Making product filter request...");
         if (!stock && city == null && store == null
                 && strengthStart == -1 && strengthEnd == -1
                 && volumeStart == -1 && volumeEnd == -1
                 && priceStart == -1 && priceEnd == -1) {
-            clientGUI.resetProductComboBoxes();
+            listener.noSelectedProducts();
             return;
-        } else {
-            ProductRequest request;
-            if (!stock) {
-                request = new ProductRequest(false, -1, -1, strengthStart, strengthEnd, volumeStart, volumeEnd, priceStart, priceEnd);
-            } else {
-                int regionID = -1;
-                int storeID = -1;
-
-                if (city != null) {
-                    for (Warehouse w : warehouses) {
-                        if (w.getCity().equals(city)) {
-                            regionID = w.getRegion();
-                            break;
-                        }
-                    }
-                }
-                if (store != null) {
-                    for (Warehouse w : warehouses) {
-                        if (w.getAddress().equals(store)) {
-                            storeID = w.getId();
-                            break;
-                        }
-                    }
-                }
-                request = new ProductRequest(stock, regionID, storeID, strengthStart, strengthEnd, volumeStart, volumeEnd, priceStart, priceEnd);
-            }
-            socketThread.sendMessage(Library.productRequestToJson(request));
-            clientGUI.updateProductComboBoxes(stock, city, store);
         }
+
+        ProductRequest request;
+        if (!stock) {
+            request = new ProductRequest(false, -1, -1, strengthStart, strengthEnd, volumeStart, volumeEnd, priceStart, priceEnd);
+        } else {
+            int regionID = -1;
+            int storeID = -1;
+
+            if (city != null) {
+                for (Warehouse w : warehouses) {
+                    if (w.getCity().equals(city)) {
+                        regionID = w.getRegion();
+                        break;
+                    }
+                }
+            }
+            if (store != null) {
+                for (Warehouse w : warehouses) {
+                    if (w.getAddress().equals(store)) {
+                        storeID = w.getId();
+                        break;
+                    }
+                }
+            }
+            request = new ProductRequest(stock, regionID, storeID, strengthStart, strengthEnd, volumeStart, volumeEnd, priceStart, priceEnd);
+        }
+        socketThread.sendMessage(Library.productRequestToJson(request));
+        listener.onProductRequestSent(stock, city, store);
     }
 
-    void applySettings(boolean updaterEnable, boolean researcherEnable, int updaterInterval, int researcherInterval, LocalTime updaterTime, LocalTime researcherTime) {
+    private void applySettings(boolean updaterEnable, boolean researcherEnable, int updaterInterval, int researcherInterval, LocalTime updaterTime, LocalTime researcherTime) {
         LOGGER.info("Send new settings to the server");
-        socketThread.sendMessage(Library.makeJsonString(Library.UPDATER, Library.AUTOSTART, String.valueOf(updaterEnable)));
-        socketThread.sendMessage(Library.makeJsonString(Library.UPDATER, Library.AUTOSTART_INTERVAL, String.valueOf(updaterInterval)));
-        socketThread.sendMessage(Library.makeJsonString(Library.UPDATER, Library.AUTOSTART_TIME, String.valueOf(updaterTime)));
-        socketThread.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.AUTOSTART, String.valueOf(researcherEnable)));
-        socketThread.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.AUTOSTART_INTERVAL, String.valueOf(researcherInterval)));
-        socketThread.sendMessage(Library.makeJsonString(Library.RESEARCHER, Library.AUTOSTART_TIME, String.valueOf(researcherTime)));
+        socketThread.sendMessage(msgOf(header(Library.UPDATER, Library.AUTOSTART), String.valueOf(updaterEnable)));
+        socketThread.sendMessage(msgOf(header(Library.UPDATER, Library.AUTOSTART_INTERVAL), String.valueOf(updaterInterval)));
+        socketThread.sendMessage(msgOf(header(Library.UPDATER, Library.AUTOSTART_TIME), String.valueOf(updaterTime)));
+        socketThread.sendMessage(msgOf(header(Library.RESEARCHER, Library.AUTOSTART), String.valueOf(researcherEnable)));
+        socketThread.sendMessage(msgOf(header(Library.RESEARCHER, Library.AUTOSTART_INTERVAL), String.valueOf(researcherInterval)));
+        socketThread.sendMessage(msgOf(header(Library.RESEARCHER, Library.AUTOSTART_TIME), String.valueOf(researcherTime)));
     }
 
     //Getting an imageView from server or HW
@@ -291,13 +336,11 @@ public class Controller implements SocketThreadListener {
         File file = new File(imagePath);
         if (file.exists()) {
             LOGGER.info("Image already on the disk, sending it to client...");
-            app.showImagesStage();
             Image image = new Image(file.toURI().toString());
-            testImagesGUI.setImage(id, image);
-//            clientGUI.productImage(id, image);
+            listener.onProductImageFound(id, image);
         } else {
             LOGGER.info("No image on the disk, sending request to the server");
-            socketThread.sendMessage(Library.makeJsonString(Library.IMAGE, String.valueOf(id)));
+            socketThread.sendMessage(msgOf(header(Library.IMAGE), String.valueOf(id)));
         }
     }
 
@@ -353,16 +396,15 @@ public class Controller implements SocketThreadListener {
                 if (header[1] == Library.ACCEPTED) {
                     isConnected = true;
                     String nickname = receivedData.getData();
-                    clientGUI.setNickname(nickname);
-                    thread.sendMessage(Library.makeJsonString(Library.SERVER_INFO));
+                    listener.onAuthAccepted(nickname);
+                    thread.sendMessage(msgOf(header(Library.SERVER_INFO)));
                     LOGGER.info("Auth accepted with nickname " + nickname);
                 } else if (header[1] == Library.DENIED) {
                     LOGGER.error("Auth denied");
-                    loginGUI.authDenied();
+                    listener.onAuthDenied();
                 } else if (header[1] == Library.MULTIPLY_SESSION) {
                     LOGGER.error("Auth failed cause multiply session was found");
-                    loginGUI.multiplySession(receivedData.getData());
-                    loginGUI.setDisableAll(false);
+                    listener.onMultiplySession(receivedData.getData());
                 }
                 break;
             case Library.WAREHOUSE_LIST:
@@ -376,7 +418,8 @@ public class Controller implements SocketThreadListener {
                 while (list.size() > 0) {
                     int region = list.get(index).getRegion();
                     String city = list.get(index).getCity();
-                    clientGUI.addCityToComb(city);
+
+                    listener.onReceiveCityName(city);
                     Iterator<Warehouse> iterator = list.iterator();
 
                     while (iterator.hasNext()) {
@@ -400,99 +443,85 @@ public class Controller implements SocketThreadListener {
             case Library.SERVER_INFO:
                 if (header[1] == Library.DENIED) {
                     LOGGER.error("Get server info request was denied");
-                    loginGUI.failedToGetData();
+                    listener.onFailToGetServerInfo();
                     thread.close();
                 } else if (header[1] == Library.ACCEPTED) {
                     LOGGER.info("Get server info accepted");
-                    app.showClient();
-                    app.hideLoginStage();
-                    int access = Integer.parseInt(receivedData.getData());
-                    if (access == Library.ADMIN) {
-                        LOGGER.info("User level - admin, unlock admin tabs");
-                        if (clientGUI != null)
-                            clientGUI.setTabsEnableForAdmin();
-                    } else {
-                        if (clientGUI != null) {
-                            LOGGER.info("User level - moderator, unlock moderator tabs");
-                            clientGUI.setTabsEnableForModerator();
-                        }
-                    }
-//                    try {
-//                        Thread.sleep(1000);
-//                        System.out.println();
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
+
+                    int ACCESS_LEVEL = 0;
+                    int SERVER_TIME = 1;
+                    int PRODUCTS_COUNT = 2;
+                    int WAREHOUSES_COUNT = 3;
+                    int ACTIVE_USERS = 4;
+
+                    String[] serverInfo = receivedData.getData().split(Library.DELIMITER);
+                    boolean isAdmin = Integer.parseInt(serverInfo[ACCESS_LEVEL]) == Library.ADMIN;
+                    serverStartTime = Long.valueOf(serverInfo[SERVER_TIME]);
+                    int productsCount = Integer.parseInt(serverInfo[PRODUCTS_COUNT]);
+                    int warehousesCount = Integer.parseInt(serverInfo[WAREHOUSES_COUNT]);
+                    int clientsCount = Integer.parseInt(serverInfo[ACTIVE_USERS]);
+
+                    listener.onServerInfoReceived(isAdmin, parseServerTime(serverStartTime), productsCount, warehousesCount, clientsCount);
+
+                    serverStartTimeTimer = new Timer();
+                    serverStartTimeTimer.schedule(new TimeUpdater(), 0, 60000);
                 }
-                break;
-            case Library.START_TIME:
-                serverStartTime = Long.valueOf(receivedData.getData());
-                LOGGER.info("Received server start time: " + serverStartTime + ", setting up Timer for update Server UPTIME");
-                clientGUI.setServerUpTime(parseServerTime(serverStartTime));
-                serverStartTimeTimer = new Timer();
-                serverStartTimeTimer.schedule(new TimeUpdater(), 0, 60000);
-                break;
-            case Library.PRODUCTS_COUNT:
-                LOGGER.info("Received products count");
-                clientGUI.setProductsCount(receivedData.getData());
-                break;
-            case Library.WAREHOUSES_COUNT:
-                LOGGER.info("Received warehouses count");
-                clientGUI.setWarehousesCount(receivedData.getData());
                 break;
             case Library.USERS:
                 switch (header[1]) {
                     case Library.COUNT:
                         LOGGER.info("Received connected users count");
-                        clientGUI.setActiveUsersCount(receivedData.getData());
+                        listener.onActiveUsersCountChanged(receivedData.getData());
                         break;
                     case Library.LIST:
                         LOGGER.info("Received connected users list");
-                        clientGUI.updateUsersList(receivedData.getData().split(Library.DELIMITER));
+                        listener.onUsersListUpdated(receivedData.getData().split(Library.DELIMITER));
                         break;
                     case Library.DISCONNECT:
-                        String userNicknameDisconnet = receivedData.getData();
+                        String userNicknameToKick = receivedData.getData();
                         if (header.length > 2 && header[2] == Library.DENIED) {
-                            LOGGER.error("Failed to kick user: " + userNicknameDisconnet);
-                            clientGUI.failedToKickUser(userNicknameDisconnet);
+                            LOGGER.error("Failed to kick user: " + userNicknameToKick);
+                            listener.onKickUserFailed(userNicknameToKick);
                         } else {
-                            LOGGER.info("Disconnected from the server by: " + userNicknameDisconnet);
-                            clientGUI.kickedFromTheServer(receivedData.getData());
-                            app.hideClientStage();
+                            LOGGER.info("Disconnected from the server by: " + userNicknameToKick);
+                            listener.kickedFromTheServer(receivedData.getData());
                         }
                         break;
                 }
                 break;
             case Library.UPDATER:
                 switch (header[1]) {
+                    case Library.INFO:
+                        LOGGER.error("Received updater info");
+                        int LAST_RUN = 0;
+                        int AUTOSTART = 1;
+                        int UPDATE_INTERVAL = 2;
+                        int AUTOSTART_TIME = 3;
+                        int LAST_POSITION = 4;
+
+                        String[] updaterInfo = receivedData.getData().split(Library.DELIMITER);
+
+                        String lastRun = parseStringDate(updaterInfo[LAST_RUN]);
+                        boolean autostart = Boolean.parseBoolean(updaterInfo[AUTOSTART]);
+                        int interval = Integer.parseInt(updaterInfo[UPDATE_INTERVAL]);
+                        String[] time = updaterInfo[AUTOSTART_TIME].split(":");
+                        LocalTime autostartTime = LocalTime.of(Integer.parseInt(time[0]), Integer.parseInt(time[1]));
+                        boolean hasLastUpdatedPosition = Integer.parseInt(updaterInfo[LAST_POSITION]) > 0;
+
+                        listener.onUpdaterInfoReceived(lastRun, autostart, interval, autostartTime, hasLastUpdatedPosition);
+
+                        break;
                     case Library.DENIED:
                         LOGGER.error("ACCESS to UPDATER was DENIED by server");
                         break;
-                    case Library.LAST_RUN:
-                        LOGGER.info("Received updater last run");
-                        clientGUI.setUpdaterLastRun(parseStringDate(receivedData.getData()));
-                        break;
-                    case Library.AUTOSTART:
-                        settingsGUI.setUpdaterAutostartState(Boolean.valueOf(receivedData.getData()));
-                        break;
-                    case Library.AUTOSTART_INTERVAL:
-                        settingsGUI.setUpdaterDaysInterval(Integer.valueOf(receivedData.getData()));
-                        break;
-                    case Library.AUTOSTART_TIME:
-                        String[] time = receivedData.getData().split(":");
-                        settingsGUI.setUpdaterAutostartTime(LocalTime.of(Integer.parseInt(time[0]), Integer.parseInt(time[1])));
-                        break;
-                    case Library.LAST_POSITION:
-                        LOGGER.info("Received updater last position");
-                        clientGUI.setLastPositionCheckboxVisible(Integer.parseInt(receivedData.getData()) > 0);
-                        break;
+
                     case Library.START:
                         LOGGER.info("Received updater start info");
-                        clientGUI.updaterStart();
+                        listener.onUpdaterStart();
                         break;
                     case Library.PROCESS_END:
                         LOGGER.info("Received updater stop info");
-                        clientGUI.updaterStopped();
+                        listener.updaterStopped();
                         break;
                     case Library.PRODUCTS_TOTAL:
                         LOGGER.info("Received updater products total");
@@ -502,62 +531,76 @@ public class Controller implements SocketThreadListener {
                     case Library.CURRENT:
                         //LOGGER.info("Received current position of updater");
                         String[] arr = receivedData.getData().split(Library.DELIMITER);
-                        int position = Integer.parseInt(arr[0]);
+
+                        int CURRENT = 0;
+                        int TOTAL = 1;
+                        int PRODUCT_NAME = 2;
+
+                        int position = Integer.parseInt(arr[CURRENT]);
                         if (updaterProductsTotal == 0) {
-                            updaterProductsTotal = Integer.parseInt(arr[1]);
+                            updaterProductsTotal = Integer.parseInt(arr[TOTAL]);
                             updaterProgressPoint = (double) 1 / updaterProductsTotal;
                         }
-                        clientGUI.setUpdaterProgress(updaterProgressPoint * position, position + "/" + updaterProductsTotal);
-                        clientGUI.setUpdaterCurrentProduct(arr[2]);
+                        listener.onUpdaterProgressChanged(updaterProgressPoint * position, position + "/" + updaterProductsTotal, arr[PRODUCT_NAME]);
                         break;
                     case Library.FOUND:
                         LOGGER.info("Received updater differences found");
+
+                        int COUNT = 0;
+                        int DIFFERENCES = 1;
+
                         String[] diffs = receivedData.getData().split(Library.DELIMITER);
-                        clientGUI.setUpdatesFound(diffs[0]);
-                        clientGUI.appendDifferencesFound(diffs[1]);
+                        listener.onUpdaterDifferencesFound(diffs[COUNT], diffs[DIFFERENCES]);
                         break;
                     case Library.FAILED:
                         LOGGER.info("Received updater failed to update product");
                         String[] failsMsg = receivedData.getData().split(Library.DELIMITER);
-                        clientGUI.setUpdatesFailed(failsMsg[1]);
+
+                        int URL = 0;
+                        int FAILS_COUNT = 1;
+
+                        listener.updaterError(failsMsg[URL], failsMsg[FAILS_COUNT]);
                         break;
                     case Library.EXCEPTION:
                         LOGGER.info("Updater exception");
                         String[] exMsg = receivedData.getData().split(Library.DELIMITER);
                         if (exMsg.length >= 3) {
-                            clientGUI.appendErrorToUpdaterLogger(exMsg[0], exMsg[1], exMsg[2]);
+                            listener.onUpdaterException(exMsg[0], exMsg[1], exMsg[2]);
                         } else {
-                            clientGUI.appendErrorToUpdaterLogger("SQLException", exMsg[0]);
+                            listener.onUpdaterException("SQLException", exMsg[0]);
                         }
                         break;
                 }
                 break;
             case Library.RESEARCHER:
                 switch (header[1]) {
+                    case Library.INFO:
+                        LOGGER.error("Received researcher info");
+                        int LAST_RUN = 0;
+                        int AUTOSTART = 1;
+                        int RESEARCH_INTERVAL = 2;
+                        int AUTOSTART_TIME = 3;
+
+                        String[] researcherInfo = receivedData.getData().split(Library.DELIMITER);
+
+                        String lastRun = parseStringDate(researcherInfo[LAST_RUN]);
+                        boolean autostart = Boolean.parseBoolean(researcherInfo[AUTOSTART]);
+                        int interval = Integer.parseInt(researcherInfo[RESEARCH_INTERVAL]);
+                        String[] time = researcherInfo[AUTOSTART_TIME].split(":");
+                        LocalTime autostartTime = LocalTime.of(Integer.parseInt(time[0]), Integer.parseInt(time[1]));
+
+                        listener.onResearcherInfoReceived(lastRun, autostart, interval, autostartTime);
                     case Library.DENIED:
                         LOGGER.error("ACCESS to RESEARCHER was DENIED by server");
                         break;
-                    case Library.LAST_RUN:
-                        LOGGER.info("Received researcher last run");
-                        clientGUI.setResearcherLastUpdate(parseStringDate(receivedData.getData()));
-                        break;
-                    case Library.AUTOSTART:
-                        settingsGUI.setResearcherAutostartState(Boolean.valueOf(receivedData.getData()));
-                        break;
-                    case Library.AUTOSTART_INTERVAL:
-                        settingsGUI.setResearcherDaysInterval(Integer.valueOf(receivedData.getData()));
-                        break;
-                    case Library.AUTOSTART_TIME:
-                        String[] time = receivedData.getData().split(":");
-                        settingsGUI.setResearcherAutostartTime(LocalTime.of(Integer.parseInt(time[0]), Integer.parseInt(time[1])));
-                        break;
+
                     case Library.START:
                         LOGGER.info("Received researcher start info");
-                        clientGUI.researcherStart();
+                        listener.onResearcherStart();
                         break;
                     case Library.PROCESS_END:
                         LOGGER.info("Received researcher stop info");
-                        clientGUI.researcherStopped();
+                        listener.onResearcherStopped();
                         break;
                     case Library.PRODUCTS_TOTAL:
                         //LOGGER.info("Received researcher products count");
@@ -567,20 +610,25 @@ public class Controller implements SocketThreadListener {
                     case Library.CURRENT:
                         //LOGGER.info("Received researcher current position");
                         String[] arr = receivedData.getData().split(Library.DELIMITER);
-                        int position = Integer.parseInt(arr[0]);
-                        clientGUI.setResearcherProgress(researcherProgressPoint * position, position + "/" + researcherProductsTotal);
-                        clientGUI.setResearcherCurrentGroup(arr[1]);
+                        int POSITION = 0;
+                        int CURRENT_GROUP = 1;
+                        int position = Integer.parseInt(arr[POSITION]);
+                        listener.onResearcherProgressChanged(researcherProgressPoint * position, position + "/" + researcherProductsTotal, arr[CURRENT_GROUP]);
                         break;
                     case Library.CURRENT_CATEGORY:
                         //LOGGER.info("Received researcher current category");
                         String[] currCat = receivedData.getData().split(Library.DELIMITER);
-                        clientGUI.setResearcherCurrentCategory(currCat[0] + "/" + currCat[1], currCat[2]);
+                        int CURRENT = 0;
+                        int COUNT = 1;
+                        int CATEGORY_NAME = 2;
+                        listener.onResearcherCurrentCategoryChanged(currCat[CURRENT] + "/" + currCat[COUNT], currCat[CATEGORY_NAME]);
                         break;
                     case Library.FOUND:
                         LOGGER.info("Received researcher new position found");
                         String[] diffs = receivedData.getData().split(Library.DELIMITER);
-                        clientGUI.appendResearcherFoundProd(diffs[0]);
-                        clientGUI.setResearcherTotalFounds(diffs[1]);
+                        int PRODUCT = 0;
+                        int TOTAL_FOUND = 1;
+                        listener.onResearcherNewProductFound(diffs[PRODUCT], diffs[TOTAL_FOUND]);
                         break;
 //                    case Library.FAILED:
 //                        String[] failsMsg = receivedData.getData().split(Library.DELIMITER);
@@ -599,19 +647,19 @@ public class Controller implements SocketThreadListener {
             case Library.PRODUCT_REQUEST:
                 if (header[1] == Library.EMPTY) {
                     LOGGER.warn("No products found by user request");
-                    clientGUI.productsNotFound();
+                    listener.onProductsNotFound();
                 }
                 break;
             case Library.PRODUCT_LIST:
                 products.add(Library.productFromJson(receivedData.getData()));
-//                clientGUI.addToProductList(Library.productFromJson(receivedData.getData()));
+                listener.onProductFound(Library.productFromJson(receivedData.getData()));
                 break;
             case Library.PRODUCT_LIST_START:
                 products.clear();
                 break;
             case Library.PRODUCT_LIST_END:
                 LOGGER.warn("Received products list by user request");
-                clientGUI.updateProductTableContent(products);
+                listener.allProductsReceived(products);
                 break;
         }
     }
@@ -621,11 +669,12 @@ public class Controller implements SocketThreadListener {
         LOGGER.info("Controller socket thread stopped");
         if (isConnected) {
             LOGGER.error("Lost connection with server");
-            clientGUI.connectionLost();
-            app.hideClientStage();
-            app.showLoginStage();
+            listener.onConnectLost();
+//            clientGUI.connectionLost();
+//            app.hideClientStage();
+//            app.showLoginStage();
         }
-        loginGUI.setDisableAll(false);
+//        loginGUI.setDisableAll(false);
     }
 
     @Override
@@ -734,11 +783,19 @@ public class Controller implements SocketThreadListener {
         return newDate.format(formatter);
     }
 
+    private String msgOf(byte[] header, String... data) {
+        return Library.makeJsonString(header, data);
+    }
+
+    private byte[] header(byte... header) {
+        return header;
+    }
+
     private class TimeUpdater extends TimerTask {
         @Override
         public void run() {
             LOGGER.info("TIMER TASK");
-            clientGUI.setServerUpTime(parseServerTime(serverStartTime));
+            listener.onServerUptimeUpdated(parseServerTime(serverStartTime));
         }
     }
 }

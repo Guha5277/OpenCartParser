@@ -20,9 +20,9 @@ public class Library {
     public static final byte MULTIPLY_SESSION = 5;
     public static final byte MESSAGE_FORMAT_ERROR = -1;
     public static final byte SERVER_INFO = 6;
-    public static final byte START_TIME = 7;
-    public static final byte PRODUCTS_COUNT = 8;
-    public static final byte WAREHOUSES_COUNT = 9;
+//    public static final byte START_TIME = 7;
+//    public static final byte PRODUCTS_COUNT = 8;
+//    public static final byte WAREHOUSES_COUNT = 9;
     public static final byte USERS = 10;
     public static final byte LIST = 11;
     public static final byte COUNT = 12;
@@ -57,52 +57,43 @@ public class Library {
     public static final byte LAST_CHUNK = 41;
     public static final byte NO_IMAGE = 42;
     public static final byte FULL = 43;
-
+    public static final byte INFO = 44;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-
-
     public static String getAuthRequest(String login, String password){
-        return makeJsonString(Library.AUTH, Library.REQUEST, login + DELIMITER + password);
+        return makeJsonString(new byte[]{Library.AUTH, Library.REQUEST}, login + DELIMITER + password);
     }
 
     public static DataProtocol jsonToObject(String json){
         return GSON.fromJson(json, DataProtocol.class);
     }
 
-    public static String makeJsonString(byte header1, byte header2, String data) {
-        DataProtocol message = new DataProtocol(new byte[]{header1, header2}, data);
-        return GSON.toJson(message);
-    }
+    public static String makeJsonString(byte[] header, String... data) {
+        String dataResult;
 
-    public static String makeJsonString(byte header1, byte header2, byte header3, String data) {
-        DataProtocol message = new DataProtocol(new byte[]{header1, header2, header3}, data);
-        return GSON.toJson(message);
-    }
+        if (data.length == 0){
+            dataResult = "";
+        } else {
+            StringBuilder sb = new StringBuilder();
+            if (data.length == 1){
+                sb.append(data[0]);
+            } else {
+                for (int i = 0; i <data.length ; i++) {
+                    sb.append(data[i]);
+                    if (i == data.length - 1) break;
+                    sb.append(DELIMITER);
+                }
+            }
+            dataResult = sb.toString();
+        }
 
-    public static String makeJsonString(byte header1, byte header2, String data, String data2) {
-        DataProtocol message = new DataProtocol(new byte[]{header1, header2}, data + DELIMITER + data2);
-        return GSON.toJson(message);
-    }
-
-    public static String makeJsonString(byte header1, byte header2, String data, String data2, String data3) {
-        DataProtocol message = new DataProtocol(new byte[]{header1, header2}, data + DELIMITER + data2 + DELIMITER + data3);
-        return GSON.toJson(message);
-    }
-
-    public static String makeJsonString(byte header1, byte header2) {
-        DataProtocol message = new DataProtocol(new byte[]{header1, header2});
-        return GSON.toJson(message);
-    }
-
-    public static String makeJsonString(byte header, String data) {
-        DataProtocol message = new DataProtocol(new byte[]{header}, data);
-        return GSON.toJson(message);
-    }
-
-    public static String makeJsonString(byte header) {
-        DataProtocol message = new DataProtocol(new byte[]{header});
+        DataProtocol message;
+        if (dataResult.equals("")){
+            message = new DataProtocol(header);
+        } else {
+            message = new DataProtocol(header, dataResult);
+        }
         return GSON.toJson(message);
     }
 
