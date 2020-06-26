@@ -131,7 +131,6 @@ public class Product {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof Product)) return false;
-        return ((Product) obj).getURL().equals(URL);
+        return obj instanceof Product && ((Product) obj).getURL().equals(URL);
     }
 }

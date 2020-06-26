@@ -1,6 +1,5 @@
 package main;
 
-import com.sun.xml.internal.ws.api.ha.StickyFeature;
 import main.product.Group;
 import main.product.Product;
 import main.product.Warehouse;
@@ -13,8 +12,10 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 class SQLClient {
     private static Connection connection;
@@ -47,6 +48,7 @@ class SQLClient {
     static void disconnect() {
         try {
             connection.close();
+            statement.close();
         } catch (SQLException e) {
             LOG.error("Failed to Close the connection" + e.getMessage());
         }
@@ -75,8 +77,7 @@ class SQLClient {
         int categoryID = 0;
 
         String query = String.format("SELECT id FROM " + CATEGORIES_TABLE + " WHERE name='%s'", categoryName);
-        try {
-            ResultSet set = statement.executeQuery(query);
+        try (ResultSet set = statement.executeQuery(query)){
             if (set.next()) {
                 categoryID = set.getInt(1);
             }
@@ -130,8 +131,7 @@ class SQLClient {
 
     synchronized static boolean isProductAlreadyInDB(String url) {
         String query = String.format("SELECT name from " + PRODUCT_TABLE + " WHERE url='%s'", url);
-        try {
-            ResultSet set = statement.executeQuery(query);
+        try (ResultSet set = statement.executeQuery(query)){
             int size = 0;
             if (set.next()) {
                 size = 1;
@@ -146,8 +146,7 @@ class SQLClient {
 
     synchronized static List<Product> getAllProducts() {
         String query = "SELECT * from " + PRODUCT_TABLE;
-        try {
-            ResultSet set = statement.executeQuery(query);
+        try (ResultSet set = statement.executeQuery(query)){
             if (set != null) {
                 List<Product> list = new ArrayList<>();
                 while (set.next()) {
@@ -172,10 +171,10 @@ class SQLClient {
         return null;
     }
 
-    synchronized static List<Product> getProductsListByQuery(String query) {
+    static List<Product> getProductsListByQuery(String query) {
+        LOG.info("Product request query: " + query);
         List<Product> result;
-        try {
-            ResultSet set = statement.executeQuery(query);
+        try (ResultSet set = statement.executeQuery(query)){
             result = new ArrayList<>();
             if (set != null) {
                 int columnCount = set.getMetaData().getColumnCount();
@@ -241,20 +240,16 @@ class SQLClient {
 
     synchronized static List<Warehouse> getAllWarehouses() {
         String query = "SELECT * from " + WAREHOUSE_TABLE;
-        try {
-            ResultSet set = statement.executeQuery(query);
+        try (ResultSet set = statement.executeQuery(query)){
             List<Warehouse> warehousesList = new ArrayList<>();
-            if (set != null) {
                 while (set.next()) {
                     warehousesList.add(new Warehouse(set.getInt("id"), set.getString("alt_name"), set.getInt("region"), set.getString("city"), set.getString("address")));
                 }
                 return warehousesList;
-            }
         } catch (SQLException e) {
             LOG.error("Error when trying to get all product.Warehouse from DB" + e.getMessage());
             return null;
         }
-        return null;
     }
 
     private static String returnValidString(String wrongString, int index) {
@@ -341,9 +336,8 @@ class SQLClient {
 
     synchronized static String getNickname(String login, String password) {
         String query = String.format("SELECT nickname FROM " + USERS_TABLE + " WHERE username='%s' AND password='%s'", login, password);
-        try {
-            ResultSet set = statement.executeQuery(query);
-            if (set.isClosed()) return null;
+        try (ResultSet set = statement.executeQuery(query)){
+//            if (set.isClosed()) return null;
             return set.getString(1);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -353,9 +347,8 @@ class SQLClient {
 
     synchronized static int getUserRole(String nickname) {
         String query = String.format("SELECT role FROM " + USERS_TABLE + " WHERE nickname='%s'", nickname);
-        try {
-            ResultSet set = statement.executeQuery(query);
-            if (set.isClosed()) return 4;
+        try (ResultSet set = statement.executeQuery(query)){
+//            if (set.isClosed()) return 4;
             return set.getInt(1);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -365,9 +358,8 @@ class SQLClient {
 
     static int getProductsCount() {
         String query = "SELECT COUNT(*) FROM " + PRODUCT_TABLE;
-        try {
-            ResultSet set = statement.executeQuery(query);
-            if (set.isClosed()) return 0;
+        try (ResultSet set = statement.executeQuery(query)){
+//            if (set.isClosed()) return 0;
             return set.getInt(1);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -377,9 +369,8 @@ class SQLClient {
 
     static int getWarehousesCount() {
         String query = "SELECT COUNT(*) FROM " + WAREHOUSE_TABLE;
-        try {
-            ResultSet set = statement.executeQuery(query);
-            if (set.isClosed()) return 0;
+        try (ResultSet set = statement.executeQuery(query)){
+//            if (set.isClosed()) return 0;
             return set.getInt(1);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -389,9 +380,8 @@ class SQLClient {
 
     static LocalDate getProcessLastRun(String process) {
         String query = String.format("SELECT last_run FROM " + INFO_TABLE + " WHERE process='%s'", process);
-        try {
-            ResultSet set = statement.executeQuery(query);
-            if (set.isClosed()) return null;
+        try (ResultSet set = statement.executeQuery(query)){
+//            if (set.isClosed()) return null;
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 
             Date date;
@@ -410,9 +400,8 @@ class SQLClient {
 
     static LocalTime getProcessLaunchTime(String process) {
         String query = String.format("SELECT start_time FROM " + SETTINGS_TABLE + " WHERE process='%s'", process);
-        try {
-            ResultSet set = statement.executeQuery(query);
-            if (set.isClosed()) return null;
+        try (ResultSet set = statement.executeQuery(query)){
+//            if (set.isClosed()) return null;
             SimpleDateFormat formatter = new SimpleDateFormat("HH:mm");
             Date date;
             try {
@@ -431,9 +420,8 @@ class SQLClient {
 
     static int getProcessDayInterval(String process) {
         String query = String.format("SELECT day_interval FROM " + SETTINGS_TABLE + " WHERE process='%s'", process);
-        try {
-            ResultSet set = statement.executeQuery(query);
-            if (set.isClosed()) return 0;
+        try (ResultSet set = statement.executeQuery(query)){
+//            if (set.isClosed()) return 0;
             return set.getInt(1);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -443,9 +431,8 @@ class SQLClient {
 
     static boolean getProcessAutoStartState(String process) {
         String query = String.format("SELECT enable FROM " + SETTINGS_TABLE + " WHERE process='%s'", process);
-        try {
-            ResultSet set = statement.executeQuery(query);
-            if (set.isClosed()) return false;
+        try (ResultSet set = statement.executeQuery(query)){
+//            if (set.isClosed()) return false;
             return Boolean.valueOf(set.getString(1));
         } catch (SQLException e) {
             e.printStackTrace();
@@ -501,9 +488,8 @@ class SQLClient {
 
     static int getLastUpdatedProductPosition() {
         String query = "select paused_at from " + INFO_TABLE + " where process='updater'";
-        try {
-            ResultSet set = statement.executeQuery(query);
-            if (set.isClosed()) return 0;
+        try (ResultSet set = statement.executeQuery(query)){
+//            if (set.isClosed()) return 0;
             return set.getInt(1);
         } catch (SQLException e) {
             LOG.error("Failed to UPDATE INFO! product_id: " + e.getMessage());
@@ -527,9 +513,8 @@ class SQLClient {
 
     static String getImageID(int productID) {
         String query = String.format("SELECT image_id from " + PRODUCT_TABLE + " WHERE id=%d", productID);
-        try {
-            ResultSet set = statement.executeQuery(query);
-            if (set.isClosed()) return null;
+        try (ResultSet set = statement.executeQuery(query)){
+//            if (set.isClosed()) return null;
             return set.getString(1);
         } catch (SQLException e) {
             LOG.error("Failed to get image from DB. Query: " + query + ". Error: " + e.getMessage());

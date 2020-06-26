@@ -49,6 +49,7 @@ class Parser {
         }
     }
 
+    /*TODO rename method to getInnerProducts*/
     Elements getInnerLiquids(String url) {
         try {
             //LOG.info("Getting inner liquids...");
@@ -340,33 +341,6 @@ class Parser {
             return -1.0d;
         }
     }
-
-//    String trimToValidName(String name, int volume, double strength) {
-//        int indexStart = name.indexOf(String.valueOf(volume)) - 1;
-//
-//        if (indexStart < 0) {
-//            indexStart = name.indexOf('*') - 2;
-//        }
-//
-//        int indexEnd = name.indexOf(" мл") + 3;
-//        String firstPart = name.substring(0, indexStart);
-//        String secondPart = name.substring(indexEnd);
-//
-//
-//        if (strength != 1.5d) {
-//            if (secondPart.equals(" " + (int) strength + " мг/мл")) {
-//                return firstPart;
-//            }
-//            indexEnd = secondPart.indexOf((String.valueOf((int) strength))) - 1;
-//        } else {
-//            if (secondPart.equals("1.5 мг/мл") || secondPart.equals("01.5 мг/мл")) {
-//                return firstPart;
-//            }
-//            indexEnd = secondPart.indexOf("1.5") - 1;
-//        }
-//        if (indexEnd > 0) secondPart = secondPart.substring(0, indexEnd);
-//        return firstPart + secondPart;
-//    }
 
     void insertProductToDB(Product product) {
         SQLClient.insertProduct(product.getName(), product.getURL(), product.getPrice(), product.getCategoryID(), product.getGroup().getName(), product.getVolume(), product.getStrength());
