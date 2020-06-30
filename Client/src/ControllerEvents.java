@@ -18,8 +18,8 @@ interface ControllerEvents {
     void onUsersListUpdated(String[] users);
     void onKickUserFailed(String userNicknameToKick);
     void kickedFromTheServer(String initiator);
-    void onUpdaterInfoReceived(String lastRun, boolean autostart, int interval, LocalTime autostartTime, boolean hasLastUpdatedPosition);
-    void onResearcherInfoReceived(String lastRun, boolean autostart, int interval, LocalTime autostartTime);
+    void onUpdaterInfoReceived(String lastRunDate, boolean autostart, int interval, LocalTime autostartTime, boolean hasLastUpdatedPosition);
+    void onResearcherInfoReceived(String lastRunDate, boolean autostart, int interval, LocalTime autostartTime);
     void onUpdaterStart();
     void updaterStopped();
     void onUpdaterProgressChanged(double progress, String progressLabelText, String name);
@@ -40,4 +40,6 @@ interface ControllerEvents {
     void onProductFound(Product product);
     void allProductsReceived(List<Product> products);
     void onServerUptimeUpdated(String serverTime);
+    void onUpdaterLastRunChanged(String lastRunDate);
+    void onUpdaterLastPositionChanged(boolean hasLastUpdatedPosition);
 }

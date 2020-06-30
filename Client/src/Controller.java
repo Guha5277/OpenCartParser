@@ -509,7 +509,13 @@ public class Controller implements SocketThreadListener, GUIEvents {
                         boolean hasLastUpdatedPosition = Integer.parseInt(updaterInfo[LAST_POSITION]) > 0;
 
                         listener.onUpdaterInfoReceived(lastRun, autostart, interval, autostartTime, hasLastUpdatedPosition);
+                        break;
 
+                    case Library.LAST_RUN:
+                        listener.onUpdaterLastRunChanged(parseStringDate(receivedData.getData()));
+                        break;
+                    case Library.LAST_POSITION:
+                        listener.onUpdaterLastPositionChanged(Integer.parseInt(receivedData.getData()) > 0);
                         break;
                     case Library.DENIED:
                         LOGGER.error("ACCESS to UPDATER was DENIED by server");
@@ -590,6 +596,7 @@ public class Controller implements SocketThreadListener, GUIEvents {
                         LocalTime autostartTime = LocalTime.of(Integer.parseInt(time[0]), Integer.parseInt(time[1]));
 
                         listener.onResearcherInfoReceived(lastRun, autostart, interval, autostartTime);
+                        break;
                     case Library.DENIED:
                         LOGGER.error("ACCESS to RESEARCHER was DENIED by server");
                         break;

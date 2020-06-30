@@ -3,14 +3,14 @@
     <Appenders>
         <Console name="ConsoleAppender" target="SYSTEM_OUT">
             <PatternLayout>
-                <Pattern>%d{HH:mm:ss} [%-5level] [%C{10}] - %msg %n</Pattern>
+                <Pattern>%d{HH:mm:ss} [%-5level] [%C{10}]   [thread]:[%tid] - %msg %n</Pattern>
             </PatternLayout>
         </Console>
 
         <RollingFile name="ServerAppender" fileName="logs/server/server.log"
             filePattern="logs/server/$${date:yyyy-MM}/%d{yyyy-MM-dd}.log">
             <PatternLayout>
-                <Pattern>%d{HH:mm:ss} [%-5level] [%C{2}] - %msg %n</Pattern>
+                <Pattern>%d{HH:mm:ss} [%-5level] [%C{2}] [%thread]:[%tid] - %msg %n</Pattern>
             </PatternLayout>
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1" />
@@ -21,7 +21,7 @@
         <RollingFile name="UsersAppender" fileName="logs/users/users.log"
                      filePattern="logs/users/$${date:yyyy-MM}/%d{yyyy-MM-dd}.log">
             <PatternLayout>
-                <Pattern>%d{HH:mm:ss} [%-5level] [%C{2}] - %msg %n</Pattern>
+                <Pattern>%d{HH:mm:ss} [%-5level] [%C{2}] [%thread]:[%tid] - %msg %n</Pattern>
             </PatternLayout>
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1" />
@@ -32,7 +32,7 @@
         <RollingFile name="ParserAppender" fileName="logs/server/parser/parser.log"
                      filePattern="logs/server/parser/$${date:yyyy-MM}/%d{yyyy-MM-dd}.log">
             <PatternLayout>
-                <Pattern>%d{HH:mm:ss} [%-5level] [%C{2}] - %msg %n</Pattern>
+                <Pattern>%d{HH:mm:ss} [%-5level] [%C{2}] [%thread]:[%tid] - %msg %n</Pattern>
             </PatternLayout>
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1" />

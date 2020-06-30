@@ -208,9 +208,9 @@ public class AppGUI extends Application implements ControllerEvents {
     }
 
     @Override
-    public void onUpdaterInfoReceived(String lastRun, boolean autostart, int interval, LocalTime autostartTime, boolean hasLastUpdatedPosition) {
+    public void onUpdaterInfoReceived(String lastRunDate, boolean autostart, int interval, LocalTime autostartTime, boolean hasLastUpdatedPosition) {
         Platform.runLater(() -> {
-            clientController.setUpdaterLastRun(lastRun);
+            clientController.setUpdaterLastRun(lastRunDate);
             clientController.setLastPositionCheckboxVisible(hasLastUpdatedPosition);
             settingsController.setUpdaterAutostartState(autostart);
             settingsController.setUpdaterDaysInterval(interval);
@@ -219,9 +219,9 @@ public class AppGUI extends Application implements ControllerEvents {
     }
 
     @Override
-    public void onResearcherInfoReceived(String lastRun, boolean autostart, int interval, LocalTime autostartTime) {
+    public void onResearcherInfoReceived(String lastRunDate, boolean autostart, int interval, LocalTime autostartTime) {
         Platform.runLater(() -> {
-            clientController.setResearcherLastUpdate(lastRun);
+            clientController.setResearcherLastUpdate(lastRunDate);
             settingsController.setResearcherAutostartState(autostart);
             settingsController.setResearcherDaysInterval(interval);
             settingsController.setResearcherAutostartTime(autostartTime);
@@ -306,6 +306,20 @@ public class AppGUI extends Application implements ControllerEvents {
     public void onUpdaterException(String exception, String message) {
         Platform.runLater(() -> {
             clientController.appendErrorToUpdaterLogger(exception, message);
+        });
+    }
+
+    @Override
+    public void onUpdaterLastRunChanged(String lastRunDate) {
+        Platform.runLater(() -> {
+            clientController.setUpdaterLastRun(lastRunDate);
+        });
+    }
+
+    @Override
+    public void onUpdaterLastPositionChanged(boolean hasLastUpdatedPosition) {
+        Platform.runLater(() -> {
+            clientController.setLastPositionCheckboxVisible(hasLastUpdatedPosition);
         });
     }
 
@@ -425,6 +439,8 @@ public class AppGUI extends Application implements ControllerEvents {
         Platform.runLater(() -> {
             clientController.connectionLost();
             clientStage.hide();
+            settingsStage.hide();
+            imageStage.hide();
             loginStage.show();
         });
     }

@@ -44,7 +44,7 @@ class Parser {
             //LOG.info("Getting inner groups...");
             return Jsoup.connect(url).get().body().getElementsByClass(CATEGORY_DELIMITER);
         } catch (IOException e) {
-            LOG.error("Failed to get inner group " + e.getMessage());
+            LOG.error("Failed to get inner group. URL: " + url + ", " + e.getMessage());
             return null;
         }
     }
@@ -55,7 +55,7 @@ class Parser {
             //LOG.info("Getting inner liquids...");
             return Jsoup.connect(url).get().body().getElementsByClass(INNER_LIQUID_DELIMITER);
         } catch (IOException e) {
-            LOG.error("Failed to get inner liquids " + e.getMessage());
+            LOG.error("Failed to get inner liquids. URL: " + url + ", " + e.getMessage());
             return null;
         }
     }

@@ -179,7 +179,7 @@ class Updater extends Parser implements Runnable {
     }
 
     private void checkProductImage(Product product) {
-        LOG.info("Check image for product " + product.getName());
+        LOG.info("Checking image...");
         String imageID = product.getImageID();
         if (imageID == null) {
             LOG.info("No imageID in the DB!");
@@ -187,16 +187,13 @@ class Updater extends Parser implements Runnable {
             updateImageID(product, imageID);
         } else if (imageID.equals("NO_IMAGE")) {
             imageID = downloadImage(product);
-            if (!imageID.equals("NO_IMAGE")){
+            if (!imageID.equals("NO_IMAGE")) {
                 updateImageID(product, imageID);
             }
         } else {
             File file = new File(IMAGES_PATH + imageID);
-            if (file.exists()) {
-                LOG.info("It is not necessary to update an image");
-                return;
-            }
-            LOG.info("No imageID in the HW!");
+            if (file.exists()) return;
+
             imageID = downloadImage(product);
             updateImageID(product, imageID);
         }
@@ -253,6 +250,7 @@ class Updater extends Parser implements Runnable {
     }
 
     private void updateProductRemains(List<Warehouse> warehousesList, Product product) {
+        LOG.info("Updating remains...");
         ArrayList<Warehouse> warehouses = new ArrayList<>(warehousesList);
         Elements remainsElements;
         try {

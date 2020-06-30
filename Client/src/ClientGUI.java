@@ -241,9 +241,7 @@ public class ClientGUI {
     }
 
     void setNickname(String nickname) {
-        Platform.runLater(() -> {
-            lblNickname.setText(nickname);
-        });
+        lblNickname.setText(nickname);
     }
 
     void setTabsEnable(boolean isAdmin) {
@@ -297,10 +295,8 @@ public class ClientGUI {
     }
 
     void setLastPositionCheckboxVisible(boolean state) {
-        Platform.runLater(() -> {
-            chkLastSavedPos.setVisible(state);
-            chkLastSavedPos.setDisable(isUpdaterRun);
-        });
+        chkLastSavedPos.setVisible(state);
+        chkLastSavedPos.setDisable(isUpdaterRun);
     }
 
     void setUpdaterCurrentProduct(String productName) {
@@ -352,11 +348,9 @@ public class ClientGUI {
     }
 
     void setUpdaterLastRun(String date) {
-        Platform.runLater(() -> {
-            lblUpdaterLastRunText.setVisible(true);
-            lblUpdaterLastRunDate.setText(date);
-            lblUpdaterLastRunDate.setVisible(true);
-        });
+        lblUpdaterLastRunText.setVisible(true);
+        lblUpdaterLastRunDate.setText(date);
+        lblUpdaterLastRunDate.setVisible(true);
     }
 
     private void showUpdaterElements() {
@@ -398,35 +392,31 @@ public class ClientGUI {
 
     //researcher
     void setResearcherLastUpdate(String date) {
-        Platform.runLater(() -> {
-            lblResearcherLastRunText.setVisible(true);
-            lblResearcherLastRunDate.setText(date);
-            lblResearcherLastRunDate.setVisible(true);
-        });
+        lblResearcherLastRunText.setVisible(true);
+        lblResearcherLastRunDate.setText(date);
+        lblResearcherLastRunDate.setVisible(true);
     }
 
     void researcherStart() {
-        Platform.runLater(this::showResearcherElements);
+        showResearcherElements();
     }
 
     void researcherStopped() {
         isResearcherRun = false;
-        Platform.runLater(() -> {
-            //updater status
-            lblResearcherStatus.setDisable(true);
-            lblResearcherStatus.setText("выключен");
-            //control buttons
-            btnResearcherStart.setDisable(false);
-            btnResearcherStop.setDisable(true);
-            //process elements
-            lblResearcherCategory.setVisible(true);
-            lblResearcherCategoryPos.setVisible(false);
-            lblResearcherCategoryName.setVisible(false);
-            lblResearcherCurrentGroupName.setVisible(false);
-            lblResearcherGroupPos.setVisible(false);
-            prgrResearcher.setVisible(false);
-            lblResearcherGroupPos.setVisible(false);
-        });
+        //updater status
+        lblResearcherStatus.setDisable(true);
+        lblResearcherStatus.setText("выключен");
+        //control buttons
+        btnResearcherStart.setDisable(false);
+        btnResearcherStop.setDisable(true);
+        //process elements
+        lblResearcherCategory.setVisible(true);
+        lblResearcherCategoryPos.setVisible(false);
+        lblResearcherCategoryName.setVisible(false);
+        lblResearcherCurrentGroupName.setVisible(false);
+        lblResearcherGroupPos.setVisible(false);
+        prgrResearcher.setVisible(false);
+        lblResearcherGroupPos.setVisible(false);
     }
 
     private void showResearcherElements() {
@@ -446,27 +436,21 @@ public class ClientGUI {
     }
 
     void setResearcherProgress(double progress, String position) {
-        Platform.runLater(() -> {
-            if (!isResearcherRun) {
-                isResearcherRun = true;
-                showResearcherElements();
-            }
-            prgrResearcher.setProgress(progress);
-            lblResearcherGroupPos.setText(position);
-        });
+        if (!isResearcherRun) {
+            isResearcherRun = true;
+            showResearcherElements();
+        }
+        prgrResearcher.setProgress(progress);
+        lblResearcherGroupPos.setText(position);
     }
 
     void setResearcherCurrentGroup(String groupName) {
-        Platform.runLater(() -> {
-            lblResearcherCurrentGroupName.setText(groupName);
-        });
+        lblResearcherCurrentGroupName.setText(groupName);
     }
 
     void setResearcherCurrentCategory(String position, String categoryName) {
-        Platform.runLater(() -> {
-            lblResearcherCategoryPos.setText(position);
-            lblResearcherCategoryName.setText(categoryName);
-        });
+        lblResearcherCategoryPos.setText(position);
+        lblResearcherCategoryName.setText(categoryName);
     }
 
     void setResearcherTotalFounds(String count) {
@@ -474,15 +458,14 @@ public class ClientGUI {
     }
 
     void appendResearcherFoundProd(String diff) {
-        Platform.runLater(() -> {
-            if (researcherLogArea.isDisable()) researcherLogArea.setDisable(false);
-            researcherLogArea.appendText(diff + "\n");
-        });
+        if (researcherLogArea.isDisable()) researcherLogArea.setDisable(false);
+        researcherLogArea.appendText(diff + "\n");
     }
 
     private void resetUI() {
         researcherStopped();
         updaterStopped();
+        clearProductList();
     }
 
     void setResearchFailed(String count) {
@@ -530,32 +513,32 @@ public class ClientGUI {
     }
 
     void updateProductTableContent(List<Product> products) {
-            if (productsList == null) {
-                productsList = FXCollections.observableArrayList(products);
-            } else {
-                productsList.removeAll(productsList);
-                productsList.addAll(products);
-            }
+        if (productsList == null) {
+            productsList = FXCollections.observableArrayList(products);
+        } else {
+            productsList.removeAll(productsList);
+            productsList.addAll(products);
+        }
 
-            totalProductShow.setText("Всего найдено: " + products.size());
+        totalProductShow.setText("Всего найдено: " + products.size());
 
-            productTableView.setItems(productsList);
+        productTableView.setItems(productsList);
 //            productTableView.refresh();
     }
 
     void addToProductList(Product product) {
-            if (productsList == null) {
-                productsList = FXCollections.observableArrayList(product);
-            } else {
-                productsList.add(product);
-            }
+        if (productsList == null) {
+            productsList = FXCollections.observableArrayList(product);
+        } else {
+            productsList.add(product);
+        }
 
-            productTableView.setItems(productsList);
-            //productTableView.refresh();
+        productTableView.setItems(productsList);
+        //productTableView.refresh();
     }
 
     void clearProductList() {
-        if (productsList == null)  return;
+        if (productsList == null) return;
         productsList.clear();
         productTableView.getItems().clear();
     }
@@ -584,10 +567,8 @@ public class ClientGUI {
     }
 
     void connectionLost() {
-        Platform.runLater(() -> {
-            resetUI();
-            makeDialogWindow(Alert.AlertType.ERROR, "Соединение прервано!", "Соединение с сервером потеряно!", "").showAndWait();
-        });
+        resetUI();
+        makeDialogWindow(Alert.AlertType.ERROR, "Соединение прервано!", "Соединение с сервером потеряно!", "").showAndWait();
     }
 
     //Event Handlers
