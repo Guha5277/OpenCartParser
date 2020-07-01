@@ -438,6 +438,7 @@ public class AppGUI extends Application implements ControllerEvents {
     public void onConnectLost() {
         Platform.runLater(() -> {
             clientController.connectionLost();
+            loginController.connectionFailed("Соединение потеряно");
             clientStage.hide();
             settingsStage.hide();
             imageStage.hide();

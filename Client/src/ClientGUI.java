@@ -568,7 +568,6 @@ public class ClientGUI {
 
     void connectionLost() {
         resetUI();
-        makeDialogWindow(Alert.AlertType.ERROR, "Соединение прервано!", "Соединение с сервером потеряно!", "").showAndWait();
     }
 
     //Event Handlers
