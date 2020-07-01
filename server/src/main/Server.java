@@ -1,7 +1,11 @@
 package main;
 
-import main.product.Product;
-import main.product.Warehouse;
+import com.guhar4k.library.DataProtocol;
+import com.guhar4k.library.Library;
+import com.guhar4k.library.ProductRequest;
+import com.guhar4k.parser.*;
+import com.guhar4k.product.Product;
+import com.guhar4k.product.Warehouse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,7 +21,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.*;
 
-public class Server implements ServerSocketThreadListener, SocketThreadListener, ParserEvents {
+public class Server implements ServerSocketThreadListener, SocketThreadListener, IUpdater, IResearcher, IGrabber {
     private long serverStartAt;
     private int productsCount;
     private int warehousesCount;
@@ -92,11 +96,11 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         SERVER_LOGGER.info("Server Started " + name + " " + address);
     }
 
-    private String msgOf(byte[] header, String ... data){
+    private String msgOf(byte[] header, String... data) {
         return Library.makeJsonString(header, data);
     }
 
-    private byte[] header(byte ... header){
+    private byte[] header(byte... header) {
         return header;
     }
 
@@ -270,9 +274,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private void startUpdater(boolean continueUpdate) {
         if (updaterThread != null && updaterThread.isAlive()) return;
         if (continueUpdate && lastUpdatedProductPosition < productsCount) {
-            updater = new Updater(this, lastUpdatedProductPosition, IMAGES_PATH);
+            updater = new Updater(this, lastUpdatedProductPosition, IMAGES_PATH, SQLClient.getAllProducts(), SQLClient.getAllWarehouses());
         } else {
-            updater = new Updater(this, 0, IMAGES_PATH);
+            updater = new Updater(this, 0, IMAGES_PATH, SQLClient.getAllProducts(), SQLClient.getAllWarehouses());
         }
         updaterThread = new Thread(updater);
         updaterThread.start();
@@ -613,27 +617,54 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         SERVER_LOGGER.error("ServerSocket exception: " + e.getMessage() + " " + e.getCause());
     }
 
-    //Services events
+    //ParserEvents
+    @Override
+    public int getCategoryID(String productName) {
+        return SQLClient.getCategoryID(productName);
+    }
+
+    @Override
+    public void insertProduct(String name, String url, int price, int categoryID, String name1, int volume, double strength) {
+        SQLClient.insertProduct(name, url, price, categoryID, name1, volume, strength);
+    }
+
+
+    //Grabber Events
     @Override
     public void onGrabberReady() {
         SERVER_LOGGER.info("Grabber ready");
     }
 
     @Override
+    public void onGrabberException(String message) {
+        SERVER_LOGGER.error("Grabber exception: " + message);
+    }
+
+    @Override
+    public void onGrabError() {
+        SERVER_LOGGER.error("Grabber error");
+    }
+
+    @Override
+    public void onGrabberSuccessfulEnd(int count) {
+        SERVER_LOGGER.info("Parser successful end, total updates: " + count);
+    }
+
+    @Override
+    public void insertCategory(String name) {
+        SQLClient.insertCategory(name);
+    }
+
+    @Override
+    public void insertStore(int region, String city, String address, String phone) {
+        SQLClient.insertStore(region, city, address, phone);
+    }
+
+    //Updater Events
+    @Override
     public void onUpdaterReady() {
         SERVER_LOGGER.info("Updater ready");
         sendMsgToModeratorsAndAdmins(msgOf(header(Library.UPDATER, Library.START)));
-    }
-
-    @Override
-    public void onResearcherReady() {
-        SERVER_LOGGER.info("Researcher ready");
-        sendMsgToModeratorsAndAdmins(msgOf(header(Library.RESEARCHER, Library.START)));
-    }
-
-    @Override
-    public void onParserException(Exception e) {
-        SERVER_LOGGER.error("Parser exception: " + e.getMessage());
     }
 
     @Override
@@ -643,9 +674,8 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     }
 
     @Override
-    public void onUpdaterSQLException(Exception e) {
-        SERVER_LOGGER.error("Updater SQL exception: " + e.getMessage());
-        sendMsgToModeratorsAndAdmins(msgOf(header(Library.UPDATER, Library.EXCEPTION), e.getMessage()));
+    public void onUpdateError() {
+        SERVER_LOGGER.error("Updater error");
     }
 
     @Override
@@ -673,21 +703,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     }
 
     @Override
-    public void onGrabError() {
-        SERVER_LOGGER.error("Grabber error");
-    }
-
-    @Override
-    public void onUpdateError() {
-        SERVER_LOGGER.error("Updater error");
-    }
-
-    @Override
-    public void onParseSuccessfulEnd(int count) {
-        SERVER_LOGGER.info("Parser successful end, total updates: " + count);
-    }
-
-    @Override
     public void onUpdateSuccessfulEnd(int checked, int updated, int errors) {
         SERVER_LOGGER.info("Updater successful end, total checked: " + checked + ", updates: " + updated + ", errors: " + errors);
         if (checked - 1 == updaterTotalProd) {
@@ -708,6 +723,60 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     }
 
+    @Override
+    public void updateProductName(int id, String actualName) {
+        SQLClient.updateProductName(id, actualName);
+    }
+
+    @Override
+    public void updateProductGroupName(int id, String actualGroupName) {
+        SQLClient.updateProductGroupName(id, actualGroupName);
+    }
+
+    @Override
+    public void updateProductCategory(int id, int actualCategoryId) {
+        SQLClient.updateProductCategory(id, actualCategoryId);
+    }
+
+    @Override
+    public void updateProductPrice(int id, int actualPrice) {
+        SQLClient.updateProductPrice(id, actualPrice);
+    }
+
+    @Override
+    public void updateProductVolume(int id, int actualVolume) {
+        SQLClient.updateProductVolume(id, actualVolume);
+    }
+
+    @Override
+    public void updateProductStrength(int id, double actualStrength) {
+        SQLClient.updateProductStrength(id, actualStrength);
+    }
+
+    @Override
+    public void updateImageID(int id, String imageID) {
+        SQLClient.updateImageID(id, imageID);
+    }
+
+    @Override
+    public void updateProductRemains(int warehouseID, int productID, int remains) {
+        SQLClient.updateProductRemains(warehouseID, productID, remains);
+    }
+
+    //Researcher Events
+    @Override
+    public void onResearcherReady() {
+        SERVER_LOGGER.info("Researcher ready");
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.RESEARCHER, Library.START)));
+    }
+
+
+    //TODO разобрать с этим
+//    @Override
+//    public void onUpdaterSQLException(Exception e) {
+//        SERVER_LOGGER.error("Updater SQL exception: " + e.getMessage());
+//        sendMsgToModeratorsAndAdmins(msgOf(header(Library.UPDATER, Library.EXCEPTION), e.getMessage()));
+//    }
     @Override
     public void onResearchSuccessfulEnd(int count) {
         SERVER_LOGGER.info("Researcher successful end, total updates: " + count);
@@ -744,6 +813,16 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     @Override
     public void onResearchError() {
         SERVER_LOGGER.error("Researcher error");
+    }
+
+    @Override
+    public void onResearcherException(String message) {
+        SERVER_LOGGER.error("Researcher exception: " + message);
+    }
+
+    @Override
+    public boolean isProductAlreadyInDB(String url) {
+        return SQLClient.isProductAlreadyInDB(url);
     }
 
     //Timer task's
