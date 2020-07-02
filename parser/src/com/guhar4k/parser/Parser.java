@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 class Parser {
-    IParser listener;
+    private IParser listener;
     static final Logger LOG = LogManager.getLogger("ParserLogger");
 
     private final String CATEGORY_DELIMITER = "col-lg-4 col-md-4 col-sm-6 col-xs-12";
@@ -39,6 +39,7 @@ class Parser {
             String name = category.text();
             String url = category.attr("href");
             LOG.info("Parsed: " + name + " " + url);
+            //Категории создаются только в одном месте. Дейстительно ли они нужны?
             resultList.add(new Category(name, url));
         });
         return resultList;
@@ -65,7 +66,7 @@ class Parser {
         }
     }
 
-    void getCategoriesID(ArrayList<Category> categories) {
+    void setIDForCategories(ArrayList<Category> categories) {
         LOG.info("Getting ID's for categories...");
         categories.forEach(category -> {
             int id = listener.getCategoryID(category.getName());

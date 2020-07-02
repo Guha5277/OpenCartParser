@@ -43,7 +43,7 @@ class Grabber extends Parser implements Runnable {
         }
         ArrayList<Category> categories = getCategories(page);
         insertAllCategories(categories);
-        getCategoriesID(categories);
+        setIDForCategories(categories);
         getCategoriesContent(categories);
 
         if (!insertAllWarehouses(getWarehousesList())) {
