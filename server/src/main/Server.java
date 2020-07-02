@@ -605,7 +605,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                     SERVER_LOGGER.error("No image for product with id: " + productID);
                     client.sendMessage(msgOf(header(Library.IMAGE, Library.NO_IMAGE), String.valueOf(productID)));
                 } else {
-                    SERVER_LOGGER.error("Image for the product with id " + productID + " is on disk");
+                    SERVER_LOGGER.info("Image for the product with id " + productID + " is on disk");
                     String imagePath = IMAGES_PATH + imageID;
                     sendImageToClient(client, productID, imagePath);
                 }

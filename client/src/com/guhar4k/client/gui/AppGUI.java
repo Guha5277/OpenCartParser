@@ -1,7 +1,8 @@
 package com.guhar4k.client.gui;
 
-import com.guhar4k.client.core.ControllerEvents;
 import com.guhar4k.client.core.Controller;
+import com.guhar4k.client.core.ControllerEvents;
+import com.guhar4k.product.Product;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
@@ -10,7 +11,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
-import com.guhar4k.product.Product;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -44,7 +44,7 @@ public class AppGUI extends Application implements ControllerEvents {
         listener = new Controller(this);
 
         LOGGER.info("Building GUI...");
-        FXMLLoader loginLoader = new FXMLLoader(getClass().getResource("login.fxml"));
+        FXMLLoader loginLoader = new FXMLLoader(getClass().getResource("/login.fxml"));
         Parent root = loginLoader.load();
         loginStage = primaryStage;
         primaryStage.setTitle("");
@@ -54,7 +54,7 @@ public class AppGUI extends Application implements ControllerEvents {
         loginController.setListener(listener);
         LOGGER.info("Login Stage built successful");
 
-        FXMLLoader clientLoader = new FXMLLoader(getClass().getResource("client.fxml"));
+        FXMLLoader clientLoader = new FXMLLoader(getClass().getResource("/client.fxml"));
         Parent clientRoot = clientLoader.load();
         Scene clientScene = new Scene(clientRoot);
         clientStage = new Stage();
@@ -69,7 +69,7 @@ public class AppGUI extends Application implements ControllerEvents {
         clientController.setApp(this);
         LOGGER.info("Client Stage built successful");
 
-        FXMLLoader filterLoader = new FXMLLoader((getClass().getResource("product_filter.fxml")));
+        FXMLLoader filterLoader = new FXMLLoader((getClass().getResource("/product_filter.fxml")));
         Parent filterRoot = filterLoader.load();
         Scene filterScene = new Scene(filterRoot);
         productFilterController = filterLoader.getController();
@@ -79,7 +79,7 @@ public class AppGUI extends Application implements ControllerEvents {
         productFilterStage.setResizable(false);
         LOGGER.info("Filter Stage built successful");
 
-        FXMLLoader imagesLoader = new FXMLLoader((getClass().getResource("image_test.fxml")));
+        FXMLLoader imagesLoader = new FXMLLoader((getClass().getResource("/image_test.fxml")));
         Parent imagesRoot = imagesLoader.load();
         Scene imagesScene = new Scene(imagesRoot);
         imageSceneController = imagesLoader.getController();
@@ -88,7 +88,7 @@ public class AppGUI extends Application implements ControllerEvents {
         imageStage.setResizable(false);
         LOGGER.info("Images Test Stage built successful");
 
-        FXMLLoader settingsLoader = new FXMLLoader((getClass().getResource("settings.fxml")));
+        FXMLLoader settingsLoader = new FXMLLoader((getClass().getResource("/settings.fxml")));
         Parent settingsRoot = settingsLoader.load();
         Scene settingsScene = new Scene(settingsRoot);
         settingsController = settingsLoader.getController();

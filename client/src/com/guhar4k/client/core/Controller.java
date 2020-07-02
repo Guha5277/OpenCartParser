@@ -21,7 +21,7 @@ import java.util.*;
 public class Controller implements SocketThreadListener, GUIEvents {
     private ControllerEvents listener;
 
-    private final String CONFIG_FILE = "config.properties";
+    private final String CONFIG_FILE = "/config.properties";
     private SocketThread socketThread;
     private String login;
     private String password;
