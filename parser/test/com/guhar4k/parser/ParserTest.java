@@ -6,29 +6,29 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 
 import java.io.IOException;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ParserTest {
     private String SAMPLE_URL = "https://ilfumoshop.ru/";
     private static String CATEGORIES_URL = "https://ilfumoshop.ru/zhidkost-dlya-zapravki-vejporov";
     private int CATEGORIES_COUNT = 9;
     private static Parser parser;
-    static List<Category> list;
+    static List<Category> categoriesList;
 
     @BeforeAll
     static void initAll() throws IOException {
         IParser listener = mock(IParser.class);
         parser = new Parser(listener);
         Document doc = parser.downloadPage(CATEGORIES_URL);
-        list = parser.getCategories(doc);
+        categoriesList = parser.getCategories(doc);
     }
 
     @Test
@@ -39,24 +39,24 @@ class ParserTest {
 
     @Test
     void parseCategoriesFromDocument() throws IOException {
-        assertNotNull(list);
+        assertNotNull(categoriesList);
     }
 
     @Test
     void checkForValidCategoriesCount() throws IOException{
-        int actualCount = list.size();
+        int actualCount = categoriesList.size();
         assertEquals(CATEGORIES_COUNT, actualCount);
     }
 
     @Test
     void getGroupsFromCategory() throws IOException {
-        Elements groups = parser.getInnerGroups(list.get(0).getUrl());
+        Elements groups = parser.getInnerGroups(categoriesList.get(0).getUrl());
         assertEquals(false, groups.isEmpty());
     }
 
     @Test
     void getInnerLiquids() throws IOException {
-        Elements groups = parser.getInnerGroups(list.get(0).getUrl());
+        Elements groups = parser.getInnerGroups(categoriesList.get(0).getUrl());
         Element group = groups.get(0).child(1).select("a").get(0);
         Elements products = parser.getInnerLiquids(group.attr("href"));
         assertEquals(false, products.isEmpty());
@@ -64,25 +64,17 @@ class ParserTest {
 
     @Test
     void parseProduct() throws IOException {
-        Elements groups = parser.getInnerGroups(list.get(0).getUrl());
+        Elements groups = parser.getInnerGroups(categoriesList.get(0).getUrl());
         Element group = groups.get(0).child(1).select("a").get(0);
         Elements products = parser.getInnerLiquids(group.attr("href"));
         Product product = parser.parseProduct(products.get(0).attr("href"));
         assertNotNull(product.getURL());
-        assertNotNull(product.getPrice());
         assertNotNull(product.getName());
-        assertNotNull(product.getStrength());
-        assertNotNull(product.getVolume());
     }
 
     @Test
-    void getCategoryElements() {
-
+    void getCategoryElements() throws IOException {
+        List<Element> categoryElements = parser.getCategoryElements(categoriesList.get(0));
+        assertNotNull(categoryElements);
     }
-
-    @Test
-    void insertProductToDB() {
-
-    }
-
 }
