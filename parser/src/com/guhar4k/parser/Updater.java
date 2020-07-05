@@ -81,7 +81,7 @@ public class Updater extends Parser implements Runnable {
         return totalUpdated;
     }
 
-    private boolean compareProducts(Product actualProduct, Product oldProduct) {
+    boolean compareProducts(Product actualProduct, Product oldProduct) {
         boolean productHaveUpdate = false;
         StringBuilder diffBuild = new StringBuilder();
         int id = oldProduct.getId();
