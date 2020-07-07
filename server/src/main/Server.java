@@ -446,7 +446,14 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     public void onReceiveString(SocketThread thread, Socket socket, String msg) {
         SERVER_LOGGER.info("Received message from client (" + msg.length() + ")");
         ClientThread client = (ClientThread) thread;
-        DataProtocol receivedData = Library.jsonToObject(msg);
+        DataProtocol receivedData;
+        try{
+            receivedData = Library.jsonToObject(msg);
+        } catch (com.google.gson.JsonSyntaxException e){
+            SERVER_LOGGER.error("Failed to parse JSON from string: " + e.getMessage());
+            return;
+        }
+
         byte[] header = receivedData.getHeader();
         /*TODO check client for authorize and get client access level*/
         switch (header[0]) {
