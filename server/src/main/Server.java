@@ -49,6 +49,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private static final Logger USERS_LOGGER = LogManager.getLogger("UsersLogger");
     private final String IMAGES_PATH = "Server/res/images/";
     private final int IMAGE_CHUNK_LIMIT = 30000;
+    private HashMap<ClientThread, Integer> productQueries;
 
     public static void main(String[] args) {
         new Server();
@@ -104,124 +105,13 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         return header;
     }
 
-    private List<Product> getProductsByFilter(ProductRequest request) {
-        String query = makeProductQuery(request);
-        return SQLClient.getProductsListByQuery(query);
-    }
-
-    private String makeProductQuery(ProductRequest request) {
-        StringBuilder query = new StringBuilder();
-        boolean hasWhere = false;
-        boolean stockRequired = request.isInStock();
-        String delimiter;
-        if (stockRequired) {
-            delimiter = " AND";
-            int regionID = request.getRegionID();
-            int storeID = request.getStoreID();
-
-            boolean singleStore = false;
-            String stockFilter;
-
-            if (regionID == -1 && storeID == -1) {
-                stockFilter = " AND product_remains.remains > 0";
-            } else if (storeID != -1) {
-                stockFilter = " AND product_remains.remains > 0 AND warehouse.id=" + storeID;
-                singleStore = true;
-            } else {
-                stockFilter = " AND product_remains.remains > 0 AND warehouse.region=" + regionID;
-            }
-
-            if (singleStore) {
-                query.append("SELECT liquids.id, liquids.name, liquids.price, liquids.volume, liquids.strength, liquids.category, liquids.url, product_remains.remains from product_remains ");
-            } else {
-                query.append("SELECT liquids.id, liquids.name, liquids.price, liquids.volume, liquids.strength, liquids.category, liquids.url, product_remains.remains, warehouse.id, warehouse.address from product_remains ");
-            }
-            query.append("inner join warehouse on product_remains.warehouse_id = warehouse.id ");
-            query.append("inner join liquids on product_remains.product_id = liquids.id");
-            query.append(stockFilter);
-
-        } else {
-            delimiter = " WHERE";
-            query.append("SELECT id, name, price, volume, strength, category, url from liquids");
-        }
-        int strengthStart = request.getStrengthStart();
-        int strengthEnd = request.getStrengthEnd();
-        int volumeStart = request.getVolumeStart();
-        int volumeEnd = request.getVolumeEnd();
-        int priceStart = request.getPriceStart();
-        int priceEnd = request.getPriceEnd();
-
-        if (strengthStart > -1 || strengthEnd > -1) {
-            hasWhere = true;
-            query.append(delimiter);
-            query.append(" strength");
-            if (strengthStart > -1 && strengthEnd > -1) {
-                query.append(" BETWEEN ");
-                query.append(strengthStart);
-                query.append(" AND ");
-                query.append(strengthEnd);
-            } else if (strengthStart > -1) {
-                query.append(" > ");
-                query.append(strengthStart);
-            } else {
-                query.append(" < ");
-                query.append(strengthEnd);
-            }
-        }
-
-        if (volumeStart > -1 || volumeEnd > -1) {
-            if (hasWhere) {
-                query.append(" AND volume");
-            } else {
-                hasWhere = true;
-                query.append(" WHERE volume");
-            }
-            if (volumeStart > -1 && volumeEnd > -1) {
-                query.append(" BETWEEN ");
-                query.append(volumeStart);
-                query.append(" AND ");
-                query.append(volumeEnd);
-            } else if (volumeStart > -1) {
-                query.append(" > ");
-                query.append(volumeStart);
-            } else {
-                query.append(" < ");
-                query.append(volumeEnd);
-            }
-        }
-
-        if (priceStart > -1 || priceEnd > -1) {
-            if (hasWhere) {
-                query.append(" AND price");
-            } else {
-                query.append(" WHERE price");
-            }
-            if (priceStart > -1 && priceEnd > -1) {
-                query.append(" BETWEEN ");
-                query.append(priceStart);
-                query.append(" AND ");
-                query.append(priceEnd);
-            } else if (priceStart > -1) {
-                query.append(" > ");
-                query.append(priceStart);
-            } else {
-                query.append(" < ");
-                query.append(priceEnd);
-            }
-        }
-        return query.toString();
+    private void noResultsByQuery(ClientThread client) {
+        SERVER_LOGGER.info("No result found for PRODUCT_REQUEST");
+        client.sendMessage(msgOf(header(Library.PRODUCT_REQUEST, Library.EMPTY)));
     }
 
     private void sendProductList(List<Product> list, ClientThread client) {
         int listSize = list.size();
-        if (listSize == 0) {
-            SERVER_LOGGER.info("No result found for PRODUCT_REQUEST");
-            sendMsgToModeratorsAndAdmins(msgOf(header(Library.PRODUCT_REQUEST, Library.EMPTY)));
-            return;
-        }
-
-        SERVER_LOGGER.info(listSize + " products found for PRODUCT_REQUEST");
-
         client.sendMessage(msgOf(header(Library.PRODUCT_LIST_START)));
 
         for (Product p : list) {
@@ -447,9 +337,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         SERVER_LOGGER.info("Received message from client (" + msg.length() + ")");
         ClientThread client = (ClientThread) thread;
         DataProtocol receivedData;
-        try{
+        try {
             receivedData = Library.jsonToObject(msg);
-        } catch (com.google.gson.JsonSyntaxException e){
+        } catch (com.google.gson.JsonSyntaxException e) {
             SERVER_LOGGER.error("Failed to parse JSON from string: " + e.getMessage());
             return;
         }
@@ -596,10 +486,22 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 }
                 break;
             case Library.PRODUCT_REQUEST:
+                //TODO accept or decline new query method
                 USERS_LOGGER.info("PRODUCT REQUEST...");
                 ProductRequest request = Library.productRequestFromJson(receivedData.getData());
-                List<Product> products = getProductsByFilter(request);
-                sendProductList(products, client);
+
+                String[] queries = QueryMaker.make(request);
+
+                int productsCount = SQLClient.getCountForProductRequest(queries[0]);
+                SERVER_LOGGER.info("PRODUCTS COUNT BY QUERY : " + productsCount);
+                if (productsCount == 0){
+                    SERVER_LOGGER.info("NO RESULTS!");
+                    noResultsByQuery(client);
+                } else {
+                    List<Product> products = SQLClient.getProductsListByQuery2(queries[1]);
+                    sendProductList(products, client);
+                }
+
                 break;
             case Library.IMAGE:
                 USERS_LOGGER.info("IMAGE REQUEST...");
@@ -618,6 +520,8 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 }
         }
     }
+
+
 
     @Override
     public void onSocketThreadException(SocketThread thread, Exception e) {

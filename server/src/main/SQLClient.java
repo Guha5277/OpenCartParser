@@ -6,6 +6,7 @@ import com.guhar4k.product.Warehouse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -170,6 +171,46 @@ class SQLClient {
         }
         return null;
     }
+
+
+    static int getCountForProductRequest(String query) {
+        LOG.info("Product count for request query: " + query);
+        int count = 0;
+        try (Statement statement = connection.createStatement();
+             ResultSet set = statement.executeQuery(query)) {
+            if (set.next()) {
+                count = set.getInt("count");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return count;
+    }
+
+    static List<Product> getProductsListByQuery2(String query) {
+        LOG.info("Product request query: " + query);
+        List<Product> result = new ArrayList<>();
+        try (Statement statement = connection.createStatement();
+             ResultSet set = statement.executeQuery(query)) {
+            if (set != null) {
+                while (set.next()) {
+                    int productID = set.getInt(1);
+                    String productName = set.getString(2);
+                    int price = set.getInt(3);
+                    int volume = set.getInt(4);
+                    int strength = set.getInt(5);
+                    int category = set.getInt(6);
+                    String url = set.getString(7);
+                    Product product = new Product(productID, productName, url, price, category, volume, strength);
+                    result.add(product);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
 
     static List<Product> getProductsListByQuery(String query) {
         LOG.info("Product request query: " + query);

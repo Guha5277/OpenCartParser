@@ -322,6 +322,7 @@ public class Controller implements SocketThreadListener, GUIEvents {
             }
             request = new ProductRequest(stock, regionID, storeID, strengthStart, strengthEnd, volumeStart, volumeEnd, priceStart, priceEnd);
         }
+        LOGGER.info(Library.productRequestToJson(request));
         socketThread.sendMessage(Library.productRequestToJson(request));
         listener.onProductRequestSent(stock, city, store);
     }
@@ -665,15 +666,15 @@ public class Controller implements SocketThreadListener, GUIEvents {
                 }
                 break;
             case Library.PRODUCT_LIST:
-                products.add(Library.productFromJson(receivedData.getData()));
+                //products.add(Library.productFromJson(receivedData.getData()));
                 listener.onProductFound(Library.productFromJson(receivedData.getData()));
                 break;
             case Library.PRODUCT_LIST_START:
-                products.clear();
+                //products.clear();
                 break;
             case Library.PRODUCT_LIST_END:
                 LOGGER.warn("Received products list by user request");
-                listener.allProductsReceived(products);
+                //listener.allProductsReceived(products);
                 break;
         }
     }
