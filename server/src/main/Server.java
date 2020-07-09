@@ -490,15 +490,15 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 USERS_LOGGER.info("PRODUCT REQUEST...");
                 ProductRequest request = Library.productRequestFromJson(receivedData.getData());
 
-                String[] queries = QueryMaker.make(request);
+                QueryMaker queryMaker = new QueryMaker(request);
 
-                int productsCount = SQLClient.getCountForProductRequest(queries[0]);
+                int productsCount = SQLClient.getCountForProductRequest(queryMaker.getCountQuery());
                 SERVER_LOGGER.info("PRODUCTS COUNT BY QUERY : " + productsCount);
                 if (productsCount == 0){
                     SERVER_LOGGER.info("NO RESULTS!");
                     noResultsByQuery(client);
                 } else {
-                    List<Product> products = SQLClient.getProductsListByQuery2(queries[1]);
+                    List<Product> products = SQLClient.getProductsListByQuery2(queryMaker.getQuery());
                     sendProductList(products, client);
                 }
 

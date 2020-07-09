@@ -3,19 +3,31 @@ package main;
 import com.guhar4k.library.ProductRequest;
 
 class QueryMaker {
-    private QueryMaker() {
+    private String countQuery;
+    private String query;
+
+    QueryMaker(ProductRequest request) {
+        make(request);
     }
 
-    static String[] make(ProductRequest request) {
-        StringBuilder query = new StringBuilder();
-        StringBuilder distinctQuery = new StringBuilder();
+    public String getCountQuery() {
+        return countQuery;
+    }
+
+    public String getQuery() {
+        return query;
+    }
+
+    private void make(ProductRequest request) {
+        StringBuilder queryBuilder = new StringBuilder();
+        StringBuilder countQueryBuilder = new StringBuilder();
         boolean stockRequired = request.isInStock();
 
         if (stockRequired) {
-            query.append(parseStock(distinctQuery, request.getRegionID(), request.getStoreID()));
+            queryBuilder.append(parseStock(countQueryBuilder, request.getRegionID(), request.getStoreID()));
         } else {
-            distinctQuery.append("SELECT COUNT(id) AS count from liquids");
-            query.append("SELECT id, name, price, volume, strength, category, url from liquids");
+            countQueryBuilder.append("SELECT COUNT(id) AS count from liquids");
+            queryBuilder.append("SELECT id, name, price, volume, strength, category, url from liquids");
         }
 
         int strengthStart = request.getStrengthStart();
@@ -29,30 +41,33 @@ class QueryMaker {
 
         if (strengthStart > -1 || strengthEnd > -1) {
             String strengthParam = parseParam(hasWhere, "strength", strengthStart, strengthEnd);
-            distinctQuery.append(strengthParam);
-            query.append(strengthParam);
+            countQueryBuilder.append(strengthParam);
+            queryBuilder.append(strengthParam);
             hasWhere = true;
         }
 
         if (volumeStart > -1 || volumeEnd > -1) {
             String volumeParam = parseParam(hasWhere, "volume", volumeStart, volumeEnd);
-            distinctQuery.append(volumeParam);
-            query.append(volumeParam);
+            countQueryBuilder.append(volumeParam);
+            queryBuilder.append(volumeParam);
             hasWhere = true;
         }
 
         if (priceStart > -1 || priceEnd > -1) {
             String priceParam = parseParam(hasWhere, "price", priceStart, priceEnd);
-            distinctQuery.append(priceParam);
-            query.append(priceParam);
+            countQueryBuilder.append(priceParam);
+            queryBuilder.append(priceParam);
         }
 
-        query.append(" LIMIT 100");
+        queryBuilder.append(" LIMIT 100");
 
-        return new String[] {distinctQuery.toString(), query.toString()};
+        countQuery = countQueryBuilder.toString();
+        query = queryBuilder.toString();
+
+        //return new String[] {countQueryBuilder.toString(), queryBuilder.toString()};
     }
 
-    private static String parseStock(StringBuilder distinctQuery, int regionID, int storeID) {
+    private String parseStock(StringBuilder distinctQuery, int regionID, int storeID) {
         StringBuilder resultString = new StringBuilder();
         distinctQuery.append("SELECT COUNT (DISTINCT liquids.id) AS count from liquids " +
                 "inner join product_remains on product_remains.product_id = liquids.id ");
@@ -87,7 +102,7 @@ class QueryMaker {
         return resultString.toString();
     }
 
-    private static String parseParam(boolean hasWhere, String paramName, double paramStart, double paramEnd) {
+    private String parseParam(boolean hasWhere, String paramName, double paramStart, double paramEnd) {
         StringBuilder resultString = new StringBuilder();
 
         if (hasWhere) {
