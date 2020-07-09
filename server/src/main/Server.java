@@ -110,14 +110,14 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         client.sendMessage(msgOf(header(Library.PRODUCT_REQUEST, Library.EMPTY)));
     }
 
-    private void sendProductList(List<Product> list, ClientThread client) {
+    private void sendProductList(List<Product> list, ClientThread client, boolean hasNextPage) {
         int listSize = list.size();
         client.sendMessage(msgOf(header(Library.PRODUCT_LIST_START)));
 
         for (Product p : list) {
             client.sendMessage(Library.productToJson(p));
         }
-        client.sendMessage(msgOf(header(Library.PRODUCT_LIST_END)));
+        client.sendMessage(msgOf(header(Library.PRODUCT_LIST_END), String.valueOf(hasNextPage)));
 
         SERVER_LOGGER.info(listSize + " products sent to client successful");
     }
@@ -486,23 +486,30 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 }
                 break;
             case Library.PRODUCT_REQUEST:
-                //TODO accept or decline new query method
                 USERS_LOGGER.info("PRODUCT REQUEST...");
-                ProductRequest request = Library.productRequestFromJson(receivedData.getData());
 
-                QueryMaker queryMaker = new QueryMaker(request);
-
-                int productsCount = SQLClient.getCountForProductRequest(queryMaker.getCountQuery());
-                SERVER_LOGGER.info("PRODUCTS COUNT BY QUERY : " + productsCount);
-                if (productsCount == 0){
-                    SERVER_LOGGER.info("NO RESULTS!");
-                    noResultsByQuery(client);
-                } else {
-                    List<Product> products = SQLClient.getProductsListByQuery2(queryMaker.getQuery());
-                    sendProductList(products, client);
+                switch (header[1]){
+                    case Library.NEW:
+                        ProductRequest request = Library.productRequestFromJson(receivedData.getData());
+                        QueryMaker queryMaker = new QueryMaker(request);
+                        int resultsCount = SQLClient.getCountForProductRequest(queryMaker.getCountQuery());
+                        SERVER_LOGGER.info("PRODUCTS COUNT BY QUERY : " + resultsCount);
+                        if (resultsCount == 0){
+                            SERVER_LOGGER.info("NO RESULTS!");
+                            noResultsByQuery(client);
+                        } else {
+                            queryMaker.setResultsCount(resultsCount);
+                            List<Product> products = SQLClient.getProductsListByQuery2(queryMaker.getQuery());
+                            boolean hasNextPage = queryMaker.hasNext();
+                            if (hasNextPage) {
+                                //TODO save client + queryMaker to map
+                            }
+                            sendProductList(products, client, hasNextPage);
+                        }
+                        break;
+                    case Library.NEXT:
+                        break;
                 }
-
-                break;
             case Library.IMAGE:
                 USERS_LOGGER.info("IMAGE REQUEST...");
                 int productID = Integer.parseInt(receivedData.getData());

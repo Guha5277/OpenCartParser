@@ -56,6 +56,8 @@ public class Library {
     public static final byte NO_IMAGE = 42;
     public static final byte FULL = 43;
     public static final byte INFO = 44;
+    public static final byte NEW = 45;
+    public static final byte NEXT = 46;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
@@ -107,7 +109,7 @@ public class Library {
 
     public static String productRequestToJson(ProductRequest request){
         String data = GSON.toJson(request);
-        DataProtocol message = new DataProtocol(new byte[]{PRODUCT_REQUEST}, data);
+        DataProtocol message = new DataProtocol(new byte[]{PRODUCT_REQUEST, NEW}, data);
         return GSON.toJson(message);
     }
 
