@@ -49,7 +49,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private static final Logger USERS_LOGGER = LogManager.getLogger("UsersLogger");
     private final String IMAGES_PATH = "Server/res/images/";
     private final int IMAGE_CHUNK_LIMIT = 30000;
-    private HashMap<ClientThread, Integer> productQueries;
+    private HashMap<ClientThread, QueryMaker> productQueries = new HashMap<>();
 
     public static void main(String[] args) {
         new Server();
@@ -239,20 +239,20 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
             byte[] encodedFileContent = encodeString.getBytes();
             int imageLength = encodedFileContent.length;
 
-            SERVER_LOGGER.info("Image length: " + imageLength);
+            //SERVER_LOGGER.info("Image length: " + imageLength);
 
             if (imageLength > IMAGE_CHUNK_LIMIT) {
-                SERVER_LOGGER.info("Image length is out of limit (" + IMAGE_CHUNK_LIMIT + ")");
+                //SERVER_LOGGER.info("Image length is out of limit (" + IMAGE_CHUNK_LIMIT + ")");
                 int subArraysCount = imageLength / IMAGE_CHUNK_LIMIT;
                 if (imageLength % IMAGE_CHUNK_LIMIT != 0) {
                     subArraysCount++;
                 }
-                SERVER_LOGGER.info("Image chunks: " + subArraysCount);
+                //SERVER_LOGGER.info("Image chunks: " + subArraysCount);
 
                 int indexStart = 0;
                 byte[][] subArrays = new byte[subArraysCount][];
                 for (int i = 0; i < subArraysCount; i++) {
-                    SERVER_LOGGER.info("Create chink #" + (i + 1));
+                    //SERVER_LOGGER.info("Create chink #" + (i + 1));
                     int indexEnd = IMAGE_CHUNK_LIMIT * (i + 1);
                     subArrays[i] = Arrays.copyOfRange(encodedFileContent, indexStart, indexEnd < imageLength ? indexEnd : imageLength);
                     String data;
@@ -277,9 +277,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
             } else {
                 client.sendMessage(msgOf(header(Library.IMAGE, Library.FULL), productID + Library.DELIMITER + encodeString));
             }
-            SERVER_LOGGER.info("Successful sent image " + imagePath + " to client " + (client.getNickname() == null ? "Anonymous" : client.getNickname()));
+            //SERVER_LOGGER.info("Successful sent image " + imagePath + " to client " + (client.getNickname() == null ? "Anonymous" : client.getNickname()));
         } catch (IOException e) {
-            SERVER_LOGGER.error("Failed to send image " + imagePath + " to client " + (client.getNickname() == null ? "Anonymous" : client.getNickname()));
+            //SERVER_LOGGER.error("Failed to send image " + imagePath + " to client " + (client.getNickname() == null ? "Anonymous" : client.getNickname()));
         }
     }
 
@@ -334,7 +334,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     @Override
     public void onReceiveString(SocketThread thread, Socket socket, String msg) {
-        SERVER_LOGGER.info("Received message from client (" + msg.length() + ")");
+        //SERVER_LOGGER.info("Received message from client (" + msg.length() + ")");
         ClientThread client = (ClientThread) thread;
         DataProtocol receivedData;
         try {
@@ -487,41 +487,74 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 break;
             case Library.PRODUCT_REQUEST:
                 USERS_LOGGER.info("PRODUCT REQUEST...");
-
                 switch (header[1]){
                     case Library.NEW:
+                        USERS_LOGGER.info("New product request");
                         ProductRequest request = Library.productRequestFromJson(receivedData.getData());
-                        QueryMaker queryMaker = new QueryMaker(request);
+
+                        boolean isNewClient;
+
+                        QueryMaker queryMaker = productQueries.get(client);
+                        if (queryMaker == null) {
+                            USERS_LOGGER.info("New client: " + client.getNickname());
+                            queryMaker = new QueryMaker(request);
+                            isNewClient = true;
+                        } else {
+                            USERS_LOGGER.info("Client was already in queryList");
+                            queryMaker.makeNewQuery(request);
+                            isNewClient = false;
+                        }
+
                         int resultsCount = SQLClient.getCountForProductRequest(queryMaker.getCountQuery());
-                        SERVER_LOGGER.info("PRODUCTS COUNT BY QUERY : " + resultsCount);
+
                         if (resultsCount == 0){
-                            SERVER_LOGGER.info("NO RESULTS!");
+                            USERS_LOGGER.info("No result for client query");
                             noResultsByQuery(client);
                         } else {
                             queryMaker.setResultsCount(resultsCount);
                             List<Product> products = SQLClient.getProductsListByQuery2(queryMaker.getQuery());
                             boolean hasNextPage = queryMaker.hasNext();
-                            if (hasNextPage) {
+                            if (hasNextPage && isNewClient) {
+                                USERS_LOGGER.info("Client was stored to the queryList");
                                 //TODO save client + queryMaker to map
+                                productQueries.put(client, queryMaker);
                             }
                             sendProductList(products, client, hasNextPage);
                         }
                         break;
                     case Library.NEXT:
+                        SERVER_LOGGER.info("Next page of products request");
+                        QueryMaker maker = productQueries.get(client);
+                        if (maker == null) {
+                            //TODO send error to client
+                            USERS_LOGGER.error("No client: " + client.getNickname() + " in Queries List");
+                            return;
+                        }
+
+                        if (!maker.hasNext()) {
+                            //TODO send error to client
+                            USERS_LOGGER.error("The list of product has no next page. Client: " + client.getNickname());
+                            return;
+                        }
+
+                        USERS_LOGGER.info("Getting " + (maker.getCurrentPage() + 1) + "/" + maker.getPages() + " page");
+                        List<Product> products = SQLClient.getProductsListByQuery2(maker.getNext());
+                        sendProductList(products, client, maker.hasNext());
                         break;
                 }
+                break;
             case Library.IMAGE:
-                USERS_LOGGER.info("IMAGE REQUEST...");
+                //USERS_LOGGER.info("IMAGE REQUEST...");
                 int productID = Integer.parseInt(receivedData.getData());
                 String imageID = SQLClient.getImageID(productID);
                 if (imageID == null) {
                     SERVER_LOGGER.error("FAILED to get an image from DB for product with id: " + productID);
                     client.sendMessage(msgOf(header(Library.IMAGE, Library.EXCEPTION), String.valueOf(productID)));
                 } else if (imageID.equals("NO_IMAGE")) {
-                    SERVER_LOGGER.error("No image for product with id: " + productID);
+                    //SERVER_LOGGER.error("No image for product with id: " + productID);
                     client.sendMessage(msgOf(header(Library.IMAGE, Library.NO_IMAGE), String.valueOf(productID)));
                 } else {
-                    SERVER_LOGGER.info("Image for the product with id " + productID + " is on disk");
+                    //SERVER_LOGGER.info("Image for the product with id " + productID + " is on disk");
                     String imagePath = IMAGES_PATH + imageID;
                     sendImageToClient(client, productID, imagePath);
                 }

@@ -14,6 +14,7 @@ public class ClientThread extends SocketThread {
 
     ClientThread(SocketThreadListener listener, String name, Socket socket) {
         super(listener, name, socket);
+        nickname = "Anon" +socket.getInetAddress();
     }
 
     void authAccept(String username){
@@ -25,7 +26,6 @@ public class ClientThread extends SocketThread {
         sendMessage(msg);
         close();
     }
-
 
     void msgFormatError(String msg){
         sendMessage(msg);

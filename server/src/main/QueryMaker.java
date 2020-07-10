@@ -1,7 +1,6 @@
 package main;
 
 import com.guhar4k.library.ProductRequest;
-import org.omg.CosNaming.NamingContextExtPackage.StringNameHelper;
 
 class QueryMaker {
     private static final int pageSize = 100;
@@ -20,14 +19,21 @@ class QueryMaker {
         return countQuery;
     }
 
-    boolean hasNext(){
-        return currentPage * pageSize < resultsCount;
+    boolean hasNext() {
+        return (currentPage + 1) <= pages;
     }
 
-    String getNext(){
+    void makeNewQuery(ProductRequest request) {
+        int resultsCount = 0;
+        int pages = 0;
+        int currentPage = 0;
+        make(request);
+    }
+
+    String getNext() {
         if (!hasNext()) throw new IllegalStateException("The query maker has no next page");
-        currentPage++;
         String limit = String.format(" LIMIT %d, %d", currentPage * pageSize, pageSize);
+        currentPage++;
         return query + limit;
     }
 
@@ -41,7 +47,7 @@ class QueryMaker {
         calcPages(resultsCount);
     }
 
-    private void calcPages(int resultsCount){
+    private void calcPages(int resultsCount) {
         pages = resultsCount / pageSize;
         int remainder = resultsCount % pageSize;
         if (remainder > 0) pages++;
@@ -152,5 +158,18 @@ class QueryMaker {
             resultString.append(paramEnd);
         }
         return resultString.toString();
+    }
+
+    public int getPages() {
+        return pages;
+    }
+
+    public int getCurrentPage() {
+        return currentPage;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof QueryMaker && ((QueryMaker) obj).getQuery().equals(query);
     }
 }
