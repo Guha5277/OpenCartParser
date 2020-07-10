@@ -327,6 +327,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     public void onSocketThreadStop(SocketThread thread) {
         ClientThread clientThread = (ClientThread) thread;
         clients.remove(thread);
+        productQueries.remove(thread);
         sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.COUNT), String.valueOf(clients.size())));
         sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.LIST), getListOfClients()));
         USERS_LOGGER.info("Client disconnected: " + clientThread.getNickname());
