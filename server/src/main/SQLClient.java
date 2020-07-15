@@ -13,10 +13,8 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Date;
-import java.util.List;
-import java.util.Locale;
 
 class SQLClient {
     private static Connection connection;
@@ -493,6 +491,21 @@ class SQLClient {
             LOG.error("Failed to get image from DB. Query: " + query + ". Error: " + e.getMessage());
         }
         return null;
+    }
+
+    static ArrayList<int[]> getProductRemains(int productID) {
+//        Map<Integer, Integer> result = new HashMap<>();
+        ArrayList<int[]> result = new ArrayList<>();
+        String query = String.format("SELECT warehouse_id, remains from " + REMAINS_TABLE + " where product_id = %d and remains > 0", productID);
+        LOG.info(query);
+        try (ResultSet set = statement.executeQuery(query)) {
+            while (set.next()){
+                result.add(new int[]{set.getInt(1), set.getInt(2)});
+            }
+        } catch (SQLException e) {
+            LOG.error("Failed to get image from DB. Query: " + query + ". Error: " + e.getMessage());
+        }
+        return result;
     }
 }
 

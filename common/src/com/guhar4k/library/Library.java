@@ -58,6 +58,7 @@ public class Library {
     public static final byte INFO = 44;
     public static final byte NEW = 45;
     public static final byte NEXT = 46;
+    public static final byte REMAINS = 47;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 

@@ -122,6 +122,22 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         SERVER_LOGGER.info(listSize + " products sent to client successful");
     }
 
+    private void sendRemains(SocketThread thread, List<int[]> resultList, int productID) {
+        StringBuilder sb = new StringBuilder();
+
+        for(int[] arr : resultList) {
+            sb.append(arr[0]);
+            sb.append(":");
+            sb.append(arr[1]);
+            sb.append(Library.DELIMITER);
+        }
+
+        sb.append(productID);
+
+        thread.sendMessage(msgOf(header(Library.REMAINS), sb.toString()));
+        SERVER_LOGGER.info("Remains successful sent to client. Size: " + resultList.size());
+    }
+
     private void sendWarehousesList(SocketThread thread) {
         warehouses = SQLClient.getAllWarehouses();
         if (warehouses == null) {
@@ -358,55 +374,56 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 authorizeClient(client, receivedData.getData());
                 break;
             case Library.SERVER_INFO:
-                if (!client.isAuthorized()) {
-                    USERS_LOGGER.error("GET SERVER_INFO FAILED cause client is not authorized!");
-//                    client.sendMessage(msgOf()(Library.SERVER_INFO, Library.DENIED));
-                    client.sendMessage(msgOf(header(Library.SERVER_INFO, Library.DENIED)));
-                    clients.remove(client);
-                    client.close();
-                } else {
-                    int accessLevel = client.getAccessLevel();
-                    if (accessLevel == ClientThread.ADMIN || accessLevel == ClientThread.MODERATOR) {
-                        USERS_LOGGER.info("GET SERVER_INFO ACCEPTED for " + client.getNickname());
-                        String serverInfo = accessLevel + Library.DELIMITER +
-                                serverStartAt + Library.DELIMITER +
-                                productsCount + Library.DELIMITER +
-                                warehousesCount + Library.DELIMITER +
-                                clients.size();
+//                if (!client.isAuthorized()) {
+//                    USERS_LOGGER.error("GET SERVER_INFO FAILED cause client is not authorized!");
+////                    client.sendMessage(msgOf()(Library.SERVER_INFO, Library.DENIED));
+//                    client.sendMessage(msgOf(header(Library.SERVER_INFO, Library.DENIED)));
+//                    clients.remove(client);
+//                    client.close();
+//                } else {
+                int accessLevel = client.getAccessLevel();
+                if (accessLevel == ClientThread.ADMIN || accessLevel == ClientThread.MODERATOR) {
+                    USERS_LOGGER.info("GET SERVER_INFO ACCEPTED for " + client.getNickname());
+                    String serverInfo = accessLevel + Library.DELIMITER +
+                            serverStartAt + Library.DELIMITER +
+                            productsCount + Library.DELIMITER +
+                            warehousesCount + Library.DELIMITER +
+                            clients.size();
 //                        client.sendMessage(msgOf()(Library.SERVER_INFO, Library.ACCEPTED, serverInfo));
-                        client.sendMessage(msgOf(header(Library.SERVER_INFO, Library.ACCEPTED), serverInfo));
+                    client.sendMessage(msgOf(header(Library.SERVER_INFO, Library.ACCEPTED), serverInfo));
 
-                        String updaterInfo = updaterLastRunDate + Library.DELIMITER +
-                                updaterAutostartState + Library.DELIMITER +
-                                updaterDaysInterval + Library.DELIMITER +
-                                updaterAutostartTime + Library.DELIMITER +
-                                lastUpdatedProductPosition;
+                    String updaterInfo = updaterLastRunDate + Library.DELIMITER +
+                            updaterAutostartState + Library.DELIMITER +
+                            updaterDaysInterval + Library.DELIMITER +
+                            updaterAutostartTime + Library.DELIMITER +
+                            lastUpdatedProductPosition;
 //                        client.sendMessage(msgOf()(Library.UPDATER, Library.INFO, updaterInfo));
-                        client.sendMessage(msgOf(header(Library.UPDATER, Library.INFO), updaterInfo));
+                    client.sendMessage(msgOf(header(Library.UPDATER, Library.INFO), updaterInfo));
 
-                        String researcherInfo = researcherLastRunDate + Library.DELIMITER +
-                                researcherAutostartState + Library.DELIMITER +
-                                researcherDaysInterval + Library.DELIMITER +
-                                researcherAutostartTime;
-                        client.sendMessage(msgOf(header(Library.RESEARCHER, Library.INFO), researcherInfo));
-                        sendWarehousesList(thread);
+                    String researcherInfo = researcherLastRunDate + Library.DELIMITER +
+                            researcherAutostartState + Library.DELIMITER +
+                            researcherDaysInterval + Library.DELIMITER +
+                            researcherAutostartTime;
+                    client.sendMessage(msgOf(header(Library.RESEARCHER, Library.INFO), researcherInfo));
+                    sendWarehousesList(thread);
 
-                        sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.COUNT), String.valueOf(clients.size())));
-                        sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.LIST), getListOfClients()));
+                    sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.COUNT), String.valueOf(clients.size())));
+                    sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.LIST), getListOfClients()));
 
 
-                    } else {
-                        USERS_LOGGER.error("GET SERVER_INFO FAILED cause client access level is lower than required: " + accessLevel);
-                        client.sendMessage(msgOf(header(Library.SERVER_INFO, Library.DENIED)));
-                    }
+                } else {
+                    sendWarehousesList(thread);
+//                        USERS_LOGGER.error("GET SERVER_INFO FAILED cause client access level is lower than required: " + accessLevel);
+//                        client.sendMessage(msgOf(header(Library.SERVER_INFO, Library.DENIED)));
                 }
+//                }
                 break;
             case Library.UPDATER:
                 USERS_LOGGER.info("UPDATER...");
-                int accessLevel = client.getAccessLevel();
+                int accessLevel2 = client.getAccessLevel();
                 String nickname = client.getNickname();
-                if (accessLevel > 2) {
-                    USERS_LOGGER.error("ACCESS TO UPDATER DENIED cause client access level is lower than required: " + accessLevel);
+                if (accessLevel2 > 2) {
+                    USERS_LOGGER.error("ACCESS TO UPDATER DENIED cause client access level is lower than required: " + accessLevel2);
                     client.sendMessage(msgOf(header(Library.UPDATER, Library.DENIED)));
                     return;
                 }
@@ -488,7 +505,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 break;
             case Library.PRODUCT_REQUEST:
                 USERS_LOGGER.info("PRODUCT REQUEST...");
-                switch (header[1]){
+                switch (header[1]) {
                     case Library.NEW:
                         USERS_LOGGER.info("New product request");
                         ProductRequest request = Library.productRequestFromJson(receivedData.getData());
@@ -508,7 +525,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
                         int resultsCount = SQLClient.getCountForProductRequest(queryMaker.getCountQuery());
 
-                        if (resultsCount == 0){
+                        if (resultsCount == 0) {
                             USERS_LOGGER.info("No result for client query");
                             noResultsByQuery(client);
                         } else {
@@ -544,6 +561,16 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                         break;
                 }
                 break;
+            case Library.REMAINS:
+                SERVER_LOGGER.info("REMAINS...");
+                int id = Integer.parseInt(receivedData.getData());
+                List<int[]> result = SQLClient.getProductRemains(id);
+                if (result == null){
+                    SERVER_LOGGER.error("Failed to get remains!");
+                    return;
+                }
+                sendRemains(thread, result, id);
+                break;
             case Library.IMAGE:
                 //USERS_LOGGER.info("IMAGE REQUEST...");
                 int productID = Integer.parseInt(receivedData.getData());
@@ -561,7 +588,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 }
         }
     }
-
 
 
     @Override

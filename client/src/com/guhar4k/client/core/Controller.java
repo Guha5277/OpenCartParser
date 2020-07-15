@@ -30,7 +30,7 @@ public class Controller implements SocketThreadListener, GUIEvents {
     private int researcherProductsTotal;
     private double researcherProgressPoint;
     private List<Warehouse> warehouses = new ArrayList<>();
-    private Map<String, List<String>> someNewMap = new HashMap<>();
+    private Map<String, List<String>> warehousesMap = new HashMap<>();
     private ArrayList<Product> products = new ArrayList<>();
     private boolean isConnected;
     private long serverStartTime;
@@ -283,7 +283,7 @@ public class Controller implements SocketThreadListener, GUIEvents {
     }
 
     private List getStoreList(String selectedCity) {
-        return someNewMap.get(selectedCity);
+        return warehousesMap.get(selectedCity);
     }
 
 
@@ -433,13 +433,13 @@ public class Controller implements SocketThreadListener, GUIEvents {
                     while (iterator.hasNext()) {
                         Warehouse warehouse = iterator.next();
                         if (warehouse.getRegion() == region) {
-                            if (!someNewMap.containsKey(city)) {
+                            if (!warehousesMap.containsKey(city)) {
                                 List<String> tempList = new ArrayList<>();
                                 tempList.add("Все магазины");
                                 tempList.add(warehouse.getAddress());
-                                someNewMap.put(city, tempList);
+                                warehousesMap.put(city, tempList);
                             } else {
-                                someNewMap.get(city).add(warehouse.getAddress());
+                                warehousesMap.get(city).add(warehouse.getAddress());
                             }
                             iterator.remove();
                             index = 0;
