@@ -13,7 +13,7 @@ public interface MessageHandlerListener {
     void serverInfoForAdmin(ClientThread client);
     void serverInfoForGuest(ClientThread client);
 
-    void onUpdaterStartRequest();
+    void onUpdaterStartRequest(Boolean continueUpdate);
     void onUpdaterStopRequest();
     void onUpdaterAutostartStateChanged(boolean status);
     void onUpdaterAutostartIntervalChanged(int interval);
@@ -25,7 +25,7 @@ public interface MessageHandlerListener {
     void onResearcherAutostartIntervalChanged(int interval);
     void onResearcherAutostartTimeChanged(LocalTime autostartTime);
 
-    ClientThread getUserRole(String nickname);
+    ClientThread getUser(String nickname);
     void onKickUserRequest(ClientThread client, ClientThread targetUser);
     void onBanUserRequest(ClientThread client, ClientThread targetUser);
 

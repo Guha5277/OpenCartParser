@@ -7,10 +7,13 @@ public class ClientThread extends SocketThread {
     public static final int MODERATOR = 2;
     public static final int USER = 3;
     public static final int GHOST = 4;
+    private final int ERRORS_LIMIT = 10;
 
     private String nickname;
     private boolean isAuthorized;
     private int accessLevel = GHOST;
+
+    private int errorsCount;
 
     ClientThread(SocketThreadListener listener, String name, Socket socket) {
         super(listener, name, socket);
@@ -27,9 +30,16 @@ public class ClientThread extends SocketThread {
         close();
     }
 
-    void msgFormatError(String msg){
+    void messageFormatException(String msg){
         sendMessage(msg);
-        close();
+        errorsCount++;
+        checkErrorsLimit();
+    }
+
+    void permissionDenied(String msg){
+        sendMessage(msg);
+        errorsCount++;
+        checkErrorsLimit();
     }
 
     boolean isAuthorized() {
@@ -46,5 +56,11 @@ public class ClientThread extends SocketThread {
 
     void setAccessLevel(int accessLevel) {
         this.accessLevel = accessLevel;
+    }
+
+    private void checkErrorsLimit(){
+        if (errorsCount >= ERRORS_LIMIT) {
+            close();
+        }
     }
 }

@@ -52,6 +52,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private Researcher researcher;
     private Vector<SocketThread> clients = new Vector<>();
     private HashMap<ClientThread, QueryMaker> productQueries = new HashMap<>();
+
     public static void main(String[] args) {
         new Server();
     }
@@ -127,7 +128,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private void sendRemains(SocketThread thread, List<int[]> resultList, int productID) {
         StringBuilder sb = new StringBuilder();
 
-        for(int[] arr : resultList) {
+        for (int[] arr : resultList) {
             sb.append(arr[0]);
             sb.append(":");
             sb.append(arr[1]);
@@ -152,10 +153,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         thread.sendMessage(msgOf(header(Library.WAREHOUSE_LIST_END)));
     }
 
-    private void authorizeClient(ClientThread clientThread, String userData) {
-        String[] data = userData.split(Library.DELIMITER);
-        String login = data[0];
-        String password = data[1];
+    private void authorizeClient(ClientThread clientThread, String login, String password) {
         USERS_LOGGER.info("AUTH REQUEST for " + login);
 
         String nickname = SQLClient.getNickname(login, password);
@@ -345,270 +343,69 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         ClientThread clientThread = (ClientThread) thread;
         clients.remove(thread);
         productQueries.remove(thread);
-        sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.COUNT), String.valueOf(clients.size())));
-        sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.LIST), getListOfClients()));
+        notifyActiveUsersCountChanged();
         USERS_LOGGER.info("Client disconnected: " + clientThread.getNickname());
     }
 
     //TODO remove socket from params of this method
     @Override
     public void onReceiveString(SocketThread thread, Socket socket, String msg) {
-        //SERVER_LOGGER.info("Received message from client (" + msg.length() + ")");
-        ClientThread client = (ClientThread) thread;
-        DataProtocol receivedData;
-        try {
-            receivedData = Library.jsonToObject(msg);
-        } catch (com.google.gson.JsonSyntaxException e) {
-            SERVER_LOGGER.error("Failed to parse JSON from string: " + e.getMessage());
-            return;
-        }
-
-        byte[] header = receivedData.getHeader();
-        /*TODO check client for authorize and get client access level*/
-        switch (header[0]) {
-            case Library.AUTH:
-                if (header.length < 2 || header[1] != Library.REQUEST) {
-//                    client.msgFormatError(msgOf()(Library.MESSAGE_FORMAT_ERROR));
-                    client.sendMessage(msgOf(header(Library.MESSAGE_FORMAT_ERROR)));
-                    USERS_LOGGER.error("AUTH FAILED cause MESSAGE FORMAT ERROR header length: " + header.length);
-                    return;
-                }
-                authorizeClient(client, receivedData.getData());
-                break;
-            case Library.SERVER_INFO:
-//                if (!client.isAuthorized()) {
-//                    USERS_LOGGER.error("GET SERVER_INFO FAILED cause client is not authorized!");
-////                    client.sendMessage(msgOf()(Library.SERVER_INFO, Library.DENIED));
-//                    client.sendMessage(msgOf(header(Library.SERVER_INFO, Library.DENIED)));
-//                    clients.remove(client);
-//                    client.close();
-//                } else {
-                int accessLevel = client.getAccessLevel();
-                if (accessLevel == ClientThread.ADMIN || accessLevel == ClientThread.MODERATOR) {
-                    USERS_LOGGER.info("GET SERVER_INFO ACCEPTED for " + client.getNickname());
-                    String serverInfo = accessLevel + Library.DELIMITER +
-                            serverStartTimeMillis + Library.DELIMITER +
-                            productsCountTotal + Library.DELIMITER +
-                            warehousesCountTotal + Library.DELIMITER +
-                            clients.size();
-//                        client.sendMessage(msgOf()(Library.SERVER_INFO, Library.ACCEPTED, serverInfo));
-                    client.sendMessage(msgOf(header(Library.SERVER_INFO, Library.ACCEPTED), serverInfo));
-
-                    String updaterInfo = updaterLastRunDate + Library.DELIMITER +
-                            updaterAutostartState + Library.DELIMITER +
-                            updaterDaysInterval + Library.DELIMITER +
-                            updaterAutostartTime + Library.DELIMITER +
-                            lastUpdatedProductPosition;
-//                        client.sendMessage(msgOf()(Library.UPDATER, Library.INFO, updaterInfo));
-                    client.sendMessage(msgOf(header(Library.UPDATER, Library.INFO), updaterInfo));
-
-                    String researcherInfo = researcherLastRunDate + Library.DELIMITER +
-                            researcherAutostartState + Library.DELIMITER +
-                            researcherDaysInterval + Library.DELIMITER +
-                            researcherAutostartTime;
-                    client.sendMessage(msgOf(header(Library.RESEARCHER, Library.INFO), researcherInfo));
-                    sendWarehousesList(thread);
-
-                    sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.COUNT), String.valueOf(clients.size())));
-                    sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.LIST), getListOfClients()));
-
-
-                } else {
-                    sendWarehousesList(thread);
-//                        USERS_LOGGER.error("GET SERVER_INFO FAILED cause client access level is lower than required: " + accessLevel);
-//                        client.sendMessage(msgOf(header(Library.SERVER_INFO, Library.DENIED)));
-                }
-//                }
-                break;
-            case Library.UPDATER:
-                USERS_LOGGER.info("UPDATER...");
-                int accessLevel2 = client.getAccessLevel();
-                String nickname = client.getNickname();
-                if (accessLevel2 > 2) {
-                    USERS_LOGGER.error("ACCESS TO UPDATER DENIED cause client access level is lower than required: " + accessLevel2);
-                    client.sendMessage(msgOf(header(Library.UPDATER, Library.DENIED)));
-                    return;
-                }
-                switch (header[1]) {
-                    case Library.START:
-                        USERS_LOGGER.info("start UPDATER request by " + nickname);
-                        startUpdater(Boolean.valueOf(receivedData.getData()));
-                        break;
-                    case Library.STOP:
-                        USERS_LOGGER.info("stop UPDATER request by " + nickname);
-                        stopUpdater();
-                        break;
-                    case Library.AUTOSTART:
-                        updaterAutostartState = Boolean.valueOf(receivedData.getData());
-                        SQLClient.updateProcessAutoStartState(UPDATER, updaterAutostartState);
-                        break;
-                    case Library.AUTOSTART_INTERVAL:
-                        updaterDaysInterval = Integer.parseInt(receivedData.getData());
-                        SQLClient.updateProcessDayInterval(UPDATER, updaterDaysInterval);
-                        break;
-                    case Library.AUTOSTART_TIME:
-                        updaterAutostartTime = LocalTime.parse(receivedData.getData());
-                        SQLClient.updateProcessStartTime(UPDATER, updaterAutostartTime);
-                        break;
-                }
-                break;
-            case Library.RESEARCHER:
-                if (client.getAccessLevel() > 2) {
-                    USERS_LOGGER.error("ACCESS TO RESEARCHER DENIED cause client access level is lower than required: " + client.getAccessLevel());
-                    client.sendMessage(msgOf(header(Library.RESEARCHER, Library.DENIED)));
-                    clients.remove(client);
-                    client.close();
-                    return;
-                }
-                switch (header[1]) {
-                    case Library.START:
-                        USERS_LOGGER.info("Start RESEARCHER by " + client.getNickname());
-                        startResearcher();
-                        break;
-                    case Library.STOP:
-                        USERS_LOGGER.info("Stop RESEARCHER by " + client.getNickname());
-                        stopResearcher();
-                        break;
-                    case Library.AUTOSTART:
-                        researcherAutostartState = Boolean.valueOf(receivedData.getData());
-                        SQLClient.updateProcessAutoStartState(RESEARCHER, researcherAutostartState);
-                        break;
-                    case Library.AUTOSTART_INTERVAL:
-                        researcherDaysInterval = Integer.parseInt(receivedData.getData());
-                        SQLClient.updateProcessDayInterval(RESEARCHER, researcherDaysInterval);
-                        break;
-                    case Library.AUTOSTART_TIME:
-                        researcherAutostartTime = LocalTime.parse(receivedData.getData());
-                        SQLClient.updateProcessStartTime(RESEARCHER, researcherAutostartTime);
-                        break;
-                }
-                break;
-            case Library.USERS:
-                USERS_LOGGER.info("USER MODERATION...");
-                switch (header[1]) {
-                    case Library.KICK:
-                        String nicname2 = receivedData.getData();
-                        int initiatorLvl = client.getAccessLevel();
-                        ClientThread clientShouldBeKicked = findUserByNickname(nicname2);
-                        if (clientShouldBeKicked != null) {
-                            if (initiatorLvl < clientShouldBeKicked.getAccessLevel()) {
-                                USERS_LOGGER.info("USER " + clientShouldBeKicked.getNickname() + " was disconnected by " + client.getNickname());
-                                clientShouldBeKicked.sendMessage(msgOf(header(Library.USERS, Library.KICK), client.getNickname()));
-                                clientShouldBeKicked.close();
-                            } else {
-                                USERS_LOGGER.error("FAILED TO KICK USER " + clientShouldBeKicked.getNickname() + " by  " + client.getNickname() + " cause permission of " + client.getNickname() + " is the same or lower than  permission of " + clientShouldBeKicked.getNickname());
-                                client.sendMessage(msgOf(header(Library.USERS, Library.KICK, Library.DENIED), clientShouldBeKicked.getNickname()));
-                            }
-                        }
-                        break;
-                    case Library.BAN:
-                        break;
-                }
-                break;
-            case Library.PRODUCT_REQUEST:
-                USERS_LOGGER.info("PRODUCT REQUEST...");
-                switch (header[1]) {
-                    case Library.SORT:
-                        USERS_LOGGER.info("Sort list request");
-
-                        QueryMaker maker3 = productQueries.get(client);
-                        if (maker3 == null) {
-                            SERVER_LOGGER.error("No clients found in queries list");
-                            return;
-                        }
-                        int sortType = Integer.parseInt(receivedData.getData());
-
-                        maker3.setSortType(sortType);
-                        List<Product> products2 = SQLClient.getProductsListByQuery(maker3.getQuery());
-                        boolean hasNextPage2 = maker3.hasNext();
-                        sendProductList(products2, client, hasNextPage2);
-                        break;
-
-                    case Library.NEW:
-                        USERS_LOGGER.info("New product request");
-                        ProductRequest request = Library.productRequestFromJson(receivedData.getData());
-                        int sortType5 = request.getSortType();
-
-                        boolean isNewClient;
-
-                        QueryMaker queryMaker = productQueries.get(client);
-                        if (queryMaker == null) {
-                            USERS_LOGGER.info("New client: " + client.getNickname());
-                            queryMaker = new QueryMaker(request);
-                            isNewClient = true;
-                        } else {
-                            USERS_LOGGER.info("Client was already in queryList");
-                            queryMaker.makeNewQuery(request);
-                            isNewClient = false;
-                        }
-
-                        queryMaker.setSortType(sortType5);
-
-                        int resultsCount = SQLClient.getCountForProductRequest(queryMaker.getCountQuery());
-
-                        if (resultsCount == 0) {
-                            USERS_LOGGER.info("No result for client query");
-                            noResultsByQuery(client);
-                        } else {
-                            queryMaker.setResultsCount(resultsCount);
-                            List<Product> products = SQLClient.getProductsListByQuery(queryMaker.getQuery());
-                            boolean hasNextPage = queryMaker.hasNext();
-                            if (isNewClient) {
-                                USERS_LOGGER.info("Client was stored to the queryList");
-                                productQueries.put(client, queryMaker);
-                            }
-                            sendProductList(products, client, hasNextPage);
-                        }
-                        break;
-                    case Library.NEXT:
-                        SERVER_LOGGER.info("Next page of products request");
-                        QueryMaker maker = productQueries.get(client);
-                        if (maker == null) {
-                            //TODO send error to client
-                            USERS_LOGGER.error("No client: " + client.getNickname() + " in Queries List");
-                            return;
-                        }
-
-                        if (!maker.hasNext()) {
-                            //TODO send error to client
-                            USERS_LOGGER.error("The list of product has no next page. Client: " + client.getNickname());
-                            return;
-                        }
-
-                        USERS_LOGGER.info("Getting " + (maker.getCurrentPage() + 1) + "/" + maker.getPages() + " page");
-                        List<Product> products = SQLClient.getProductsListByQuery(maker.getNext());
-                        sendProductList(products, client, maker.hasNext());
-                        break;
-                }
-                break;
-            case Library.REMAINS:
-                SERVER_LOGGER.info("REMAINS...");
-                int id = Integer.parseInt(receivedData.getData());
-                List<int[]> result = SQLClient.getProductRemains(id);
-                if (result == null){
-                    SERVER_LOGGER.error("Failed to get remains!");
-                    return;
-                }
-                sendRemains(thread, result, id);
-                break;
-            case Library.IMAGE:
-                //USERS_LOGGER.info("IMAGE REQUEST...");
-                int productID = Integer.parseInt(receivedData.getData());
-                String imageID = SQLClient.getImageID(productID);
-                if (imageID == null) {
-                    SERVER_LOGGER.error("FAILED to get an image from DB for product with id: " + productID);
-                    client.sendMessage(msgOf(header(Library.IMAGE, Library.EXCEPTION), String.valueOf(productID)));
-                } else if (imageID.equals("NO_IMAGE")) {
-                    //SERVER_LOGGER.error("No image for product with id: " + productID);
-                    client.sendMessage(msgOf(header(Library.IMAGE, Library.NO_IMAGE), String.valueOf(productID)));
-                } else {
-                    //SERVER_LOGGER.info("Image for the product with id " + productID + " is on disk");
-                    String imagePath = IMAGES_PATH + imageID;
-                    sendImageToClient(client, productID, imagePath);
-                }
-        }
+        messageHandler.handleMessage(thread, msg);
     }
 
+    private void sendFullServerInfo(ClientThread client) {
+        USERS_LOGGER.info("GET SERVER_INFO ACCEPTED for " + client.getNickname());
+        sendServerInfo(client);
+        sendUpdaterInfo(client);
+        sendResearcherInfo(client);
+        sendWarehousesList(client);
+    }
+
+    private void sendServerInfo(ClientThread client) {
+        String serverInfo = client.getAccessLevel() + Library.DELIMITER +
+                serverStartTimeMillis + Library.DELIMITER +
+                productsCountTotal + Library.DELIMITER +
+                warehousesCountTotal + Library.DELIMITER +
+                clients.size();
+        client.sendMessage(msgOf(header(Library.SERVER_INFO, Library.ACCEPTED), serverInfo));
+    }
+
+    private void sendUpdaterInfo(ClientThread client) {
+        client.sendMessage(msgOf(header(Library.UPDATER, Library.INFO), getUpdaterInfo()));
+    }
+
+    private String getUpdaterInfo() {
+        return updaterLastRunDate + Library.DELIMITER +
+                updaterAutostartState + Library.DELIMITER +
+                updaterDaysInterval + Library.DELIMITER +
+                updaterAutostartTime + Library.DELIMITER +
+                lastUpdatedProductPosition;
+    }
+
+    private void sendResearcherInfo(ClientThread client) {
+        client.sendMessage(msgOf(header(Library.RESEARCHER, Library.INFO), getResearcherInfo()));
+        sendWarehousesList(client);
+    }
+
+    private String getResearcherInfo() {
+        return researcherLastRunDate + Library.DELIMITER +
+                researcherAutostartState + Library.DELIMITER +
+                researcherDaysInterval + Library.DELIMITER +
+                researcherAutostartTime;
+    }
+
+    private void notifyActiveUsersCountChanged() {
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.COUNT), String.valueOf(clients.size())));
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.USERS, Library.LIST), getListOfClients()));
+    }
+
+    private void notifyUpdaterParamsChanged() {
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.UPDATER, Library.INFO), getUpdaterInfo()));
+    }
+
+    private void notifyResearcherParamsChanged() {
+        sendMsgToModeratorsAndAdmins(msgOf(header(Library.RESEARCHER, Library.INFO), getResearcherInfo()));
+    }
 
     @Override
     public void onSocketThreadException(SocketThread thread, Exception e) {
@@ -872,116 +669,189 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     //Handling messages from clients
     @Override
     public void messageFormatException(ClientThread client) {
-
+        client.messageFormatException(msgOf(header(Library.EXCEPTION)));
     }
 
     @Override
     public void permissionDenied(ClientThread client) {
-
+        client.permissionDenied(msgOf(header(Library.DENIED)));
     }
 
     @Override
     public void authRequest(ClientThread client, String login, String password) {
-
+        authorizeClient(client, login, password);
+        notifyActiveUsersCountChanged();
     }
 
     @Override
     public void serverInfoForAdmin(ClientThread client) {
-
+        sendFullServerInfo(client);
     }
 
     @Override
     public void serverInfoForGuest(ClientThread client) {
-
+        sendWarehousesList(client);
     }
 
     @Override
-    public void onUpdaterStartRequest() {
-
+    public void onUpdaterStartRequest(Boolean continueUpdate) {
+        startUpdater(continueUpdate);
     }
 
     @Override
     public void onUpdaterStopRequest() {
-
+        stopUpdater();
     }
 
     @Override
     public void onUpdaterAutostartStateChanged(boolean status) {
-
+        updaterAutostartState = status;
+        SQLClient.updateProcessAutoStartState(UPDATER, updaterAutostartState);
+        notifyUpdaterParamsChanged();
     }
 
     @Override
     public void onUpdaterAutostartIntervalChanged(int interval) {
-
+        updaterDaysInterval = interval;
+        SQLClient.updateProcessDayInterval(UPDATER, updaterDaysInterval);
+        notifyUpdaterParamsChanged();
     }
 
     @Override
     public void onUpdaterAutostartTimeChanged(LocalTime autostartTime) {
-
+        updaterAutostartTime = autostartTime;
+        SQLClient.updateProcessStartTime(UPDATER, updaterAutostartTime);
+        notifyUpdaterParamsChanged();
     }
 
     @Override
     public void onResearcherStartRequest() {
-
+        startResearcher();
     }
 
     @Override
     public void onResearcherStopRequest() {
-
+        stopResearcher();
     }
 
     @Override
     public void onResearcherAutostartStateChanged(boolean status) {
-
+        researcherAutostartState = status;
+        SQLClient.updateProcessAutoStartState(RESEARCHER, researcherAutostartState);
+        notifyResearcherParamsChanged();
     }
 
     @Override
     public void onResearcherAutostartIntervalChanged(int interval) {
-
+        researcherDaysInterval = interval;
+        SQLClient.updateProcessDayInterval(RESEARCHER, researcherDaysInterval);
+        notifyResearcherParamsChanged();
     }
 
     @Override
     public void onResearcherAutostartTimeChanged(LocalTime autostartTime) {
-
+        researcherAutostartTime = autostartTime;
+        SQLClient.updateProcessStartTime(RESEARCHER, researcherAutostartTime);
+        notifyResearcherParamsChanged();
     }
 
     @Override
-    public ClientThread getUserRole(String nickname) {
-        return null;
+    public ClientThread getUser(String nickname) {
+        return findUserByNickname(nickname);
     }
 
     @Override
     public void onKickUserRequest(ClientThread client, ClientThread targetUser) {
-
+        targetUser.sendMessage(msgOf(header(Library.USERS, Library.KICK), client.getNickname()));
+        targetUser.close();
     }
 
     @Override
     public void onBanUserRequest(ClientThread client, ClientThread targetUser) {
-
+        //TODO realise or delete this function
     }
 
     @Override
     public void onSortProductsRequest(ClientThread client, int sortType) {
+        QueryMaker queryMaker = productQueries.get(client);
+        if (queryMaker == null) {
+            messageFormatException(client);
+            return;
+        }
 
+        queryMaker.setSortType(sortType);
+        List<Product> products = SQLClient.getProductsListByQuery(queryMaker.getQuery());
+        boolean hasNextPage2 = queryMaker.hasNext();
+        sendProductList(products, client, hasNextPage2);
     }
 
     @Override
     public void onNewProductRequest(ClientThread client, ProductRequest productRequest, int sortType) {
+        boolean isNewClient = false;
 
+        QueryMaker queryMaker = productQueries.get(client);
+        if (queryMaker == null) {
+            queryMaker = new QueryMaker(productRequest);
+            isNewClient = true;
+        } else {
+            queryMaker.makeNewQuery(productRequest);
+        }
+
+        queryMaker.setSortType(sortType);
+
+        int resultsCount = SQLClient.getCountForProductRequest(queryMaker.getCountQuery());
+
+        if (resultsCount == 0) {
+            noResultsByQuery(client);
+        } else {
+            queryMaker.setResultsCount(resultsCount);
+            List<Product> products = SQLClient.getProductsListByQuery(queryMaker.getQuery());
+            if (isNewClient) {
+                productQueries.put(client, queryMaker);
+            }
+            sendProductList(products, client, queryMaker.hasNext());
+        }
     }
 
     @Override
     public void onNextPageProductRequest(ClientThread client) {
+        QueryMaker queryMaker = productQueries.get(client);
+        if (queryMaker == null) {
+            messageFormatException(client);
+            return;
+        }
 
+        if (!queryMaker.hasNext()) {
+            messageFormatException(client);
+            return;
+        }
+
+        USERS_LOGGER.info("Getting " + (queryMaker.getCurrentPage() + 1) + "/" + queryMaker.getPages() + " page");
+        List<Product> products = SQLClient.getProductsListByQuery(queryMaker.getNext());
+        sendProductList(products, client, queryMaker.hasNext());
     }
 
     @Override
     public void onProductRemainsRequest(ClientThread client, int productID) {
-
+        List<int[]> result = SQLClient.getProductRemains(productID);
+        if (result == null) {
+            SERVER_LOGGER.error("Failed to get remains!");
+            return;
+        }
+        sendRemains(client, result, productID);
     }
 
     @Override
     public void onProductImageRequest(ClientThread client, int productID) {
-
+        String imageID = SQLClient.getImageID(productID);
+        if (imageID == null) {
+            SERVER_LOGGER.error("FAILED to get an image from DB for product with id: " + productID);
+            client.sendMessage(msgOf(header(Library.IMAGE, Library.EXCEPTION), String.valueOf(productID)));
+        } else if (imageID.equals("NO_IMAGE")) {
+            client.sendMessage(msgOf(header(Library.IMAGE, Library.NO_IMAGE), String.valueOf(productID)));
+        } else {
+            String imagePath = IMAGES_PATH + imageID;
+            sendImageToClient(client, productID, imagePath);
+        }
     }
 }

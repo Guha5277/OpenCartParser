@@ -92,7 +92,7 @@ public class MessageHandler implements MessageHandlerImpl {
 
         switch (header[1]) {
             case Library.START:
-                listener.onUpdaterStartRequest();
+                listener.onUpdaterStartRequest(Boolean.valueOf(message));
                 break;
             case Library.STOP:
                 listener.onUpdaterStopRequest();
@@ -219,7 +219,7 @@ public class MessageHandler implements MessageHandlerImpl {
     }
 
     private void handleUsersModerationRequest(ClientThread client, byte[] header, String message) {
-        ClientThread targetUser = listener.getUserRole(message);
+        ClientThread targetUser = listener.getUser(message);
         if (!isHeaderLengthValid(client, header, KICK_USER_HEADER_LENGTH) || message == null || targetUser == null) {
             listener.messageFormatException(client);
             return;
@@ -241,7 +241,7 @@ public class MessageHandler implements MessageHandlerImpl {
     }
 
     private void handleProductRequest(ClientThread client, byte[] header, String message) {
-        if (!isHeaderLengthValid(client, header, PRODUCT_REQUEST_HEADER_LENGTH) || message == null) {
+        if (!isHeaderLengthValid(client, header, PRODUCT_REQUEST_HEADER_LENGTH)) {
             listener.messageFormatException(client);
             return;
         }
@@ -260,6 +260,11 @@ public class MessageHandler implements MessageHandlerImpl {
     }
 
     private void handleSortProduct(ClientThread client, String message) {
+        if (message == null) {
+            listener.messageFormatException(client);
+            return;
+        }
+
         int sortType;
         try {
             sortType = Integer.parseInt(message);
@@ -271,6 +276,11 @@ public class MessageHandler implements MessageHandlerImpl {
     }
 
     private void handleNewProductRequest(ClientThread client, String message) {
+        if (message == null) {
+            listener.messageFormatException(client);
+            return;
+        }
+
         ProductRequest productRequest;
         try {
             productRequest = Library.productRequestFromJson(message);
