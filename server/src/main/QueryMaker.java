@@ -4,9 +4,19 @@ import com.guhar4k.library.ProductRequest;
 
 class QueryMaker {
     private static final int pageSize = 100;
+    private static final int SORT_DEFAULT = 1;
+    private static final int SORT_PRICE = 2;
+    private static final int SORT_PRICE_DESC = 3;
+    private static final int SORT_VOLUME = 4;
+    private static final int SORT_VOLUME_DESC = 5;
+    private static final int SORT_STRENGTH = 6;
+    private static final int SORT_STRENGTH_DESC = 7;
+
     private int resultsCount;
     private int pages;
     private int currentPage;
+
+    private int sortType;
 
     private String countQuery;
     private String query;
@@ -15,31 +25,62 @@ class QueryMaker {
         make(request);
     }
 
+    //TODO создать метод для установки флага сортировки (есть она или нет)
+
     String getCountQuery() {
         return countQuery;
     }
 
+    void setSortType(int sortType) {
+        this.sortType = sortType;
+        currentPage = 0;
+    }
+
     boolean hasNext() {
-        return (currentPage + 1) <= pages;
+        return currentPage < pages;
     }
 
     void makeNewQuery(ProductRequest request) {
-        int resultsCount = 0;
-        int pages = 0;
-        int currentPage = 0;
+        resultsCount = 0;
+        pages = 0;
+        currentPage = 0;
+        sortType = SORT_DEFAULT;
         make(request);
     }
 
     String getNext() {
         if (!hasNext()) throw new IllegalStateException("The query maker has no next page");
-        String limit = String.format(" LIMIT %d, %d", currentPage * pageSize, pageSize);
+        StringBuilder sb = new StringBuilder();
+        sb.append(query);
+        sb.append(getSortPart(sortType));
+        sb.append(String.format(" LIMIT %d, %d", currentPage * pageSize, pageSize));
         currentPage++;
-        return query + limit;
+        return sb.toString();
     }
 
     String getQuery() {
         currentPage = (currentPage == 0) ? 1 : currentPage;
-        return query + " LIMIT 100";
+        return query + getSortPart(sortType) + " LIMIT 100";
+    }
+
+    private String getSortPart(int sortType) {
+        switch (sortType) {
+            case SORT_PRICE:
+                return " ORDER BY liquids.price, liquids.our_prod DESC, liquids.category";
+            case SORT_PRICE_DESC:
+                return " ORDER BY liquids.price DESC, liquids.our_prod DESC, liquids.category";
+            case SORT_VOLUME:
+                return " ORDER BY liquids.volume, liquids.our_prod DESC, liquids.category";
+            case SORT_VOLUME_DESC:
+                return " ORDER BY liquids.volume DESC, liquids.our_prod DESC, liquids.category";
+            case SORT_STRENGTH:
+                return " ORDER BY liquids.strength, liquids.our_prod DESC, liquids.category";
+            case SORT_STRENGTH_DESC:
+                return " ORDER BY liquids.strength DESC, liquids.our_prod DESC, liquids.category";
+            default:
+                //TODO дописать
+                return " ORDER BY liquids.our_prod DESC, liquids.category";
+        }
     }
 
     void setResultsCount(int resultsCount) {
@@ -151,10 +192,10 @@ class QueryMaker {
             resultString.append(" AND ");
             resultString.append(paramEnd);
         } else if (paramStart > -1) {
-            resultString.append(" > ");
+            resultString.append(" >= ");
             resultString.append(paramStart);
         } else {
-            resultString.append(" < ");
+            resultString.append(" <= ");
             resultString.append(paramEnd);
         }
         return resultString.toString();

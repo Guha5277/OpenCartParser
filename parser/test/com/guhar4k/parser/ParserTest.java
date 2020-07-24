@@ -38,18 +38,18 @@ class ParserTest {
     }
 
     @Test
-    void parseCategoriesFromDocument() throws IOException {
+    void parseCategoriesFromDocument() {
         assertNotNull(categoriesList);
     }
 
     @Test
-    void checkForValidCategoriesCount() throws IOException{
+    void checkForValidCategoriesCount() {
         int actualCount = categoriesList.size();
         assertEquals(CATEGORIES_COUNT, actualCount);
     }
 
     @Test
-    void getGroupsFromCategory() throws IOException {
+    void getGroupsFromCategory() {
         Elements groups = parser.getInnerGroups(categoriesList.get(0).getUrl());
         assertEquals(false, groups.isEmpty());
     }

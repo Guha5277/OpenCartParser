@@ -2,6 +2,7 @@ package com.guhar4k.library;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import com.guhar4k.product.Product;
 import com.guhar4k.product.Warehouse;
 
@@ -24,7 +25,7 @@ public class Library {
     public static final byte USERS = 10;
     public static final byte LIST = 11;
     public static final byte COUNT = 12;
-    public static final byte DISCONNECT = 13;
+    public static final byte KICK = 13;
     public static final byte BAN = 14;
     public static final byte UPDATER = 15;
     public static final byte RESEARCHER = 16;
@@ -59,6 +60,7 @@ public class Library {
     public static final byte NEW = 45;
     public static final byte NEXT = 46;
     public static final byte REMAINS = 47;
+    public static final byte SORT = 48;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 

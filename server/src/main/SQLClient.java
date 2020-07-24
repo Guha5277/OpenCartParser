@@ -185,7 +185,7 @@ class SQLClient {
         return count;
     }
 
-    static List<Product> getProductsListByQuery2(String query) {
+    static List<Product> getProductsListByQuery(String query) {
         LOG.info("Product request query: " + query);
         List<Product> result = new ArrayList<>();
         try (Statement statement = connection.createStatement();

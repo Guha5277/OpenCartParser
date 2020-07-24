@@ -2,8 +2,6 @@ package com.guhar4k.parser;
 
 import com.guhar4k.product.Group;
 import com.guhar4k.product.Product;
-import com.guhar4k.product.Warehouse;
-import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +37,7 @@ class UpdaterTest {
     @BeforeAll
     static void initAll() throws IOException {
         listener = mock(IUpdater.class);
-        updater = new Updater(listener, 0, "", new ArrayList<Product>(), new ArrayList<Warehouse>());
+        updater = new Updater(listener, 0, "", new ArrayList<>(), new ArrayList<>());
         product1 = new Product(id, name, URL, price, group, category, volume, strength, "");
         product2 = new Product(id, name2, URL, price2, group2, category2, volume2, strength2, "");
         product3 = new Product(id, name2, URL, price2, group2, category2, volume2, strength2, "");
@@ -47,7 +45,7 @@ class UpdaterTest {
 
     @Test
     void compareProducts(){
-        boolean result = updater.compareProducts(product1, product2);
+        boolean result = updater.compareProduct(product1, product2);
         verify(listener, times(1)).updateProductName(id, name);
         verify(listener, times(1)).updateProductPrice(id, price);
         verify(listener, times(1)).updateProductGroupName(id, group.getName());
@@ -60,7 +58,7 @@ class UpdaterTest {
 
     @Test
     void compareEqualsProduct(){
-        boolean result = updater.compareProducts(product2, product3);
+        boolean result = updater.compareProduct(product2, product3);
         assertFalse(result);
     }
 }

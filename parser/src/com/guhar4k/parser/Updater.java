@@ -38,7 +38,6 @@ public class Updater extends Parser implements Runnable {
     @Override
     public void run() {
         LOG.info("Updater working...");
-        //List<Product> productList = listener.getAllProducts();
         if (productList == null) {
             listener.onUpdateError();
             return;
@@ -52,8 +51,6 @@ public class Updater extends Parser implements Runnable {
         int overall = products.size();
         listener.onUpdaterTotalProducts(overall);
         int totalUpdated = 0;
-
-//        List<Warehouse> warehouseList = listener.getAllWarehouses();
 
         for (int i = startPosition; i < products.size(); i++) {
             Product currProduct = products.get(i);
@@ -72,7 +69,7 @@ public class Updater extends Parser implements Runnable {
                 listener.onUpdateProductFailed(URL, errors);
                 continue;
             }
-            if (compareProducts(actualProduct, currProduct)) totalUpdated++;
+            if (compareProduct(actualProduct, currProduct)) totalUpdated++;
             updateProductRemains(warehouseList, currProduct);
             checkProductImage(currProduct);
             current++;
@@ -81,11 +78,10 @@ public class Updater extends Parser implements Runnable {
         return totalUpdated;
     }
 
-    boolean compareProducts(Product actualProduct, Product oldProduct) {
-        boolean productHaveUpdate = false;
+    boolean compareProduct(Product actualProduct, Product oldProduct) {
+        boolean result = false;
         StringBuilder diffBuild = new StringBuilder();
         int id = oldProduct.getId();
-        boolean result = false;
         String actualName = actualProduct.getName();
         String oldName = oldProduct.getName();
         String actualGroupName = actualProduct.getGroup().getName();
@@ -99,7 +95,6 @@ public class Updater extends Parser implements Runnable {
         double actualStrength = actualProduct.getStrength();
         double oldStrength = oldProduct.getStrength();
 
-
         diffBuild.append("Differences of product with id ");
         diffBuild.append(id);
         diffBuild.append(": \n");
@@ -107,80 +102,58 @@ public class Updater extends Parser implements Runnable {
         if (!(actualName.equals(oldName))) {
             LOG.info("\t\tDifferences of Names!: (actual)" + actualName + " <-> " + "(old)" + oldName);
             result = true;
-            diffBuild.append("name: ");
-            diffBuild.append(oldName);
-            diffBuild.append(" ---> ");
-            diffBuild.append(actualName);
-            diffBuild.append("\n");
-
+            diffBuild.append(makeDiffString("name", oldName, actualName));
             listener.updateProductName(id, actualName);
-            productHaveUpdate = true;
         }
+
         if (!(actualGroupName.equals(oldGroupName))) {
             LOG.info("\t\tdifferences of Groups!: (actual)" + actualGroupName + " <-> " + "(old)" + oldGroupName);
             result = true;
-            diffBuild.append("groupName: ");
-            diffBuild.append(oldGroupName);
-            diffBuild.append(" ---> ");
-            diffBuild.append(actualGroupName);
-            diffBuild.append("\n");
-
+            diffBuild.append(makeDiffString("groupName", oldGroupName, actualGroupName));
             listener.updateProductGroupName(id, actualGroupName);
-            productHaveUpdate = true;
         }
         if (actualCategoryId != oldCategoryId) {
             LOG.info("\t\tdifferences of Categories!: (actual)" + actualCategoryId + " <-> " + "(old)" + oldCategoryId);
             result = true;
-            diffBuild.append("category: ");
-            diffBuild.append(oldCategoryId);
-            diffBuild.append(" ---> ");
-            diffBuild.append(actualCategoryId);
-            diffBuild.append("\n");
-
+            diffBuild.append(makeDiffString("categoryID", oldCategoryId, actualCategoryId));
             listener.updateProductCategory(id, actualCategoryId);
-            productHaveUpdate = true;
         }
         if (actualPrice != oldPrice) {
             LOG.info("\t\tdifferences of Price!: (actual)" + actualPrice + " <-> " + "(old)" + oldPrice);
             result = true;
-            diffBuild.append("price: ");
-            diffBuild.append(oldPrice);
-            diffBuild.append(" ---> ");
-            diffBuild.append(actualPrice);
-            diffBuild.append("\n");
-
+            diffBuild.append(makeDiffString("price", oldPrice, actualPrice));
             listener.updateProductPrice(id, actualPrice);
-            productHaveUpdate = true;
         }
         if (actualVolume != oldVolume) {
             LOG.info("\t\tdifferences of Volume!: (actual)" + actualVolume + " <-> " + "(old)" + oldVolume);
             result = true;
-            diffBuild.append("volume: ");
-            diffBuild.append(oldVolume);
-            diffBuild.append(" ---> ");
-            diffBuild.append(actualVolume);
-            diffBuild.append("\n");
-
+            diffBuild.append(makeDiffString("volume", oldVolume, actualVolume));
             listener.updateProductVolume(id, actualVolume);
-            productHaveUpdate = true;
         }
         if (actualStrength != oldStrength) {
             LOG.info("\t\tdifferences of Strength!: (actual)" + actualStrength + " <-> " + "(old)" + oldStrength);
             result = true;
-            diffBuild.append("strength: ");
-            diffBuild.append(oldStrength);
-            diffBuild.append(" ---> ");
-            diffBuild.append(actualStrength);
-
+            diffBuild.append(makeDiffString("strength", oldStrength, actualStrength));
             listener.updateProductStrength(id, actualStrength);
-            productHaveUpdate = true;
         }
 
-        if (productHaveUpdate) {
+        if (result) {
             updates++;
             listener.onUpdateDiffsFound(updates, diffBuild.toString());
         }
         return result;
+    }
+
+    private String makeDiffString(String type, String oldValue, String actualValue) {
+        return type + ": " + oldValue + " ---> " + actualValue + "\n";
+    }
+
+    private String makeDiffString(String type, int oldValue, int actualValue) {
+        return type + ": " + oldValue + " ---> " + actualValue + "\n";
+    }
+
+    private String makeDiffString(String type, double oldValue, double actualValue) {
+        return type + ": " + oldValue + " ---> " + actualValue + "\n";
     }
 
     private void checkProductImage(Product product) {
@@ -259,35 +232,63 @@ public class Updater extends Parser implements Runnable {
         ArrayList<Warehouse> warehouses = new ArrayList<>(warehousesList);
         Elements remainsElements;
         try {
-            remainsElements = downloadPage(product.getURL()).body().getElementsByClass("tab-pane active").get(0).select("span");
+            remainsElements = getRemainsElements(product.getURL());
         } catch (IOException | IndexOutOfBoundsException e) {
             LOG.error(e);
             listener.onUpdaterException(product.getId(), product.getURL(), e);
             return;
         }
 
+        for (Element element : remainsElements) {
+            String warehouseNameContainer = element.text();
+            String warehouseName = parseWarehouseName(warehouseNameContainer);
 
-        remainsElements.forEach(element -> {
-            String warehouseName = element.text();
-            int index = warehouseName.indexOf(':');
-            warehouseName = warehouseName.substring(0, index - 1);
+            String remainsContainer = element.child(0).text();
+            int sumIndex = remainsContainer.contains("+") ? 1 : 0;
+            int remains = parseRemains(remainsContainer, sumIndex);
 
-            int remains = Integer.parseInt(element.child(0).text());
 
-            for (int i = 0; i < warehouses.size(); i++) {
-                if (warehouses.get(i).getAltName().equals(warehouseName)) {
-                    listener.updateProductRemains(warehouses.get(i).getId(), product.getId(), remains);
-                    warehouses.remove(i);
-                    break;
-                }
+            int warehouseIndex = findWarehouseIndex(warehouseName, warehouses);
+            if (warehouseIndex == -1) {
+                LOG.error("Can't find a warehouse by name from the list!");
+                continue;
             }
-        });
+            listener.updateProductRemains(warehouses.get(warehouseIndex).getId(), product.getId(), remains);
+            warehouses.remove(warehouseIndex);
+        }
 
-        //updateDBtoOutOfStock
+        updateOutOfStock(warehouses, product);
+    }
+
+    private Elements getRemainsElements(String url) throws IOException, IndexOutOfBoundsException {
+        return downloadPage(url).body().getElementsByClass("tab-pane active").get(0).select("span");
+    }
+
+    private String parseWarehouseName(String nameContainer) {
+        int index = nameContainer.indexOf(':');
+        return nameContainer.substring(0, index - 1);
+    }
+
+    private int parseRemains(String remainsContainer, int sumIndex) {
+        if (remainsContainer.contains("+")) {
+            remainsContainer = remainsContainer.substring(0, remainsContainer.length() - 1);
+        }
+        return Integer.parseInt(remainsContainer) + sumIndex;
+    }
+
+    private int findWarehouseIndex(String warehouseName, List<Warehouse> warehouseList) {
+        for (int i = 0; i < warehouseList.size(); i++) {
+            if (warehouseList.get(i).getAltName().equals(warehouseName)) return i;
+        }
+        return -1;
+    }
+
+    private void updateOutOfStock(ArrayList<Warehouse> warehouses, Product product) {
         for (Warehouse warehouse : warehouses) {
             listener.updateProductRemains(warehouse.getId(), product.getId(), 0);
         }
     }
+
 
     public void stop() {
         isInterrupt = true;

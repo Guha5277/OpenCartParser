@@ -176,7 +176,7 @@ public class Controller implements SocketThreadListener, GUIEvents {
 
     private void kickUser(String nickname) {
         LOGGER.info("Kick user request with nickname: " + nickname);
-        socketThread.sendMessage(msgOf(header(Library.USERS, Library.DISCONNECT), nickname));
+        socketThread.sendMessage(msgOf(header(Library.USERS, Library.KICK), nickname));
     }
 
     private void storeImageFirstChunk(String[] messageParts) {
@@ -485,7 +485,7 @@ public class Controller implements SocketThreadListener, GUIEvents {
                         LOGGER.info("Received connected users list");
                         listener.onUsersListUpdated(receivedData.getData().split(Library.DELIMITER));
                         break;
-                    case Library.DISCONNECT:
+                    case Library.KICK:
                         String userNicknameToKick = receivedData.getData();
                         if (header.length > 2 && header[2] == Library.DENIED) {
                             LOGGER.error("Failed to kick user: " + userNicknameToKick);

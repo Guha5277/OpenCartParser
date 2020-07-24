@@ -21,13 +21,19 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.*;
 
-public class Server implements ServerSocketThreadListener, SocketThreadListener, IUpdater, IResearcher, IGrabber {
-    private long serverStartAt;
-    private int productsCount;
-    private int warehousesCount;
-    private int updaterTotalProd;
+public class Server implements ServerSocketThreadListener, SocketThreadListener, MessageHandlerListener, IUpdater, IResearcher, IGrabber {
     private final String UPDATER = "updater";
     private final String RESEARCHER = "researcher";
+    private static final Logger SERVER_LOGGER = LogManager.getLogger("ServerLogger");
+    private static final Logger USERS_LOGGER = LogManager.getLogger("UsersLogger");
+    private final String IMAGES_PATH = "Server/res/images/";
+    private final int IMAGE_CHUNK_LIMIT = 30000;
+
+    MessageHandlerImpl messageHandler;
+    private long serverStartTimeMillis;
+    private int productsCountTotal;
+    private int warehousesCountTotal;
+    private int updaterTotalProd;
     private LocalDate updaterLastRunDate;
     private LocalDate researcherLastRunDate;
     private int lastUpdatedProductPosition;
@@ -45,26 +51,22 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private List<Warehouse> warehouses;
     private Researcher researcher;
     private Vector<SocketThread> clients = new Vector<>();
-    private static final Logger SERVER_LOGGER = LogManager.getLogger("ServerLogger");
-    private static final Logger USERS_LOGGER = LogManager.getLogger("UsersLogger");
-    private final String IMAGES_PATH = "Server/res/images/";
-    private final int IMAGE_CHUNK_LIMIT = 30000;
     private HashMap<ClientThread, QueryMaker> productQueries = new HashMap<>();
-
     public static void main(String[] args) {
         new Server();
     }
 
     private Server() {
         new ServerSocketThread(this, "server", 5277, 200);
-        serverStartAt = System.currentTimeMillis();
+        serverStartTimeMillis = System.currentTimeMillis();
     }
 
     private void initialize() {
         SERVER_LOGGER.info("Server initializing...");
+        messageHandler = new MessageHandler(this);
         SQLClient.connect();
-        productsCount = SQLClient.getProductsCount();
-        warehousesCount = SQLClient.getWarehousesCount();
+        productsCountTotal = SQLClient.getProductsCount();
+        warehousesCountTotal = SQLClient.getWarehousesCount();
         updaterLastRunDate = SQLClient.getProcessLastRun(UPDATER);
         updaterAutostartTime = SQLClient.getProcessLaunchTime(UPDATER);
         updaterAutostartState = SQLClient.getProcessAutoStartState(UPDATER);
@@ -92,8 +94,8 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
-        SERVER_LOGGER.info("Products: " + productsCount);
-        SERVER_LOGGER.info("Warehouses: " + warehousesCount);
+        SERVER_LOGGER.info("Products: " + productsCountTotal);
+        SERVER_LOGGER.info("Warehouses: " + warehousesCountTotal);
         SERVER_LOGGER.info("Server Started " + name + " " + address);
     }
 
@@ -179,7 +181,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
     private void startUpdater(boolean continueUpdate) {
         if (updaterThread != null && updaterThread.isAlive()) return;
-        if (continueUpdate && lastUpdatedProductPosition < productsCount) {
+        if (continueUpdate && lastUpdatedProductPosition < productsCountTotal) {
             updater = new Updater(this, lastUpdatedProductPosition, IMAGES_PATH, SQLClient.getAllProducts(), SQLClient.getAllWarehouses());
         } else {
             updater = new Updater(this, 0, IMAGES_PATH, SQLClient.getAllProducts(), SQLClient.getAllWarehouses());
@@ -246,7 +248,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     }
 
     private void sendImageToClient(ClientThread client, int productID, String imagePath) {
-        //Test send images
         File file = new File(imagePath);
         try {
             Base64.Encoder encoder = Base64.getEncoder();
@@ -295,7 +296,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
             }
             //SERVER_LOGGER.info("Successful sent image " + imagePath + " to client " + (client.getNickname() == null ? "Anonymous" : client.getNickname()));
         } catch (IOException e) {
-            //SERVER_LOGGER.error("Failed to send image " + imagePath + " to client " + (client.getNickname() == null ? "Anonymous" : client.getNickname()));
+            SERVER_LOGGER.error("Failed to send image " + imagePath + " to client " + (client.getNickname() == null ? "Anonymous" : client.getNickname()));
         }
     }
 
@@ -349,6 +350,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         USERS_LOGGER.info("Client disconnected: " + clientThread.getNickname());
     }
 
+    //TODO remove socket from params of this method
     @Override
     public void onReceiveString(SocketThread thread, Socket socket, String msg) {
         //SERVER_LOGGER.info("Received message from client (" + msg.length() + ")");
@@ -385,9 +387,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                 if (accessLevel == ClientThread.ADMIN || accessLevel == ClientThread.MODERATOR) {
                     USERS_LOGGER.info("GET SERVER_INFO ACCEPTED for " + client.getNickname());
                     String serverInfo = accessLevel + Library.DELIMITER +
-                            serverStartAt + Library.DELIMITER +
-                            productsCount + Library.DELIMITER +
-                            warehousesCount + Library.DELIMITER +
+                            serverStartTimeMillis + Library.DELIMITER +
+                            productsCountTotal + Library.DELIMITER +
+                            warehousesCountTotal + Library.DELIMITER +
                             clients.size();
 //                        client.sendMessage(msgOf()(Library.SERVER_INFO, Library.ACCEPTED, serverInfo));
                     client.sendMessage(msgOf(header(Library.SERVER_INFO, Library.ACCEPTED), serverInfo));
@@ -484,18 +486,18 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
             case Library.USERS:
                 USERS_LOGGER.info("USER MODERATION...");
                 switch (header[1]) {
-                    case Library.DISCONNECT:
+                    case Library.KICK:
                         String nicname2 = receivedData.getData();
                         int initiatorLvl = client.getAccessLevel();
                         ClientThread clientShouldBeKicked = findUserByNickname(nicname2);
                         if (clientShouldBeKicked != null) {
                             if (initiatorLvl < clientShouldBeKicked.getAccessLevel()) {
                                 USERS_LOGGER.info("USER " + clientShouldBeKicked.getNickname() + " was disconnected by " + client.getNickname());
-                                clientShouldBeKicked.sendMessage(msgOf(header(Library.USERS, Library.DISCONNECT), client.getNickname()));
+                                clientShouldBeKicked.sendMessage(msgOf(header(Library.USERS, Library.KICK), client.getNickname()));
                                 clientShouldBeKicked.close();
                             } else {
-                                USERS_LOGGER.error("FAILED TO DISCONNECT USER " + clientShouldBeKicked.getNickname() + " by  " + client.getNickname() + " cause permission of " + client.getNickname() + " is the same or lower than  permission of " + clientShouldBeKicked.getNickname());
-                                client.sendMessage(msgOf(header(Library.USERS, Library.DISCONNECT, Library.DENIED), clientShouldBeKicked.getNickname()));
+                                USERS_LOGGER.error("FAILED TO KICK USER " + clientShouldBeKicked.getNickname() + " by  " + client.getNickname() + " cause permission of " + client.getNickname() + " is the same or lower than  permission of " + clientShouldBeKicked.getNickname());
+                                client.sendMessage(msgOf(header(Library.USERS, Library.KICK, Library.DENIED), clientShouldBeKicked.getNickname()));
                             }
                         }
                         break;
@@ -506,9 +508,26 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
             case Library.PRODUCT_REQUEST:
                 USERS_LOGGER.info("PRODUCT REQUEST...");
                 switch (header[1]) {
+                    case Library.SORT:
+                        USERS_LOGGER.info("Sort list request");
+
+                        QueryMaker maker3 = productQueries.get(client);
+                        if (maker3 == null) {
+                            SERVER_LOGGER.error("No clients found in queries list");
+                            return;
+                        }
+                        int sortType = Integer.parseInt(receivedData.getData());
+
+                        maker3.setSortType(sortType);
+                        List<Product> products2 = SQLClient.getProductsListByQuery(maker3.getQuery());
+                        boolean hasNextPage2 = maker3.hasNext();
+                        sendProductList(products2, client, hasNextPage2);
+                        break;
+
                     case Library.NEW:
                         USERS_LOGGER.info("New product request");
                         ProductRequest request = Library.productRequestFromJson(receivedData.getData());
+                        int sortType5 = request.getSortType();
 
                         boolean isNewClient;
 
@@ -523,6 +542,8 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                             isNewClient = false;
                         }
 
+                        queryMaker.setSortType(sortType5);
+
                         int resultsCount = SQLClient.getCountForProductRequest(queryMaker.getCountQuery());
 
                         if (resultsCount == 0) {
@@ -530,11 +551,10 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                             noResultsByQuery(client);
                         } else {
                             queryMaker.setResultsCount(resultsCount);
-                            List<Product> products = SQLClient.getProductsListByQuery2(queryMaker.getQuery());
+                            List<Product> products = SQLClient.getProductsListByQuery(queryMaker.getQuery());
                             boolean hasNextPage = queryMaker.hasNext();
-                            if (hasNextPage && isNewClient) {
+                            if (isNewClient) {
                                 USERS_LOGGER.info("Client was stored to the queryList");
-                                //TODO save client + queryMaker to map
                                 productQueries.put(client, queryMaker);
                             }
                             sendProductList(products, client, hasNextPage);
@@ -556,7 +576,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
                         }
 
                         USERS_LOGGER.info("Getting " + (maker.getCurrentPage() + 1) + "/" + maker.getPages() + " page");
-                        List<Product> products = SQLClient.getProductsListByQuery2(maker.getNext());
+                        List<Product> products = SQLClient.getProductsListByQuery(maker.getNext());
                         sendProductList(products, client, maker.hasNext());
                         break;
                 }
@@ -748,13 +768,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         sendMsgToModeratorsAndAdmins(msgOf(header(Library.RESEARCHER, Library.START)));
     }
 
-
-    //TODO разобрать с этим
-//    @Override
-//    public void onUpdaterSQLException(Exception e) {
-//        SERVER_LOGGER.error("Updater SQL exception: " + e.getMessage());
-//        sendMsgToModeratorsAndAdmins(msgOf(header(Library.UPDATER, Library.EXCEPTION), e.getMessage()));
-//    }
     @Override
     public void onResearchSuccessfulEnd(int count) {
         SERVER_LOGGER.info("Researcher successful end, total updates: " + count);
@@ -762,7 +775,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
 
         SQLClient.commit();
         researcherLastRunDate = SQLClient.getProcessLastRun(RESEARCHER);
-        productsCount = SQLClient.getProductsCount();
+        productsCountTotal = SQLClient.getProductsCount();
 
         sendMsgToModeratorsAndAdmins(msgOf(header(Library.RESEARCHER, Library.PROCESS_END), String.valueOf(count)));
         sendMsgToModeratorsAndAdmins(msgOf(header(Library.RESEARCHER, Library.LAST_RUN), researcherLastRunDate.toString()));
@@ -854,5 +867,121 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
             SERVER_LOGGER.info("Updater TimerTask executing...");
             startUpdater(false);
         }
+    }
+
+    //Handling messages from clients
+    @Override
+    public void messageFormatException(ClientThread client) {
+
+    }
+
+    @Override
+    public void permissionDenied(ClientThread client) {
+
+    }
+
+    @Override
+    public void authRequest(ClientThread client, String login, String password) {
+
+    }
+
+    @Override
+    public void serverInfoForAdmin(ClientThread client) {
+
+    }
+
+    @Override
+    public void serverInfoForGuest(ClientThread client) {
+
+    }
+
+    @Override
+    public void onUpdaterStartRequest() {
+
+    }
+
+    @Override
+    public void onUpdaterStopRequest() {
+
+    }
+
+    @Override
+    public void onUpdaterAutostartStateChanged(boolean status) {
+
+    }
+
+    @Override
+    public void onUpdaterAutostartIntervalChanged(int interval) {
+
+    }
+
+    @Override
+    public void onUpdaterAutostartTimeChanged(LocalTime autostartTime) {
+
+    }
+
+    @Override
+    public void onResearcherStartRequest() {
+
+    }
+
+    @Override
+    public void onResearcherStopRequest() {
+
+    }
+
+    @Override
+    public void onResearcherAutostartStateChanged(boolean status) {
+
+    }
+
+    @Override
+    public void onResearcherAutostartIntervalChanged(int interval) {
+
+    }
+
+    @Override
+    public void onResearcherAutostartTimeChanged(LocalTime autostartTime) {
+
+    }
+
+    @Override
+    public ClientThread getUserRole(String nickname) {
+        return null;
+    }
+
+    @Override
+    public void onKickUserRequest(ClientThread client, ClientThread targetUser) {
+
+    }
+
+    @Override
+    public void onBanUserRequest(ClientThread client, ClientThread targetUser) {
+
+    }
+
+    @Override
+    public void onSortProductsRequest(ClientThread client, int sortType) {
+
+    }
+
+    @Override
+    public void onNewProductRequest(ClientThread client, ProductRequest productRequest, int sortType) {
+
+    }
+
+    @Override
+    public void onNextPageProductRequest(ClientThread client) {
+
+    }
+
+    @Override
+    public void onProductRemainsRequest(ClientThread client, int productID) {
+
+    }
+
+    @Override
+    public void onProductImageRequest(ClientThread client, int productID) {
+
     }
 }
