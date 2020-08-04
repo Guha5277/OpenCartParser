@@ -32,6 +32,7 @@ public interface MessageHandlerListener {
     void onSortProductsRequest(ClientThread client, int sortType);
     void onNewProductRequest(ClientThread client, ProductRequest productRequest, int sortType);
     void onNextPageProductRequest(ClientThread client);
+    void onDailyOfferRequest(ClientThread client);
 
     void onProductRemainsRequest(ClientThread client, int productID);
     void onProductImageRequest(ClientThread client, int productID);

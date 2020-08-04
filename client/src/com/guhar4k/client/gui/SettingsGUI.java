@@ -155,7 +155,7 @@ public class SettingsGUI {
         boolean researcherEnable = chkResearcherEnable.isSelected();
         int updaterInterval = Integer.parseInt(txtUpdaterDay.getText());
         int researcherInterval = Integer.parseInt(txtResearcherDay.getText());
-        LocalTime updaterTime = LocalTime.of(Integer.parseInt(txtUpdaterHour.getText()), Integer.parseInt(txtResearcherMinute.getText()));
+        LocalTime updaterTime = LocalTime.of(Integer.parseInt(txtUpdaterHour.getText()), Integer.parseInt(txtUpdaterMinute.getText()));
         LocalTime researcherTime = LocalTime.of(Integer.parseInt(txtResearcherHour.getText()), Integer.parseInt(txtResearcherMinute.getText()));
         listener.applySettingsRequest(updaterEnable, researcherEnable, updaterInterval, researcherInterval, updaterTime, researcherTime);
         window.hide();

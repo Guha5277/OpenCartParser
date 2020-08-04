@@ -1,15 +1,16 @@
 package main;
 
-import com.guhar4k.library.DataProtocol;
 import com.guhar4k.library.Library;
 import com.guhar4k.library.ProductRequest;
 import com.guhar4k.parser.*;
+import com.guhar4k.product.DailyOffer;
 import com.guhar4k.product.Product;
 import com.guhar4k.product.Warehouse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -28,7 +29,6 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private static final Logger USERS_LOGGER = LogManager.getLogger("UsersLogger");
     private final String IMAGES_PATH = "Server/res/images/";
     private final int IMAGE_CHUNK_LIMIT = 30000;
-
     MessageHandlerImpl messageHandler;
     private long serverStartTimeMillis;
     private int productsCountTotal;
@@ -52,6 +52,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private Researcher researcher;
     private Vector<SocketThread> clients = new Vector<>();
     private HashMap<ClientThread, QueryMaker> productQueries = new HashMap<>();
+    private Map<String, ArrayList<Product>> dailyOffer;
 
     public static void main(String[] args) {
         new Server();
@@ -95,6 +96,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+
+        dailyOffer = SQLClient.getDailyOffer();
+
         SERVER_LOGGER.info("Products: " + productsCountTotal);
         SERVER_LOGGER.info("Warehouses: " + warehousesCountTotal);
         SERVER_LOGGER.info("Server Started " + name + " " + address);
@@ -246,6 +250,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     }
 
     private void sendImageToClient(ClientThread client, int productID, String imagePath) {
+        //SERVER_LOGGER.info("Sending image for product with id " + productID);
         File file = new File(imagePath);
         try {
             Base64.Encoder encoder = Base64.getEncoder();
@@ -385,6 +390,19 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     private void sendResearcherInfo(ClientThread client) {
         client.sendMessage(msgOf(header(Library.RESEARCHER, Library.INFO), getResearcherInfo()));
         sendWarehousesList(client);
+    }
+
+    private void sendDailyOffer(ClientThread client) {
+        for (Map.Entry<String, ArrayList<Product>> entry : dailyOffer.entrySet()) {
+            String offerName = entry.getKey();
+            ArrayList<Product> products = entry.getValue();
+
+            for (Product p : products) {
+                String dailyOffer = Library.dailyOfferToJson(new DailyOffer(offerName, p));
+                client.sendMessage(dailyOffer);
+            }
+            client.sendMessage(msgOf(header(Library.DAILY_OFFER, Library.PRODUCT_LIST_END), offerName));
+        }
     }
 
     private String getResearcherInfo() {
@@ -707,6 +725,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     public void onUpdaterAutostartStateChanged(boolean status) {
         updaterAutostartState = status;
         SQLClient.updateProcessAutoStartState(UPDATER, updaterAutostartState);
+        if (!updaterAutostartState && updaterTimer != null) {
+            updaterTimer.cancel();
+        }
         notifyUpdaterParamsChanged();
     }
 
@@ -714,6 +735,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     public void onUpdaterAutostartIntervalChanged(int interval) {
         updaterDaysInterval = interval;
         SQLClient.updateProcessDayInterval(UPDATER, updaterDaysInterval);
+        setUpdaterTimerTask();
         notifyUpdaterParamsChanged();
     }
 
@@ -721,6 +743,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     public void onUpdaterAutostartTimeChanged(LocalTime autostartTime) {
         updaterAutostartTime = autostartTime;
         SQLClient.updateProcessStartTime(UPDATER, updaterAutostartTime);
+        setUpdaterTimerTask();
         notifyUpdaterParamsChanged();
     }
 
@@ -738,6 +761,9 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     public void onResearcherAutostartStateChanged(boolean status) {
         researcherAutostartState = status;
         SQLClient.updateProcessAutoStartState(RESEARCHER, researcherAutostartState);
+        if (!researcherAutostartState && researcherTimer != null) {
+            researcherTimer.cancel();
+        }
         notifyResearcherParamsChanged();
     }
 
@@ -745,6 +771,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     public void onResearcherAutostartIntervalChanged(int interval) {
         researcherDaysInterval = interval;
         SQLClient.updateProcessDayInterval(RESEARCHER, researcherDaysInterval);
+        setResearcherTimerTask();
         notifyResearcherParamsChanged();
     }
 
@@ -752,6 +779,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     public void onResearcherAutostartTimeChanged(LocalTime autostartTime) {
         researcherAutostartTime = autostartTime;
         SQLClient.updateProcessStartTime(RESEARCHER, researcherAutostartTime);
+        setResearcherTimerTask();
         notifyResearcherParamsChanged();
     }
 
@@ -832,6 +860,11 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
     }
 
     @Override
+    public void onDailyOfferRequest(ClientThread client) {
+        sendDailyOffer(client);
+    }
+
+    @Override
     public void onProductRemainsRequest(ClientThread client, int productID) {
         List<int[]> result = SQLClient.getProductRemains(productID);
         if (result == null) {
@@ -848,6 +881,7 @@ public class Server implements ServerSocketThreadListener, SocketThreadListener,
             SERVER_LOGGER.error("FAILED to get an image from DB for product with id: " + productID);
             client.sendMessage(msgOf(header(Library.IMAGE, Library.EXCEPTION), String.valueOf(productID)));
         } else if (imageID.equals("NO_IMAGE")) {
+            SERVER_LOGGER.info("The product with id " + productID + " have no image");
             client.sendMessage(msgOf(header(Library.IMAGE, Library.NO_IMAGE), String.valueOf(productID)));
         } else {
             String imagePath = IMAGES_PATH + imageID;

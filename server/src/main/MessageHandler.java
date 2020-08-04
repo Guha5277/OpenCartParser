@@ -256,6 +256,9 @@ public class MessageHandler implements MessageHandlerImpl {
             case Library.NEXT:
                 listener.onNextPageProductRequest(client);
                 break;
+            case Library.DAILY_OFFER:
+                listener.onDailyOfferRequest(client);
+                break;
         }
     }
 

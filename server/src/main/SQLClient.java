@@ -499,12 +499,77 @@ class SQLClient {
         String query = String.format("SELECT warehouse_id, remains from " + REMAINS_TABLE + " where product_id = %d and remains > 0", productID);
         LOG.info(query);
         try (ResultSet set = statement.executeQuery(query)) {
-            while (set.next()){
+            while (set.next()) {
                 result.add(new int[]{set.getInt(1), set.getInt(2)});
             }
         } catch (SQLException e) {
             LOG.error("Failed to get image from DB. Query: " + query + ". Error: " + e.getMessage());
         }
+        return result;
+    }
+
+
+    //TODO разбить метод и сделать его более понятным
+    static HashMap<String, ArrayList<Product>> getDailyOffer() {
+        HashMap<String, ArrayList<Product>> result = new HashMap<>();
+        ResultSet innerSet = null;
+        ResultSet innerSet2 = null;
+
+        String query = "SELECT DISTINCT offer_name from daily_offer";
+        try (ResultSet set = statement.executeQuery(query)) {
+
+            Statement namesStatement = connection.createStatement();
+            Statement productsStatement = connection.createStatement();
+
+            while (set.next()) {
+                String offerName = set.getString(1);
+                String innerQuery = String.format("SELECT product_id from daily_offer WHERE offer_name='%s'", offerName);
+                innerSet = namesStatement.executeQuery(innerQuery);
+                while (innerSet.next()) {
+                    int productID = innerSet.getInt(1);
+
+                    String innerQuery2 = String.format("SELECT * from " + PRODUCT_TABLE + " WHERE id=%d", productID);
+                    innerSet2 = productsStatement.executeQuery(innerQuery2);
+
+                    int id = innerSet2.getInt(1);
+                    String name = innerSet2.getString(2);
+                    String url = innerSet2.getString(3);
+                    int price = innerSet2.getInt(4);
+                    int category = innerSet2.getInt(5);
+                    String groupName = innerSet2.getString(6);
+                    double strength = innerSet2.getDouble(7);
+                    int volume = innerSet2.getInt(8);
+                    String imageID = innerSet2.getString(9);
+
+                    if (result.containsKey(offerName)) {
+                        result.get(offerName).add(new Product(id, name, url, price, new Group(groupName, ""), category, volume, strength, imageID));
+                    } else {
+                        ArrayList<Product> products = new ArrayList<>();
+                        products.add(new Product(id, name, url, price, new Group(groupName, ""), category, volume, strength, imageID));
+                        result.put(offerName, products);
+                    }
+
+                }
+            }
+        } catch (SQLException e) {
+            LOG.error("Query: " + query + "Error: " + e.getMessage());
+        } finally {
+            if (innerSet != null) {
+                try {
+                    innerSet.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (innerSet2 != null) {
+                try {
+                    innerSet2.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
         return result;
     }
 }
