@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="ConsoleAppender" target="SYSTEM_OUT">
+            <PatternLayout>
+                <Pattern>%d{HH:mm:ss} [%-5level] [%C{10}]   [thread]:[%tid] - %msg %n</Pattern>
+            </PatternLayout>
+        </Console>
+
+        <RollingFile name="ServerAppender" fileName="logs/server/server.log"
+            filePattern="logs/server/$${date:yyyy-MM}/%d{yyyy-MM-dd}.log">
+            <PatternLayout>
+                <Pattern>%d{HH:mm:ss} [%-5level] [%C{2}] [%thread]:[%tid] - %msg %n</Pattern>
+            </PatternLayout>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" />
+            </Policies>
+            <DefaultRolloverStrategy max="30" />
+        </RollingFile>
+
+        <RollingFile name="UsersAppender" fileName="logs/users/users.log"
+                     filePattern="logs/users/$${date:yyyy-MM}/%d{yyyy-MM-dd}.log">
+            <PatternLayout>
+                <Pattern>%d{HH:mm:ss} [%-5level] [%C{2}] [%thread]:[%tid] - %msg %n</Pattern>
+            </PatternLayout>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" />
+            </Policies>
+            <DefaultRolloverStrategy max="30" />
+        </RollingFile>
+
+        <RollingFile name="ParserAppender" fileName="logs/server/parser/parser.log"
+                     filePattern="logs/server/parser/$${date:yyyy-MM}/%d{yyyy-MM-dd}.log">
+            <PatternLayout>
+                <Pattern>%d{HH:mm:ss} [%-5level] [%C{2}] [%thread]:[%tid] - %msg %n</Pattern>
+            </PatternLayout>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" />
+            </Policies>
+            <DefaultRolloverStrategy max="30" />
+        </RollingFile>
+
+    </Appenders>
+
+    <Loggers>
+        <Logger name="ServerLogger" level="debug" additivity="false">
+            <AppenderRef ref="ServerAppender" level="INFO"/>
+            <AppenderRef ref="ConsoleAppender" level="INFO"/>
+        </Logger>
+
+        <Logger name="UsersLogger" level="debug" additivity="false">
+            <AppenderRef ref="UsersAppender" level="INFO"/>
+            <AppenderRef ref="ConsoleAppender" level="INFO"/>
+        </Logger>
+
+        <Logger name="ParserLogger" level="debug" additivity="false">
+            <AppenderRef ref="ParserAppender" level="INFO"/>
+            <AppenderRef ref="ConsoleAppender" level="INFO"/>
+        </Logger>
+
+        <Root level="trace">
+            <AppenderRef ref="ConsoleAppender"/>
+        </Root>
+    </Loggers>
+
+</Configuration>

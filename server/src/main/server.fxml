@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<AnchorPane maxHeight="418.0" maxWidth="600.0" minHeight="400.0" minWidth="600.0" prefHeight="418.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="LoginGUI">
+   <cursor>
+      <Cursor fx:constant="DEFAULT" />
+   </cursor>
+   <children>
+      <ScrollPane blendMode="SRC_ATOP" fitToHeight="true" fitToWidth="true" layoutY="348.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="70.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.topAnchor="348.0">
+         <content>
+            <TextArea id="txtAreaLogger" fx:id="txtAreaLogger" editable="false" prefHeight="61.0" prefWidth="598.0">
+               <font>
+                  <Font size="10.0" />
+               </font></TextArea>
+         </content>
+      </ScrollPane>
+      <ButtonBar layoutX="386.0" layoutY="14.0" prefHeight="70.0" prefWidth="200.0">
+        <buttons>
+          <Button id="btnServerStart" fx:id="btnServerStart" cache="true" mnemonicParsing="false" onAction="#handleServerStartButton" prefHeight="45.0" style="-fx-background-color: #40dd81;" text="СТАРТ">
+               <font>
+                  <Font name="System Bold" size="18.0" />
+               </font>
+               <cursor>
+                  <Cursor fx:constant="HAND" />
+               </cursor>
+            </Button>
+            <Button id="btnServerStop" fx:id="btnServerStop" disable="true" mnemonicParsing="false" onAction="#handleServerStopButton" prefHeight="45.0" style="-fx-background-color: #e75d5d;" text="СТОП">
+               <font>
+                  <Font name="System Bold" size="18.0" />
+               </font>
+               <cursor>
+                  <Cursor fx:constant="HAND" />
+               </cursor>
+            </Button>
+        </buttons>
+      </ButtonBar>
+      <Label layoutX="36.0" layoutY="34.0" text="Статус сервера:">
+         <font>
+            <Font name="System Bold" size="22.0" />
+         </font>
+      </Label>
+      <Label id="lblServerStatus" layoutX="209.0" layoutY="34.0" text="Offline" textFill="#e75d5d">
+         <font>
+            <Font name="System Bold" size="22.0" />
+         </font>
+      </Label>
+      <TabPane layoutX="-3.0" layoutY="205.0" prefHeight="140.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.rightAnchor="0.0">
+        <tabs>
+          <Tab text="Updater">
+            <content>
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <Label layoutX="14.0" layoutY="14.0" text="Статус:">
+                           <font>
+                              <Font name="System Bold" size="15.0" />
+                           </font>
+                        </Label>
+                        <Label id="lblUpdaterStatus" fx:id="lblUpdaterStatus" layoutX="72.0" layoutY="14.0" text="Offline" textFill="#b9adad">
+                           <font>
+                              <Font name="System Bold" size="15.0" />
+                           </font>
+                        </Label>
+                        <ProgressBar id="prgUpdater" fx:id="prgUpdater" layoutX="8.0" layoutY="89.0" prefHeight="18.0" prefWidth="590.0" progress="1.0" visible="false">
+                           <padding>
+                              <Insets right="5.0" />
+                           </padding></ProgressBar>
+                        <Label id="lblUpdaterCurrentProgress" fx:id="lblUpdaterCurrentProgress" layoutX="278.0" layoutY="89.0" text="500/4020" visible="false" />
+                        <ButtonBar layoutX="14.0" layoutY="44.0" nodeOrientation="RIGHT_TO_LEFT" prefHeight="40.0" prefWidth="200.0">
+                          <buttons>
+                              <Button id="btnUpdaterStop" fx:id="btnUpdaterStop" disable="true" mnemonicParsing="false" onAction="#handleUpdaterStopButton" text="Стоп">
+                                  <font>
+                                      <Font name="System Bold" size="12.0" />
+                                  </font>
+                                 <cursor>
+                                    <Cursor fx:constant="HAND" />
+                                 </cursor></Button>
+                              <Button id="btnUpdaterStart" fx:id="btnUpdaterStart" mnemonicParsing="false" onAction="#handleUpdaterStartButton" text="Старт">
+                                 <font>
+                                    <Font name="System Bold" size="12.0" />
+                                 </font>
+                                 <cursor>
+                                    <Cursor fx:constant="HAND" />
+                                 </cursor></Button>
+                          </buttons>
+                        </ButtonBar>
+                        <VBox layoutX="195.0" layoutY="-1.0" prefHeight="89.0" prefWidth="140.0" spacing="5.0">
+                           <children>
+                              <Label text="Последняя проверка:" />
+                              <Label text="Проверено:" />
+                              <Label text="Измений:" />
+                              <Label text="Ошибок:" />
+                           </children>
+                           <padding>
+                              <Insets top="5.0" />
+                           </padding>
+                        </VBox>
+                        <VBox layoutX="335.0" layoutY="-1.0" prefHeight="89.0" prefWidth="140.0" spacing="5.0">
+                           <children>
+                              <Label id="lblUpdaterLastUpdated" fx:id="lblUpdaterLastUpdated" />
+                              <Label id="lblUpdaterTotalChecked" fx:id="lblUpdaterTotalChecked" text="4000" visible="false" />
+                              <Label id="lblUpdaterUpdatedCount" fx:id="lblUpdaterUpdatedCount" text="0" textFill="#40dd81" visible="false" />
+                              <Label id="lblUpdateFailed" fx:id="lblUpdateFailed" text="5" textFill="#e75d5d" visible="false" />
+                           </children>
+                           <padding>
+                              <Insets top="5.0" />
+                           </padding>
+                        </VBox>
+                     </children>
+                  </AnchorPane>
+            </content>
+          </Tab>
+          <Tab text="Researcher">
+              <content>
+                  <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                      <children>
+                          <Label layoutX="14.0" layoutY="14.0" text="Статус:">
+                              <font>
+                                  <Font name="System Bold" size="15.0" />
+                              </font>
+                          </Label>
+                          <Label layoutX="72.0" layoutY="14.0" text="Offline" textFill="#e75d5d">
+                              <font>
+                                  <Font name="System Bold" size="15.0" />
+                              </font>
+                          </Label>
+                          <ProgressBar layoutX="6.0" layoutY="88.0" prefHeight="18.0" prefWidth="594.0" progress="0.87" />
+                          <Label layoutX="278.0" layoutY="89.0" text="500/4020" />
+                          <ButtonBar layoutX="14.0" layoutY="42.0" nodeOrientation="RIGHT_TO_LEFT" prefHeight="40.0" prefWidth="200.0">
+                              <buttons>
+                                  <Button disable="true" mnemonicParsing="false" text="Стоп">
+                                      <font>
+                                          <Font name="System Bold" size="12.0" />
+                                      </font>
+                                      <cursor>
+                                          <Cursor fx:constant="HAND" />
+                                      </cursor></Button>
+                                  <Button mnemonicParsing="false" text="Старт">
+                                      <font>
+                                          <Font name="System Bold" size="12.0" />
+                                      </font>
+                                      <cursor>
+                                          <Cursor fx:constant="HAND" />
+                                      </cursor></Button>
+                              </buttons>
+                          </ButtonBar>
+                      </children>
+                  </AnchorPane>
+              </content>
+          </Tab>
+            <Tab text="Grabber">
+                <content>
+                    <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                        <children>
+                            <Label layoutX="14.0" layoutY="14.0" text="Статус:">
+                                <font>
+                                    <Font name="System Bold" size="15.0" />
+                                </font>
+                            </Label>
+                            <Label layoutX="72.0" layoutY="14.0" text="Offline" textFill="#e75d5d">
+                                <font>
+                                    <Font name="System Bold" size="15.0" />
+                                </font>
+                            </Label>
+                            <ProgressBar layoutX="6.0" layoutY="88.0" prefHeight="18.0" prefWidth="594.0" progress="0.87" />
+                            <Label layoutX="278.0" layoutY="89.0" text="500/4020" />
+                            <ButtonBar layoutX="14.0" layoutY="42.0" nodeOrientation="RIGHT_TO_LEFT" prefHeight="40.0" prefWidth="200.0">
+                                <buttons>
+                                    <Button disable="true" mnemonicParsing="false" text="Стоп">
+                                        <font>
+                                            <Font name="System Bold" size="12.0" />
+                                        </font>
+                                        <cursor>
+                                            <Cursor fx:constant="HAND" />
+                                        </cursor></Button>
+                                    <Button mnemonicParsing="false" text="Старт">
+                                        <font>
+                                            <Font name="System Bold" size="12.0" />
+                                        </font>
+                                        <cursor>
+                                            <Cursor fx:constant="HAND" />
+                                        </cursor></Button>
+                                </buttons>
+                            </ButtonBar>
+                        </children>
+                    </AnchorPane>
+                </content>
+            </Tab>
+        </tabs>
+      </TabPane>
+      <VBox layoutX="35.0" layoutY="93.0" prefHeight="110.0" prefWidth="121.0" spacing="15.0">
+         <children>
+            <Label text="Всего продуктов:">
+               <opaqueInsets>
+                  <Insets />
+               </opaqueInsets>
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <Label text="Магазинов:">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <Label text="Обновлено:">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+         </children>
+         <opaqueInsets>
+            <Insets />
+         </opaqueInsets>
+      </VBox>
+      <VBox layoutX="160.0" layoutY="93.0" prefHeight="110.0" prefWidth="121.0" spacing="15.0">
+         <children>
+            <Label id="lblProductsCount" fx:id="lblProductsCount" text="10">
+               <opaqueInsets>
+                  <Insets />
+               </opaqueInsets>
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <Label id="lblWarehousesCount" fx:id="lblWarehousesCount" text="5">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <Label id="lblLastUpdatedMain" fx:id="lblLastUpdatedMain" text="15.01.2020">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+         </children>
+         <opaqueInsets>
+            <Insets />
+         </opaqueInsets>
+      </VBox>
+   </children>
+</AnchorPane>
